@@ -55,7 +55,7 @@ class BaseOptions():
         # refer to the way of gpu_ids(On Hold)
         self.parser.add_argument('--constrain', type=str, default='MSE', help='guidance loss type')
         self.parser.add_argument('--strength', type=float, default=1, help='the weight of guidance loss')
-        self.parser.add_argument('--gan_type', type=str, default='vanilla', help='wgan_gp, lsgan, vanilla') 
+        self.parser.add_argument('--gan_type', type=str, default='vanilla', help='wgan_gp, lsgan, vanilla, wgan_gp should never be used here.') 
         self.parser.add_argument('--gan_weight', type=float, default=0.2, help='the weight of gan loss')
         self.parser.add_argument('--overlap', type=int, default=4, help='the overlap for center mask')
 

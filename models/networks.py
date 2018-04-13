@@ -104,7 +104,7 @@ def get_scheduler(optimizer, opt):
         return NotImplementedError('learning rate policy [%s] is not implemented', opt.lr_policy)
     return scheduler
 
-# 把opt传进来确实很不好，因为这里每个参数最好是具有明确意义的。
+
 def define_G(input_nc, output_nc, ngf, which_model_netG, opt, mask_global, norm='batch', use_dropout=False, init_type='normal',gpu_ids=[]):
     netG = None
     use_gpu = len(gpu_ids) > 0
@@ -247,7 +247,7 @@ class UnetGeneratorShiftTriple_MostAdv_cos(nn.Module):
             unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, unet_block, norm_layer=norm_layer, use_dropout=use_dropout)
         unet_block = UnetSkipConnectionBlock(ngf * 4, ngf * 8, unet_block, norm_layer=norm_layer)
 
-        unet_shift_block = UnetSkipConnectionShiftTriple_MostAdvCosBlock(ngf * 2, ngf * 4, opt, innerCos_list, shift_list, mask_global, \
+        unet_shift_block = UnetSkipConnectionShiftTriple(ngf * 2, ngf * 4, opt, innerCos_list, shift_list, mask_global, \
                                                          unet_block, norm_layer=norm_layer)  # passing in unet_shift_block
         unet_block = UnetSkipConnectionBlock(ngf, ngf * 2, unet_shift_block, norm_layer=norm_layer)
         unet_block = UnetSkipConnectionBlock(output_nc, ngf, unet_block, outermost=True, norm_layer=norm_layer)
@@ -262,10 +262,10 @@ class UnetGeneratorShiftTriple_MostAdv_cos(nn.Module):
 
 # Mention: the TripleBlock differs in `upconv` defination.
 # 'cos' means that we add a `innerCos` layer in the block.
-class UnetSkipConnectionShiftTriple_MostAdvCosBlock(nn.Module):
+class UnetSkipConnectionShiftTriple(nn.Module):
     def __init__(self, outer_nc, inner_nc, opt, innerCos_list, shift_list, mask_global,
                  submodule=None, shift_layer=None, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d, use_dropout=False):
-        super(UnetSkipConnectionShiftTriple_MostAdvCosBlock, self).__init__()
+        super(UnetSkipConnectionShiftTriple, self).__init__()
         self.outermost = outermost
 
         downconv = nn.Conv2d(outer_nc, inner_nc, kernel_size=4,

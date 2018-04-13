@@ -155,11 +155,6 @@ class Pix2PixModel(BaseModel):
         self.input_A.narrow(1,1,1).masked_fill_(self.mask_global, 2*104.0/255.0 - 1.0)
         self.input_A.narrow(1,2,1).masked_fill_(self.mask_global, 2*117.0/255.0 - 1.0)
         
-
-
-    # maybe someday I can figure out the style of `neural style` which uses a list to store layers which
-    # is much easier and convinient. However,for just one layer innerCos, just let it be.
-    # If we want to add more constraints, I think I have to rethink that way!
     def preset_innerCos(self):
         self.ng_innerCos_list[0].set_target(Variable(self.Tensor(self.opt.batchSize, 256, 32, 32)))
         # other ng costraint can be add similar.
@@ -262,10 +257,12 @@ class Pix2PixModel(BaseModel):
         # Third add additional netG contraint loss!
         self.ng_loss_value = 0
         for gl in self.ng_innerCos_list:
-            self.ng_loss_value += gl.backward()  # We can get each constraint loss here!
-        # As constraint layer `backward` fucntion is a `fake`, it just backward the contraint loss
-        # and we set `retain_variables = True`, that means we retain the grad values.
-        # the grad will be sumed together with subsequent grad!
+            # We can get each constraint loss here!
+            # As constraint layer `backward` fucntion is a `fake`, it just backward the contraint loss
+            # and we set `retain_variables = True`, that means we retain the grad values.
+            # the grad will be sumed together with subsequent grad!
+            self.ng_loss_value += gl.backward()  
+
 
         self.loss_G.backward()
 

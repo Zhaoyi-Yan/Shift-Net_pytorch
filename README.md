@@ -27,7 +27,7 @@ cd Shift-Net_pytorch
 
 ```
 
-### pix2pix train/test
+### tain and test
 - Download your own inpainting datasets.
 
 - Train a model:

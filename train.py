@@ -5,9 +5,6 @@ from models.models import create_model
 from util.visualizer import Visualizer
 import torch
 
-# import torch
-
-# just do stuffs write the opt to the txt.
 opt = TrainOptions().parse()
 #
 data_loader = CreateDataLoader(opt)
@@ -32,7 +29,7 @@ for epoch in range(opt.epoch_count, opt.niter + opt.niter_decay + 1):
         visualizer.reset()
         total_steps += opt.batchSize
         epoch_iter += opt.batchSize
-        model.set_input(data) # it not only set the input data with mask, but also set the latent mask.
+        model.set_input(data) # it not only sets the input data with mask, but also sets the latent mask.
 
         model.set_gt_latent()
 
