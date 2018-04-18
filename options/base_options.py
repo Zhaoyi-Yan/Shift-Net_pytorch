@@ -41,7 +41,6 @@ class BaseOptions():
         self.parser.add_argument('--no_flip', action='store_true', help='if specified, do not flip the images for data argumentation')
         self.parser.add_argument('--init_type', type=str, default='normal', help='network initialization [normal|xavier|kaiming|orthogonal]')
         ## new added
-
         self.parser.add_argument('--mask_type', type=str, default='center', help='the type of mask you want to apply, \'center\' or \'random\'')
         self.parser.add_argument('--fixed_mask', type=int, default=1, help='1 or 0, whether mask is fixed')
         self.parser.add_argument('--lambda_A', type=int, default=100, help='weight on L1 term in objective')
@@ -52,7 +51,6 @@ class BaseOptions():
         self.parser.add_argument('--bottleneck', type=int, default=512, help='neurals of fc')
         self.parser.add_argument('--gp_lambda', type=float, default=10.0, help='gradient penalty coefficient')
         self.parser.add_argument('--ncritic', type=int, default=5, help='critic iterations')
-        # refer to the way of gpu_ids(On Hold)
         self.parser.add_argument('--constrain', type=str, default='MSE', help='guidance loss type')
         self.parser.add_argument('--strength', type=float, default=1, help='the weight of guidance loss')
         self.parser.add_argument('--gan_type', type=str, default='vanilla', help='wgan_gp, lsgan, vanilla, wgan_gp should never be used here.') 

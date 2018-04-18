@@ -95,13 +95,6 @@ class InnerShiftTripleFunction(torch.autograd.Function):
         # shortcut
         output = output_lst
 
-
-        # For now:
-        # cuda.ByteTensor: ex_mask, inv_ex_mask
-        # LongTensor: ind, centers_lt, centers_rb  (It is non-cuda tensors, seems no need to transfer to cuda)
-
-        ctx.save_for_backward(input)
-
         ctx.ind_lst = ind_lst
 
         return output
