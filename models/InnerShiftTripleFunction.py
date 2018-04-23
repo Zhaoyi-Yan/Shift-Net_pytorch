@@ -4,14 +4,13 @@ from util.MaxCoord import MaxCoord
 import util.util as util
 import torch.nn as nn
 import torch
-from torch.autograd.function import once_differentiable
 
 
 from torch.autograd import Variable
 class InnerShiftTripleFunction(torch.autograd.Function):
 
     @staticmethod
-    def forward(ctx, input, mask, swap_sz, stride, triple_w, flag, nonmask_point_idx, flatten_offsets, sp_x, sp_y):
+    def forward(ctx, input, mask, shift_sz, stride, triple_w, flag, nonmask_point_idx, flatten_offsets, sp_x, sp_y):
         assert input.dim() == 4, "Input Dim has to be 4"
         ctx.triple_w = triple_w
         ctx.flag = flag
@@ -50,7 +49,7 @@ class InnerShiftTripleFunction(torch.autograd.Function):
             former = former_all.narrow(0, idx, 1)
             # Mind the params order is inconsistent with Torch version.
             Nonparm = NonparametricShift()
-            _, conv_enc, conv_new_dec, _, = Nonparm.buildAutoencoder(latter.squeeze(), False, False, nonmask_point_idx, swap_sz, stride)
+            _, conv_enc, conv_new_dec, _, = Nonparm.buildAutoencoder(latter.squeeze(), False, False, nonmask_point_idx, shift_sz, stride)
             
             former_var = Variable(former, requires_grad = False)
             tmp1 = conv_enc(former_var)
@@ -101,7 +100,6 @@ class InnerShiftTripleFunction(torch.autograd.Function):
 
 
     @staticmethod
-    @once_differentiable
     def backward(ctx, grad_output):
         ind_lst = ctx.ind_lst
         flag = ctx.flag
@@ -110,14 +108,14 @@ class InnerShiftTripleFunction(torch.autograd.Function):
 
         # # the former and the latter are keep original. Only the thrid part is shifted.
         grad_former_all = grad_output[:, 0:c//3, :, :]
-        grad_latter_all = grad_output[:, c//3: c*2//3, :, :]
-        grad_swapped_all = grad_output[:, c*2//3:c, :, :]
+        grad_latter_all = grad_output[:, c//3: c*2//3, :, :].clone()
+        grad_swapped_all = grad_output[:, c*2//3:c, :, :].clone()
 
         spatial_size = ctx.h * ctx.w
 
+        W_mat_all = Variable(ctx.Tensor(ctx.bz, spatial_size, spatial_size).zero_())
         for idx in range(ctx.bz):
-            W_mat = ctx.Tensor(spatial_size, spatial_size).zero_()
-
+            W_mat = W_mat_all.select(0,idx).clone()
             for cnt in range(spatial_size):
                 indS = ind_lst[idx][cnt]   # indS is index of the outer-mask
 
