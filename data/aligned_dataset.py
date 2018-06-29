@@ -7,7 +7,7 @@ from data.base_dataset import BaseDataset
 from data.image_folder import make_dataset
 from PIL import Image
 
-# They are three dimensions.
+# Images are of three dimensions.
 class AlignedDataset(BaseDataset):
     def initialize(self, opt):
         self.opt = opt
@@ -27,16 +27,23 @@ class AlignedDataset(BaseDataset):
 
         self.transform = transforms.Compose(transform_list)
 
-    # here need to change, let B the same as A
     def __getitem__(self, index):
         AB_path = self.AB_paths[index]
         AB = Image.open(AB_path).convert('RGB')
         AB = AB.resize((self.opt.loadSize, self.opt.loadSize), Image.BICUBIC)
-        # now AB has been translated into tensor
-        AB = self.transform(AB)  # 在自定义dataset类中，将input进行变换。self.transform(input)
+        AB = self.transform(AB)
+        w, h = AB.size
+
+        if w < h:
+            ht_1 = self.optSize * h // w
+            wd_1 = self.opt.loadSize
+            AB = AB.resize((wd_1, ht_1), Image.BICUBIC)
+        else:
+            wd_1 = self.opt.loadSize * w // w
+            ht_1 = self.opt.loadSize
+            AB = AB.resize((wd_1, ht_1), Image.BICUBIC)
 
         w_total = AB.size(2)
-        # w = int(w_total / 2)
         w = w_total
         h = AB.size(1)
         w_offset = random.randint(0, max(0, w - self.opt.fineSize - 1))
