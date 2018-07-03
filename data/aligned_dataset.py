@@ -7,7 +7,6 @@ from data.base_dataset import BaseDataset
 from data.image_folder import make_dataset
 from PIL import Image
 
-# Images are of three dimensions.
 class AlignedDataset(BaseDataset):
     def initialize(self, opt):
         self.opt = opt
@@ -18,9 +17,6 @@ class AlignedDataset(BaseDataset):
 
         assert(opt.resize_or_crop == 'resize_and_crop')
 
-        # ToTensor transforms ndarray [0,255] to tensor[0,1],
-        # normalize(mean, std) 
-        # Make it between [-1, 1], beacuse [(0-0.5)/0.5, (1-0.5)/0.5]
         transform_list = [transforms.ToTensor(),
                           transforms.Normalize((0.5, 0.5, 0.5),
                                                (0.5, 0.5, 0.5))]

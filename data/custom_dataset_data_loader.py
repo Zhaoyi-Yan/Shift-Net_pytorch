@@ -2,7 +2,6 @@
 import torch.utils.data
 from data.base_data_loader import BaseDataLoader
 
-# dataloader是作为上层的，这里应该要将 已经被transform后的dataset进行多线程读取。
 def CreateDataset(opt):
     dataset = None
     if opt.dataset_mode == 'aligned':
@@ -27,7 +26,6 @@ class CustomDatasetDataLoader(BaseDataLoader):
         BaseDataLoader.initialize(self, opt)
         self.dataset = CreateDataset(opt)
 
-        # 用dataloader进行多线程读取
         self.dataloader = torch.utils.data.DataLoader(
             self.dataset,
             batch_size=opt.batchSize,
