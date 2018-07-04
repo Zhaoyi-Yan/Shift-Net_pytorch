@@ -41,6 +41,15 @@ python test.py
 ```
 The test results will be saved to a html file here: `./results/`.
 
+If you find this work useful, please cite:
+```
+@article{yan2018shift,
+  title={Shift-Net: Image Inpainting via Deep Feature Rearrangement},
+  author={Yan, Zhaoyi and Li, Xiaoming and Li, Mu and Zuo, Wangmeng and Shan, Shiguang},
+  journal={arXiv preprint arXiv:1801.09392},
+  year={2018}
+}
+```
 
 ## Acknowledgments
 We benefit a lot from [pytorch-CycleGAN-and-pix2pix](https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix)
