@@ -25,23 +25,21 @@ class AlignedDataset(BaseDataset):
 
     def __getitem__(self, index):
         AB_path = self.AB_paths[index]
-        AB = Image.open(AB_path).convert('RGB')
-        AB = AB.resize((self.opt.loadSize, self.opt.loadSize), Image.BICUBIC)
-        AB = self.transform(AB)
+        AB = Image.open(AB_path).convert('RGB')    
         w, h = AB.size
 
         if w < h:
-            ht_1 = self.optSize * h // w
+            ht_1 = self.opt.loadSize * h // w
             wd_1 = self.opt.loadSize
             AB = AB.resize((wd_1, ht_1), Image.BICUBIC)
         else:
-            wd_1 = self.opt.loadSize * w // w
+            wd_1 = self.opt.loadSize * w // h
             ht_1 = self.opt.loadSize
             AB = AB.resize((wd_1, ht_1), Image.BICUBIC)
 
-        w_total = AB.size(2)
-        w = w_total
+        AB = self.transform(AB)
         h = AB.size(1)
+        w = AB.size(2)
         w_offset = random.randint(0, max(0, w - self.opt.fineSize - 1))
         h_offset = random.randint(0, max(0, h - self.opt.fineSize - 1))
 
