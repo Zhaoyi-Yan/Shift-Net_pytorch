@@ -425,7 +425,10 @@ class UnetSkipConnectionBlock(nn.Module):
         if self.outermost:  # if it is the outermost, directly pass the input in.
             return self.model(x)
         else:
-            return torch.cat([self.model(x), x], 1)  # cat in the C channel
+            x_latter = self.model(x)
+            _, _, h, w = x.size()
+            x_latter = F.upsample(x_latter, (h, w), mode='bilinear')
+            return torch.cat([x_latter, x], 1)  # cat in the C channel
 
 
 ################################### This is for D ###################################
