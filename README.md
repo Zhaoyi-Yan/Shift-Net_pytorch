@@ -50,7 +50,7 @@ If you find this work useful, please cite:
 }
 ```
 ## New things that I want to add
-- [ ] Make U-Net handle with inputs with any sizes. (By resizing the size of features of encoder to fit that of the corresponding features of decoder.
+- [x] Make U-Net handle with inputs with any sizes. (By resizing the size of features of decoder to fit that of the corresponding features of decoder.
 
 
 
