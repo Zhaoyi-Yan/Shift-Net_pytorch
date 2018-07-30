@@ -1,7 +1,6 @@
 # Shift-Net_pytorch
 
 This repositity is our Pytorch implementation for Shift-Net, it is just for those who are interesting in our work and want to get a skeleton Pytorch implemention.
-**We DO NOT guarantee the efficiency and performance.**
 
 The torch version [Shift-Net](https://github.com/Zhaoyi-Yan/Shift-Net) is the right choice if you would like to reproduce the fine results.
 
@@ -50,6 +49,10 @@ If you find this work useful, please cite:
   year={2018}
 }
 ```
+## New things that I want to add
+- [ ] Make U-Net handle with inputs with any sizes. (By resizing the size of features of encoder to fit that of the corresponding features of decoder.
+
+
 
 ## Acknowledgments
 We benefit a lot from [pytorch-CycleGAN-and-pix2pix](https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix)
