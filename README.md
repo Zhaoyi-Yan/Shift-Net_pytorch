@@ -2,9 +2,6 @@
 
 This repositity is our Pytorch implementation for Shift-Net, it is just for those who are interesting in our work and want to get a skeleton Pytorch implemention.
 
-The torch version [Shift-Net](https://github.com/Zhaoyi-Yan/Shift-Net) is the right choice if you would like to reproduce the fine results.
-
-
 ## Prerequisites
 - Linux or OSX.
 - Python 2 or Python 3.
