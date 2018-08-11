@@ -49,7 +49,7 @@ If you find this work useful, please cite:
 ## New things that I want to add
 - [x] Make U-Net handle with inputs of any sizes. (By resizing the size of features of decoder to fit that of the corresponding features of decoder.
 - [ ] Update the code for pytorch >= 0.4.
-- [ ] Clean the code and delete useless comments.
+- [x] Clean the code and delete useless comments.
 - [ ] Lots of more crazy operations that help in performance.
 
 
