@@ -7,13 +7,12 @@ from torch.autograd import Variable
 import util.util as util
 from PIL import Image
 import torch.nn.functional as F
-from util.image_pool import ImagePool
 from .base_model import BaseModel
 from . import networks
 
-class Pix2PixModel(BaseModel):
+class ShiftNetModel(BaseModel):
     def name(self):
-        return 'Pix2PixModel'
+        return 'ShiftNetModel'
 
     def initialize(self, opt):
         BaseModel.initialize(self, opt)
@@ -124,14 +123,11 @@ class Pix2PixModel(BaseModel):
             print('-----------------------------------------------')
 
     def set_input(self, input):
-        # good practise
-        AtoB = self.opt.which_direction == 'AtoB'
-        input_A = input['A' if AtoB else 'B']
-        input_B = input['B' if AtoB else 'A']
-        # input_A is Tensor, and self.input_A has been transfer to cuda(self.Tensor are cuda tensor if gpus>0)
-        self.input_A.resize_(input_A.size()).copy_(input_A)  
+        input_A = input['A']
+        input_B = input['B']
+        self.input_A.resize_(input_A.size()).copy_(input_A)
         self.input_B.resize_(input_B.size()).copy_(input_B)
-        self.image_paths = input['A_paths' if AtoB else 'B_paths']
+        self.image_paths = input['A_paths']
 
         # Add mask to input_A
         # When the mask is random, or the mask is not fixed, we all need to create_gMask
@@ -146,20 +142,15 @@ class Pix2PixModel(BaseModel):
                 raise ValueError("Mask_type [%s] not recognized." % self.opt.mask_type)
         else:
             self.mask_global = util.create_gMask(self.gMask_opts).type_as(self.mask_global)
-        
+
         self.set_latent_mask(self.mask_global, 3, self.opt.threshold)
 
-        # keep consistent with preprocessing, the vaule is a little different from torch version
-        # However, it only makes little difference.
         self.input_A.narrow(1,0,1).masked_fill_(self.mask_global, 2*123.0/255.0 - 1.0)
         self.input_A.narrow(1,1,1).masked_fill_(self.mask_global, 2*104.0/255.0 - 1.0)
         self.input_A.narrow(1,2,1).masked_fill_(self.mask_global, 2*117.0/255.0 - 1.0)
-        
+
     def preset_innerCos(self):
         self.ng_innerCos_list[0].set_target(Variable(self.Tensor(self.opt.batchSize, 256, 32, 32)))
-        # other ng costraint can be add similar.
-        # It is a little ugly writing this. However, it benefits a lot if you want to get
-        # the latent loss seperately!
 
     def set_latent_mask(self, mask_global, layer_to_last, threshold):
         self.ng_shift_list[0].set_mask(mask_global, layer_to_last, threshold)
@@ -170,31 +161,20 @@ class Pix2PixModel(BaseModel):
         gt_latent = self.ng_innerCos_list[0].get_target()  # then get gt_latent(should be variable require_grad=False)
         self.ng_innerCos_list[0].set_target(gt_latent)
 
-
-
-    # warp input_A and input_B
-    # need to add mask
     def forward(self):
         self.real_A = Variable(self.input_A)
         self.fake_B = self.netG(self.real_A)
         self.real_B = Variable(self.input_B)
 
-    # no backprop gradients
     def test(self):
-        # volatile means that the Variable should be used in inference mode!
-        # don't save the history.
         self.real_A = Variable(self.input_A, volatile=True)
         self.fake_B = self.netG(self.real_A)
         self.real_B = Variable(self.input_B, volatile=True)
 
-    # get image paths
     def get_image_paths(self):
         return self.image_paths
 
     def backward_D(self):
-
-        # Fake
-        # stop backprop to the generator by detaching fake_B
         fake_AB = self.fake_B
         # Real
         real_AB = self.real_B # GroundTruth
@@ -257,18 +237,13 @@ class Pix2PixModel(BaseModel):
         # Third add additional netG contraint loss!
         self.ng_loss_value = 0
         for gl in self.ng_innerCos_list:
-            # We can get each constraint loss here!
-            # As constraint layer `backward` fucntion is a `fake`, it just backward the contraint loss
-            # and we set `retain_variables = True`, that means we retain the grad values.
-            # the grad will be sumed together with subsequent grad!
-            self.ng_loss_value += gl.backward()  
+            self.ng_loss_value += gl.backward()
 
 
         self.loss_G.backward()
 
     def optimize_parameters(self):
         self.forward()
-
         # for other type of GAN, ncritic = 1.
         if not self.wgan_gp:
             self.ncritic = 1

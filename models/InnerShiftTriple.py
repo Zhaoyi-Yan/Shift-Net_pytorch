@@ -25,8 +25,8 @@ class InnerShiftTriple(nn.Module):
         mask = util.cal_feat_mask(mask_global, layer_to_last, threshold)
         self.mask = mask.squeeze()
         return self.mask
-    
-    # If mask changes, then need to cal_fix_flag true each time.
+
+    # If mask changes, then need to set cal_fix_flag true each iteration.
     def forward(self, input):
         _, self.c, self.h, self.w = input.size()
         if self.fixed_mask and self.cal_fixed_flag == False:
@@ -37,7 +37,7 @@ class InnerShiftTriple(nn.Module):
             self.flag, self.nonmask_point_idx, self.flatten_offsets = util.cal_mask_given_mask_thred(latter.squeeze(), self.mask, self.shift_sz, \
                                                                                                         self.stride, self.mask_thred)
             self.cal_fixed_flag = False
-        
+
         if not (torch.is_tensor(self.sp_x) or torch.is_tensor(self.sp_y)):
             print('Pre-calculate constant assistant \'sp_x\' and \'sp_y\' for the layer, which channel is:', self.c, ', h is: ', self.h, ', w is ', self.w)
             self.sp_x, self.sp_y = util.cal_sps_for_Advanced_Indexing(self.h, self.w)

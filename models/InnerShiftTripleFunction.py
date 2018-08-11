@@ -18,13 +18,13 @@ class InnerShiftTripleFunction(torch.autograd.Function):
 
 
         ctx.bz, c_real, ctx.h, ctx.w = input.size()
-        c = c_real   # As mask is not as a channel passing
+        c = c_real
         ctx.Tensor = torch.cuda.FloatTensor if torch.cuda.is_available else torch.FloatTensor
 
         # former and latter are all tensors
         former_all = input.narrow(1, 0, c//2)
         latter_all = input.narrow(1, c//2, c//2)
-        
+
         assert mask.dim() == 2, "Mask dimension must be 2"
         ex_mask = mask.expand(1, c//2, mask.size(0), mask.size(1)) # 1*c*h*w
         inv_ex_mask = torch.add(torch.neg(ex_mask.float()), 1).byte()
@@ -47,15 +47,13 @@ class InnerShiftTripleFunction(torch.autograd.Function):
         for idx in range(ctx.bz):
             latter = latter_all.narrow(0, idx, 1)
             former = former_all.narrow(0, idx, 1)
-            # Mind the params order is inconsistent with Torch version.
             Nonparm = NonparametricShift()
             _, conv_enc, conv_new_dec, _, = Nonparm.buildAutoencoder(latter.squeeze(), False, False, nonmask_point_idx, shift_sz, stride)
-            
+
             former_var = Variable(former, requires_grad = False)
             tmp1 = conv_enc(former_var)
             latter_non_mask = latter.clone()
-            
-            # print('cuda is: ', torch.cuda.current_device(), ' and bz is: ', ctx.bz)
+
             latter_non_mask.masked_fill_(ex_mask, 0) # only save non_mask region
 
             maxcoor = MaxCoord()
@@ -76,7 +74,7 @@ class InnerShiftTripleFunction(torch.autograd.Function):
                     correct_ch = int(non_r_ch + offset)
                     kbar[:,correct_ch,i,j] = 1
                     ind[indx] = correct_ch
-            
+
             kbar_var = Variable(kbar, requires_grad =False)
             result_tmp_var = conv_new_dec(kbar_var)
             result_tmp = result_tmp_var.data
@@ -84,7 +82,6 @@ class InnerShiftTripleFunction(torch.autograd.Function):
 
             result_tmp_mask.masked_fill_(inv_ex_mask, 0)  # mask part
 
-            # Swapped_latter should be only contain the content of the mask region. More complementarity!
             swapped_latter = result_tmp_mask
 
             # construct final self.output
@@ -119,7 +116,7 @@ class InnerShiftTripleFunction(torch.autograd.Function):
             for cnt in range(spatial_size):
                 indS = ind_lst[idx][cnt]   # indS is index of the outer-mask
 
-                # It means this pixel is in the mask, and this line(index: cnt_th) 
+                # It means this pixel is in the mask, and this line(index: cnt_th)
                 # should be one-hot vector, with the `indS_th` be 1.
                 if flag[cnt] == 1:
                     W_mat[cnt, indS] = 1
@@ -132,7 +129,7 @@ class InnerShiftTripleFunction(torch.autograd.Function):
             # Then transpose it back
             grad_swapped_weighted = grad_swapped_weighted.t().contiguous().view(1, c//3, ctx.h, ctx.w)
             grad_latter_all[idx] = torch.add(grad_latter_all[idx], grad_swapped_weighted.mul(ctx.triple_w))
-        
+
 
         # note the input channel and the output channel are all c, as no mask input for now.
         grad_input = torch.cat([grad_former_all, grad_latter_all], 1)

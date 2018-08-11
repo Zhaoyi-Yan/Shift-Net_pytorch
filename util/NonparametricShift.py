@@ -22,7 +22,7 @@ class NonparametricShift(object):
         conv_enc_all, conv_dec_all = self._build(patch_size, stride, C, patches_all, npatches_all, normalize, interpolate)
 
         return conv_enc_all, conv_enc_non_mask, conv_dec_all, conv_dec_non_mask
-    
+
     def _build(self, patch_size, stride, C, target_patches, npatches, normalize, interpolate):
         # for each patch, divide by its L2 norm.
         enc_patches = target_patches.clone()
@@ -38,10 +38,10 @@ class NonparametricShift(object):
 
         if interpolate:
             raise NotImplementedError
-        
+
         conv_dec = nn.ConvTranspose2d(npatches, C, kernel_size=patch_size, stride=stride, bias=False)
         conv_dec.weight.data = target_patches
-        
+
         return conv_enc, conv_dec
 
     def _extract_patches(self, img, patch_size, stride, nonmask_point_idx):
@@ -56,7 +56,7 @@ class NonparametricShift(object):
         input_windows = input_windows.permute(1,2,0,3,4).contiguous().view(i_2*i_3, i_1, i_4, i_5)
 
         patches_all = input_windows
-        patches = input_windows.index_select(0, nonmask_point_idx) #It returns a new tensor, it is nonmask patches!
+        patches = input_windows.index_select(0, nonmask_point_idx) #It returns a new tensor, representing patches extracted from non-masked region!
 
         return patches_all, patches
 

@@ -2,10 +2,10 @@
 def create_model(opt):
     model = None
     print(opt.model)
-    if opt.model == 'pix2pix':
+    if opt.model == 'shiftnet':
         assert(opt.dataset_mode == 'aligned')
-        from .pix2pix_model import Pix2PixModel
-        model = Pix2PixModel()
+        from .shiftnet_model import ShiftNetModel
+        model = ShiftNetModel()
     elif opt.model == 'test':
         assert(opt.dataset_mode == 'single')
         from .test_model import TestModel

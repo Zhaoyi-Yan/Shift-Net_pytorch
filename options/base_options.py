@@ -22,10 +22,9 @@ class BaseOptions():
         parser.add_argument('--name', type=str, default='256C_TC_TS_g10_IN_cos32_gan0.2', help='name of the experiment. It decides where to store samples and models')
         parser.add_argument('--n_layers_D', type=int, default=3, help='only used if which_model_netD==n_layers')
         parser.add_argument('--gpu_ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2')
-        parser.add_argument('--dataset_mode', type=str, default='aligned', help='chooses how datasets are loaded. [unaligned | aligned | single]')
-        parser.add_argument('--model', type=str, default='pix2pix',
-                                 help='chooses which model to use. pix2pix, test')
-        parser.add_argument('--which_direction', type=str, default='AtoB', help='AtoB or BtoA')
+        parser.add_argument('--dataset_mode', type=str, default='aligned', help='chooses how datasets are loaded. [aligned | single]')
+        parser.add_argument('--model', type=str, default='shiftnet',
+                                 help='chooses which model to use. shiftnet, test')
         parser.add_argument('--nThreads', default=2, type=int, help='# threads for loading data')
         parser.add_argument('--checkpoints_dir', type=str, default='./checkpoints', help='models are saved here')
         parser.add_argument('--norm', type=str, default='instance', help='instance normalization or batch normalization')
@@ -34,7 +33,7 @@ class BaseOptions():
         parser.add_argument('--display_id', type=int, default=1, help='window id of the web display')
         parser.add_argument('--display_port', type=int, default=8097, help='visdom port of the web display')
         parser.add_argument('--suffix', default='', type=str, help='customized suffix: opt.name = opt.name + suffix: e.g., {model}_{which_model_netG}_size{loadSize}')
-        
+
         parser.add_argument('--use_dropout', action='store_true', help='use dropout for the generator') #it means if using '--use_dropout then this option is true.
         parser.add_argument('--max_dataset_size', type=int, default=float("inf"), help='Maximum number of samples allowed per dataset. If the dataset directory contains more than max_dataset_size, only a subset is loaded.')
         parser.add_argument('--resize_or_crop', type=str, default='resize_and_crop', help='scaling and cropping of images at load time [resize_and_crop|crop|scale_width]')
@@ -53,7 +52,7 @@ class BaseOptions():
         parser.add_argument('--ncritic', type=int, default=5, help='critic iterations')
         parser.add_argument('--constrain', type=str, default='MSE', help='guidance loss type')
         parser.add_argument('--strength', type=float, default=1, help='the weight of guidance loss')
-        parser.add_argument('--gan_type', type=str, default='vanilla', help='wgan_gp, lsgan, vanilla, wgan_gp should never be used here.') 
+        parser.add_argument('--gan_type', type=str, default='vanilla', help='wgan_gp, lsgan, vanilla, wgan_gp should never be used here.')
         parser.add_argument('--gan_weight', type=float, default=0.2, help='the weight of gan loss')
         parser.add_argument('--overlap', type=int, default=4, help='the overlap for center mask')
 
@@ -64,7 +63,7 @@ class BaseOptions():
         # initialize parser with basic options
         if not self.initialized:
             parser = argparse.ArgumentParser(
-                formatter_class=argparse.ArgumentDefaultsHelpFormatter)            
+                formatter_class=argparse.ArgumentDefaultsHelpFormatter)
             parser = self.initialize(parser)
 
 

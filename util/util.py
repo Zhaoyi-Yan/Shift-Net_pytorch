@@ -40,18 +40,6 @@ def binary_mask(in_mask, threshold):
 
     return output
 
-def build_centers(nLen, stride, swap_sz):
-    nH = nW = nLen
-    centers_lt = torch.Tensor(nH*nW, 2).long()
-    centers_rb = torch.Tensor(nH*nW, 2).long()
-
-    for i in range(nW*nH):
-        h = math.floor(i/nW)  # zero-index
-        w = math.floor(i%nW)  # zero-index
-        centers_lt[i] = torch.Tensor([h*stride, w*stride])
-        centers_rb[i] = torch.Tensor([h*stride + swap_sz-1, w*stride + swap_sz-1])
-    return centers_lt, centers_rb
-
 def create_gMask(gMask_opts):
     pattern = gMask_opts['pattern']
     mask_global = gMask_opts['mask_global']
@@ -124,7 +112,7 @@ def cal_mask_given_mask_thred(img, mask, patch_size, stride, mask_thred):
         else:
             flag[i] = 1
             offsets_tmp_vec[i] = -1
-    # print(flag)  #checked 
+    # print(flag)  #checked
     # print(offsets_tmp_vec) # checked
 
     non_mask_num = tmp_non_mask_idx
@@ -137,11 +125,11 @@ def cal_mask_given_mask_thred(img, mask, patch_size, stride, mask_thred):
     flatten_offsets_all = torch.LongTensor(N).zero_()
     for i in range(N):
         offset_value = torch.sum(offsets_tmp_vec[0:i+1])
-        if flag[i] == 1: 
+        if flag[i] == 1:
             offset_value = offset_value + 1
         # print(i+offset_value)
         flatten_offsets_all[i+offset_value] = -offset_value
-        
+
     flatten_offsets = flatten_offsets_all.narrow(0, 0, non_mask_num)
 
     # print('flatten_offsets')

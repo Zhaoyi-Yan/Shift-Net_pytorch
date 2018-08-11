@@ -8,8 +8,6 @@ import functools
 import torch.nn.functional as F
 from torch.optim import lr_scheduler
 import util.util as util
-
-
 from .InnerShiftTriple import InnerShiftTriple
 from .InnerCos import InnerCos
 
@@ -17,7 +15,6 @@ from .InnerCos import InnerCos
 ###############################################################################
 # Functions
 ###############################################################################
-
 
 def weights_init_normal(m):
     classname = m.__class__.__name__
@@ -114,9 +111,6 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, opt, mask_global, norm=
     if use_gpu:
         assert(torch.cuda.is_available())
 
-    # Especially add constraint list to get all the constrain layers.
-    # And add shift_list to get all shift layers, so we can do anything to them in training...
-    # For now, the main purpose is random mask training enable.
     innerCos_list = []
     shift_list = []
 
@@ -126,9 +120,7 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, opt, mask_global, norm=
     # else we need to set the masks each iteration, generating new random masks and mask the input
     # as well as setting masks for these special layers.
 
-    if which_model_netG == 'unet_128':
-        netG = UnetGenerator(input_nc, output_nc, 7, ngf, norm_layer=norm_layer, use_dropout=use_dropout, gpu_ids=gpu_ids)
-    elif which_model_netG == 'unet_256':
+    if which_model_netG == 'unet_256':
         netG = UnetGenerator(input_nc, output_nc, 8, ngf, norm_layer=norm_layer, use_dropout=use_dropout, gpu_ids=gpu_ids)
     elif which_model_netG == 'unet_shift_triple_MostAdvCos':
         netG = UnetGeneratorShiftTriple_MostAdv_cos(input_nc, output_nc, 8, opt, innerCos_list, shift_list, mask_global, \
@@ -279,7 +271,7 @@ class UnetSkipConnectionShiftTriple(nn.Module):
         # As the downconv layer is outer_nc in and inner_nc out.
         # So the shift define like this:
         shift = InnerShiftTriple(opt.threshold, opt.fixed_mask, opt.shift_sz, opt.stride, opt.mask_thred, opt.triple_weight)
-        
+
         shift.set_mask(mask_global, 3, opt.threshold)
         shift_list.append(shift)
 
@@ -317,7 +309,7 @@ class UnetSkipConnectionShiftTriple(nn.Module):
             # shift should be placed after uprelu
             # NB: innerCos are placed before shift. So need to add the latent gredient to
             # to former part.
-            up = [uprelu, innerCos, shift, upconv, upnorm]  
+            up = [uprelu, innerCos, shift, upconv, upnorm]
 
             if use_dropout:
                 model = down + [submodule] + up + [nn.Dropout(0.5)]
