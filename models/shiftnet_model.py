@@ -91,7 +91,6 @@ class ShiftNetModel(BaseModel):
                 self.load_network(self.netD, 'D', opt.which_epoch)
 
         if self.isTrain:
-            self.fake_AB_pool = ImagePool(opt.pool_size)
             self.old_lr = opt.lr
             # define loss functions
             self.criterionGAN = networks.GANLoss(gan_type=opt.gan_type, tensor=self.Tensor)
