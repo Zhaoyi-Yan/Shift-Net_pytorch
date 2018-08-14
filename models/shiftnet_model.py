@@ -235,8 +235,9 @@ class ShiftNetModel(BaseModel):
 
         # Third add additional netG contraint loss!
         self.ng_loss_value = 0
-        for gl in self.ng_innerCos_list:
-            self.ng_loss_value += gl.backward()
+        if not self.opt.skip:
+            for gl in self.ng_innerCos_list:
+                self.ng_loss_value += gl.backward()
 
 
         self.loss_G.backward()
