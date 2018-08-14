@@ -232,7 +232,7 @@ class UnetSkipConnectionShiftTripleBlock(nn.Module):
 
         # Add latent constraint
         # Then add the constraint to the constrain layer list!
-        innerCos = InnerCos(strength=opt.strength)
+        innerCos = InnerCos(strength=opt.strength, skip=opt.skip)
         innerCos.set_mask(mask_global, opt)  # Here we need to set mask for innerCos layer too.
         innerCos_list.append(innerCos)
 
