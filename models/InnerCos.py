@@ -47,6 +47,7 @@ class InnerCos(nn.Module):
 
             self.output = in_data
         else:
+            self.loss = 0
             self.output = in_data
         return self.output
 
