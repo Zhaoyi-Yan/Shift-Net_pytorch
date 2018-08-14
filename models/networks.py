@@ -78,11 +78,7 @@ def init_net(net, init_type='normal', init_gain=0.02, gpu_ids=[]):
 
 def define_G(input_nc, output_nc, ngf, which_model_netG, opt, mask_global, norm='batch', use_dropout=False, init_type='normal',gpu_ids=[]):
     netG = None
-    use_gpu = len(gpu_ids) > 0
     norm_layer = get_norm_layer(norm_type=norm)
-
-    if use_gpu:
-        assert(torch.cuda.is_available())
 
     innerCos_list = []
     shift_list = []
@@ -94,14 +90,13 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, opt, mask_global, norm=
     # as well as setting masks for these special layers.
 
     if which_model_netG == 'unet_256':
-        netG = UnetGenerator(input_nc, output_nc, 8, ngf, norm_layer=norm_layer, use_dropout=use_dropout, gpu_ids=gpu_ids)
+        netG = UnetGenerator(input_nc, output_nc, 8, ngf, norm_layer=norm_layer, use_dropout=use_dropout)
     elif which_model_netG == 'unet_shift_triple':
         netG = UnetGeneratorShiftTriple(input_nc, output_nc, 8, opt, innerCos_list, shift_list, mask_global, \
-                                                         ngf, norm_layer=norm_layer, use_dropout=use_dropout, gpu_ids=gpu_ids)
+                                                         ngf, norm_layer=norm_layer, use_dropout=use_dropout)
     else:
-        print('Generator model name [%s] is not recognized' % which_model_netG)
-    if len(gpu_ids) > 0:
-        netG.cuda(gpu_ids[0])
+        raise NotImplementedError('Generator model name [%s] is not recognized' % which_model_netG)
+ 
     
 
     print('Constraint in netG:')
@@ -187,7 +182,7 @@ class GANLoss(nn.Module):
         return self.loss(input, target_tensor)
 
 
-################################### This is for TS_MostAdv_cos_　#####################################
+################################### This is for Shift layer　#####################################
 # Defines the Unet generator.
 # |num_downs|: number of downsamplings in UNet. For example,
 # if |num_downs| == 7, image of size 128x128 will become of size 1x1
@@ -267,7 +262,7 @@ class UnetSkipConnectionShiftTripleBlock(nn.Module):
                                         padding=1)
             down = [downrelu, downconv, downnorm]
             # shift should be placed after uprelu
-            # NB: innerCos are placed before shift. So need to add the latent gredient to
+            # Note: innerCos are placed before shift. So need to add the latent gredient to
             # to former part.
             up = [uprelu, innerCos, shift, upconv, upnorm]
 
