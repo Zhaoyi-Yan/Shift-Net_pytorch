@@ -1,5 +1,4 @@
 # Shift-Net_pytorch
-
 This repositity is our Pytorch implementation for Shift-Net, it is just for those who are interesting in our work and want to get a skeleton Pytorch implemention.
 
 ## Prerequisites
@@ -36,6 +35,9 @@ python train.py
 python test.py
 ```
 The test results will be saved to a html file here: `./results/`.
+
+**Multi-GPU Workaround**
+The implementation of `InnerCos` makes it difficulty to train with multiple gpus. At the moment, if you want to try multi-gpu training, please set `skip=1` in `options/base_options.py`. We will find a better way to deal with it soon.
 
 If you find this work useful, please cite:
 ```

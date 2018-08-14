@@ -16,67 +16,6 @@ from .InnerCos import InnerCos
 # Functions
 ###############################################################################
 
-def weights_init_normal(m):
-    classname = m.__class__.__name__
-    # print(classname)
-    if classname.find('Conv') != -1:
-        init.normal(m.weight.data, 0.0, 0.02)
-    elif classname.find('Linear') != -1:
-        init.normal(m.weight.data, 0.0, 0.02)
-    elif classname.find('BatchNorm2d') != -1 or classname.find('InstanceNorm2d') != -1:
-        init.normal(m.weight.data, 1.0, 0.02)
-        init.constant(m.bias.data, 0.0)
-
-
-def weights_init_xavier(m):
-    classname = m.__class__.__name__
-    # print(classname)
-    if classname.find('Conv') != -1:
-        init.xavier_normal(m.weight.data, gain=0.02)
-    elif classname.find('Linear') != -1:
-        init.xavier_normal(m.weight.data, gain=0.02)
-    elif classname.find('BatchNorm2d') != -1 or classname.find('InstanceNorm2d') != -1:
-        init.normal(m.weight.data, 1.0, 0.02)
-        init.constant(m.bias.data, 0.0)
-
-
-def weights_init_kaiming(m):
-    classname = m.__class__.__name__
-    # print(classname)
-    if classname.find('Conv') != -1:
-        init.kaiming_normal(m.weight.data, a=0, mode='fan_in')
-    elif classname.find('Linear') != -1:
-        init.kaiming_normal(m.weight.data, a=0, mode='fan_in')
-    elif classname.find('BatchNorm2d') != -1 or classname.find('InstanceNorm2d') != -1:
-        init.normal(m.weight.data, 1.0, 0.02)
-        init.constant(m.bias.data, 0.0)
-
-
-def weights_init_orthogonal(m):
-    classname = m.__class__.__name__
-    # print(classname)
-    if classname.find('Conv') != -1:
-        init.orthogonal(m.weight.data, gain=1)
-    elif classname.find('Linear') != -1:
-        init.orthogonal(m.weight.data, gain=1)
-    elif classname.find('BatchNorm2d') != -1 or classname.find('InstanceNorm2d') != -1:
-        init.normal(m.weight.data, 1.0, 0.02)
-        init.constant(m.bias.data, 0.0)
-
-
-def init_weights(net, init_type='normal'):
-    print('initialization method [%s]' % init_type)
-    if init_type == 'normal':
-        net.apply(weights_init_normal)
-    elif init_type == 'xavier':
-        net.apply(weights_init_xavier)
-    elif init_type == 'kaiming':
-        net.apply(weights_init_kaiming)
-    elif init_type == 'orthogonal':
-        net.apply(weights_init_orthogonal)
-    else:
-        raise NotImplementedError('initialization method [%s] is not implemented' % init_type)
-
 def get_norm_layer(norm_type='instance'):
     if norm_type == 'batch':
         norm_layer = functools.partial(nn.BatchNorm2d, affine=True)
@@ -87,6 +26,7 @@ def get_norm_layer(norm_type='instance'):
     else:
         raise NotImplementedError('normalization layer [%s] is not found' % norm_type)
     return norm_layer
+
 
 def get_scheduler(optimizer, opt):
     if opt.lr_policy == 'lambda':
@@ -103,13 +43,42 @@ def get_scheduler(optimizer, opt):
     return scheduler
 
 
-def define_G(input_nc, output_nc, ngf, which_model_netG, opt, mask_global, norm='batch', use_dropout=False, init_type='normal',gpu_ids=[]):
-    netG = None
-    use_gpu = len(gpu_ids) > 0
-    norm_layer = get_norm_layer(norm_type=norm)
+def init_weights(net, init_type='normal', gain=0.02):
+    def init_func(m):
+        classname = m.__class__.__name__
+        if hasattr(m, 'weight') and (classname.find('Conv') != -1 or classname.find('Linear') != -1):
+            if init_type == 'normal':
+                init.normal(m.weight.data, 0.0, gain)
+            elif init_type == 'xavier':
+                init.xavier_normal(m.weight.data, gain=gain)
+            elif init_type == 'kaiming':
+                init.kaiming_normal(m.weight.data, a=0, mode='fan_in')
+            elif init_type == 'orthogonal':
+                init.orthogonal(m.weight.data, gain=gain)
+            else:
+                raise NotImplementedError('initialization method [%s] is not implemented' % init_type)
+            if hasattr(m, 'bias') and m.bias is not None:
+                init.constant(m.bias.data, 0.0)
+        elif classname.find('BatchNorm2d') != -1:
+            init.normal(m.weight.data, 1.0, gain)
+            init.constant(m.bias.data, 0.0)
 
-    if use_gpu:
+    print('initialize network with %s' % init_type)
+    net.apply(init_func)
+
+
+def init_net(net, init_type='normal', init_gain=0.02, gpu_ids=[]):
+    if len(gpu_ids) > 0:
         assert(torch.cuda.is_available())
+        net.cuda(gpu_ids[0])
+        net = torch.nn.DataParallel(net, gpu_ids)
+    init_weights(net, init_type, gain=init_gain)
+    return net
+
+
+def define_G(input_nc, output_nc, ngf, which_model_netG, opt, mask_global, norm='batch', use_dropout=False, init_type='normal', gpu_ids=[], init_gain=0.02):
+    netG = None
+    norm_layer = get_norm_layer(norm_type=norm)
 
     innerCos_list = []
     shift_list = []
@@ -121,15 +90,14 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, opt, mask_global, norm=
     # as well as setting masks for these special layers.
 
     if which_model_netG == 'unet_256':
-        netG = UnetGenerator(input_nc, output_nc, 8, ngf, norm_layer=norm_layer, use_dropout=use_dropout, gpu_ids=gpu_ids)
-    elif which_model_netG == 'unet_shift_triple_MostAdvCos':
-        netG = UnetGeneratorShiftTriple_MostAdv_cos(input_nc, output_nc, 8, opt, innerCos_list, shift_list, mask_global, \
-                                                         ngf, norm_layer=norm_layer, use_dropout=use_dropout, gpu_ids=gpu_ids)
+        netG = UnetGenerator(input_nc, output_nc, 8, ngf, norm_layer=norm_layer, use_dropout=use_dropout)
+    elif which_model_netG == 'unet_shift_triple':
+        netG = UnetGeneratorShiftTriple(input_nc, output_nc, 8, opt, innerCos_list, shift_list, mask_global, \
+                                                         ngf, norm_layer=norm_layer, use_dropout=use_dropout)
     else:
-        print('Generator model name [%s] is not recognized' % which_model_netG)
-    if len(gpu_ids) > 0:
-        netG.cuda(gpu_ids[0])
-    init_weights(netG, init_type=init_type)
+        raise NotImplementedError('Generator model name [%s] is not recognized' % which_model_netG)
+ 
+    
 
     print('Constraint in netG:')
     print(innerCos_list)
@@ -137,28 +105,23 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, opt, mask_global, norm=
     print('Shift in netG:')
     print(shift_list)
 
-    return netG, innerCos_list, shift_list
+    return init_net(netG, init_type, init_gain, gpu_ids), innerCos_list, shift_list
 
 
 def define_D(input_nc, ndf, which_model_netD,
-             n_layers_D=3, norm='batch', use_sigmoid=False, init_type='normal', gpu_ids=[]):
+             n_layers_D=3, norm='batch', use_sigmoid=False, init_type='normal', gpu_ids=[], init_gain=0.02):
     netD = None
-    use_gpu = len(gpu_ids) > 0
     norm_layer = get_norm_layer(norm_type=norm)
 
-    if use_gpu:
-        assert(torch.cuda.is_available())
     if which_model_netD == 'basic':
-        netD = NLayerDiscriminator(input_nc, ndf, n_layers=3, norm_layer=norm_layer, use_sigmoid=use_sigmoid, gpu_ids=gpu_ids)
+        netD = NLayerDiscriminator(input_nc, ndf, n_layers=3, norm_layer=norm_layer, use_sigmoid=use_sigmoid)
     elif which_model_netD == 'n_layers':
-        netD = NLayerDiscriminator(input_nc, ndf, n_layers_D, norm_layer=norm_layer, use_sigmoid=use_sigmoid, gpu_ids=gpu_ids)
+        netD = NLayerDiscriminator(input_nc, ndf, n_layers_D, norm_layer=norm_layer, use_sigmoid=use_sigmoid)
     else:
-        print('Discriminator model name [%s] is not recognized' %
+        raise NotImplementedError('Discriminator model name [%s] is not recognized' %
               which_model_netD)
-    if use_gpu:
-        netD.cuda(gpu_ids[0])
-    init_weights(netD, init_type=init_type)
-    return netD
+    
+    return init_net(netD, init_type, init_gain, gpu_ids)
 
 
 def print_network(net):
@@ -219,19 +182,15 @@ class GANLoss(nn.Module):
         return self.loss(input, target_tensor)
 
 
-################################### This is for TS_MostAdv_cos_　#####################################
+################################### This is for Shift layer　#####################################
 # Defines the Unet generator.
 # |num_downs|: number of downsamplings in UNet. For example,
 # if |num_downs| == 7, image of size 128x128 will become of size 1x1
 # at the bottleneck
-class UnetGeneratorShiftTriple_MostAdv_cos(nn.Module):
+class UnetGeneratorShiftTriple(nn.Module):
     def __init__(self, input_nc, output_nc,  num_downs, opt, innerCos_list, shift_list, mask_global, ngf=64,
-                 norm_layer=nn.BatchNorm2d, use_dropout=False, gpu_ids=[]):
-        super(UnetGeneratorShiftTriple_MostAdv_cos, self).__init__()
-        self.gpu_ids = gpu_ids
-
-        # currently support only input_nc == output_nc
-        assert(input_nc == output_nc)
+                 norm_layer=nn.BatchNorm2d, use_dropout=False):
+        super(UnetGeneratorShiftTriple, self).__init__()
 
         # construct unet structure
         unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, norm_layer=norm_layer, innermost=True)
@@ -240,7 +199,7 @@ class UnetGeneratorShiftTriple_MostAdv_cos(nn.Module):
             unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, unet_block, norm_layer=norm_layer, use_dropout=use_dropout)
         unet_block = UnetSkipConnectionBlock(ngf * 4, ngf * 8, unet_block, norm_layer=norm_layer)
 
-        unet_shift_block = UnetSkipConnectionShiftTriple(ngf * 2, ngf * 4, opt, innerCos_list, shift_list, mask_global, \
+        unet_shift_block = UnetSkipConnectionShiftTripleBlock(ngf * 2, ngf * 4, opt, innerCos_list, shift_list, mask_global, \
                                                          unet_block, norm_layer=norm_layer)  # passing in unet_shift_block
         unet_block = UnetSkipConnectionBlock(ngf, ngf * 2, unet_shift_block, norm_layer=norm_layer)
         unet_block = UnetSkipConnectionBlock(output_nc, ngf, unet_block, outermost=True, norm_layer=norm_layer)
@@ -248,17 +207,13 @@ class UnetGeneratorShiftTriple_MostAdv_cos(nn.Module):
         self.model = unet_block
 
     def forward(self, input):
-        if  self.gpu_ids and isinstance(input.data, torch.cuda.FloatTensor):
-            return nn.parallel.data_parallel(self.model, input, self.gpu_ids)
-        else:
-            return self.model(input)
+        return self.model(input)
 
 # Mention: the TripleBlock differs in `upconv` defination.
-# 'cos' means that we add a `innerCos` layer in the block.
-class UnetSkipConnectionShiftTriple(nn.Module):
+class UnetSkipConnectionShiftTripleBlock(nn.Module):
     def __init__(self, outer_nc, inner_nc, opt, innerCos_list, shift_list, mask_global,
                  submodule=None, shift_layer=None, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d, use_dropout=False):
-        super(UnetSkipConnectionShiftTriple, self).__init__()
+        super(UnetSkipConnectionShiftTripleBlock, self).__init__()
         self.outermost = outermost
 
         downconv = nn.Conv2d(outer_nc, inner_nc, kernel_size=4,
@@ -277,7 +232,7 @@ class UnetSkipConnectionShiftTriple(nn.Module):
 
         # Add latent constraint
         # Then add the constraint to the constrain layer list!
-        innerCos = InnerCos(strength=opt.strength)
+        innerCos = InnerCos(strength=opt.strength, skip=opt.skip)
         innerCos.set_mask(mask_global, opt)  # Here we need to set mask for innerCos layer too.
         innerCos_list.append(innerCos)
 
@@ -307,7 +262,7 @@ class UnetSkipConnectionShiftTriple(nn.Module):
                                         padding=1)
             down = [downrelu, downconv, downnorm]
             # shift should be placed after uprelu
-            # NB: innerCos are placed before shift. So need to add the latent gredient to
+            # Note: innerCos are placed before shift. So need to add the latent gredient to
             # to former part.
             up = [uprelu, innerCos, shift, upconv, upnorm]
 
@@ -338,12 +293,8 @@ class UnetSkipConnectionShiftTriple(nn.Module):
 # at the bottleneck
 class UnetGenerator(nn.Module):
     def __init__(self, input_nc, output_nc, num_downs, ngf=64,
-                 norm_layer=nn.BatchNorm2d, use_dropout=False, gpu_ids=[]):
+                 norm_layer=nn.BatchNorm2d, use_dropout=False):
         super(UnetGenerator, self).__init__()
-        self.gpu_ids = gpu_ids
-
-        # currently support only input_nc == output_nc
-        assert(input_nc == output_nc)
 
         # construct unet structure
         unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, norm_layer=norm_layer, innermost=True)
@@ -358,10 +309,7 @@ class UnetGenerator(nn.Module):
         self.model = unet_block
 
     def forward(self, input):
-        if  self.gpu_ids and isinstance(input.data, torch.cuda.FloatTensor):
-            return nn.parallel.data_parallel(self.model, input, self.gpu_ids)
-        else:
-            return self.model(input)
+        return self.model(input)
 
 
 # It construct network from the inside to the outside.
@@ -426,9 +374,8 @@ class UnetSkipConnectionBlock(nn.Module):
 ################################### This is for D ###################################
 # Defines the PatchGAN discriminator with the specified arguments.
 class NLayerDiscriminator(nn.Module):
-    def __init__(self, input_nc, ndf=64, n_layers=3, norm_layer=nn.BatchNorm2d, use_sigmoid=False, gpu_ids=[]):
+    def __init__(self, input_nc, ndf=64, n_layers=3, norm_layer=nn.BatchNorm2d, use_sigmoid=False):
         super(NLayerDiscriminator, self).__init__()
-        self.gpu_ids = gpu_ids
         if type(norm_layer) == functools.partial:
             use_bias = norm_layer.func == nn.InstanceNorm2d
         else:
@@ -470,7 +417,4 @@ class NLayerDiscriminator(nn.Module):
         self.model = nn.Sequential(*sequence)
 
     def forward(self, input):
-        if len(self.gpu_ids) and isinstance(input.data, torch.cuda.FloatTensor):
-            return nn.parallel.data_parallel(self.model, input, self.gpu_ids)
-        else:
-            return self.model(input)
+        return self.model(input)
