@@ -47,5 +47,7 @@ class InnerShiftTriple(nn.Module):
                                                          self.triple_weight, self.flag, self.nonmask_point_idx, self.flatten_offsets,\
                                                         self.sp_x, self.sp_y)
 
-
-
+    def __repr__(self):
+        return self.__class__.__name__+ '(' \
+              + 'threshold: ' + str(self.threshold) \
+              + ' ,triple_weight ' + str(self.triple_weight) + ')'
