@@ -17,9 +17,9 @@ class BaseOptions():
         parser.add_argument('--ngf', type=int, default=64, help='# of gen filters in first conv layer')
         parser.add_argument('--ndf', type=int, default=64, help='# of discrim filters in first conv layer')
         parser.add_argument('--which_model_netD', type=str, default='basic', help='selects model to use for netD')
-        parser.add_argument('--which_model_netG', type=str, default='unet_shift_triple_MostAdvCos', help='selects model to use for netG')  # use unet_swap
+        parser.add_argument('--which_model_netG', type=str, default='unet_shift_triple', help='selects model to use for netG')  # use unet_swap
         parser.add_argument('--triple_weight', type=float, default=1, help='The weight on the gradient of skip connections from the gradient of swapped')
-        parser.add_argument('--name', type=str, default='256C_TC_TS_g10_IN_cos32_gan0.2', help='name of the experiment. It decides where to store samples and models')
+        parser.add_argument('--name', type=str, default='exp_unet_shift_triple', help='name of the experiment. It decides where to store samples and models')
         parser.add_argument('--n_layers_D', type=int, default=3, help='only used if which_model_netD==n_layers')
         parser.add_argument('--gpu_ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2')
         parser.add_argument('--dataset_mode', type=str, default='aligned', help='chooses how datasets are loaded. [aligned | single]')
@@ -39,7 +39,7 @@ class BaseOptions():
         parser.add_argument('--resize_or_crop', type=str, default='resize_and_crop', help='scaling and cropping of images at load time [resize_and_crop|crop|scale_width]')
         parser.add_argument('--no_flip', action='store_true', help='if specified, do not flip the images for data argumentation')
         parser.add_argument('--init_type', type=str, default='normal', help='network initialization [normal|xavier|kaiming|orthogonal]')
-        ## new added
+        # Shift feature relevant.
         parser.add_argument('--mask_type', type=str, default='center', help='the type of mask you want to apply, \'center\' or \'random\'')
         parser.add_argument('--fixed_mask', type=int, default=1, help='1 or 0, whether mask is fixed')
         parser.add_argument('--lambda_A', type=int, default=100, help='weight on L1 term in objective')
