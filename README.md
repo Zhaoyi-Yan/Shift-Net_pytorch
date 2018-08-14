@@ -37,6 +37,10 @@ python test.py
 ```
 The test results will be saved to a html file here: `./results/`.
 
+**Multi-GPU**
+The implementation of `InnerCos` makes it error when using multiple gpus. If you want to try multi-gpu training, please
+set `skip=1` in `options/base_options.py`
+
 If you find this work useful, please cite:
 ```
 @article{yan2018shift,
