@@ -148,8 +148,6 @@ class ShiftNetModel(BaseModel):
         self.input_A.narrow(1,1,1).masked_fill_(self.mask_global, 2*104.0/255.0 - 1.0)
         self.input_A.narrow(1,2,1).masked_fill_(self.mask_global, 2*117.0/255.0 - 1.0)
 
-    def preset_innerCos(self):
-        self.ng_innerCos_list[0].set_target(Variable(self.Tensor(self.opt.batchSize, 256, 32, 32)))
 
     def set_latent_mask(self, mask_global, layer_to_last, threshold):
         self.ng_shift_list[0].set_mask(mask_global, layer_to_last, threshold)
@@ -157,8 +155,6 @@ class ShiftNetModel(BaseModel):
     # It is quite convinient, as one forward-pass, all the innerCos will get the GT_latent!
     def set_gt_latent(self):
         self.netG.forward(Variable(self.input_B, requires_grad=False)) # input ground truth
-        gt_latent = self.ng_innerCos_list[0].get_target()  # then get gt_latent(should be variable require_grad=False)
-        self.ng_innerCos_list[0].set_target(gt_latent)
 
     def forward(self):
         self.real_A = Variable(self.input_A)
@@ -237,7 +233,9 @@ class ShiftNetModel(BaseModel):
         self.ng_loss_value = 0
         if not self.opt.skip:
             for gl in self.ng_innerCos_list:
-                self.ng_loss_value += gl.backward()
+                self.ng_loss_value += Variable(gl.loss, requires_grad=True)
+
+        self.loss_G += self.ng_loss.value
 
 
         self.loss_G.backward()
