@@ -53,7 +53,7 @@ class BaseOptions():
         parser.add_argument('--constrain', type=str, default='MSE', help='guidance loss type')
         parser.add_argument('--strength', type=float, default=1, help='the weight of guidance loss')
         parser.add_argument('--init_gain', type=float, default=0.02, help='scaling factor for normal, xavier and orthogonal.')
-        parser.add_argument('--skip', type=int, default=0, help='Define whether the guidance layer is skipped. It is a workaround when using multiGPUs.')
+        parser.add_argument('--skip', type=int, default=0, help='Define whether the guidance layer is skipped.')
         parser.add_argument('--gan_type', type=str, default='vanilla', help='wgan_gp, lsgan, vanilla, wgan_gp should never be used here.')
         parser.add_argument('--gan_weight', type=float, default=0.2, help='the weight of gan loss')
         parser.add_argument('--overlap', type=int, default=4, help='the overlap for center mask')
