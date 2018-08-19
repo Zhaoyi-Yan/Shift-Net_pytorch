@@ -39,7 +39,6 @@ class InnerShiftTriple(nn.Module):
             self.cal_fixed_flag = False
 
         if not (torch.is_tensor(self.sp_x) or torch.is_tensor(self.sp_y)):
-            print('Pre-calculate constant assistant \'sp_x\' and \'sp_y\' for the layer, which channel is:', self.c, ', h is: ', self.h, ', w is ', self.w)
             self.sp_x, self.sp_y = util.cal_sps_for_Advanced_Indexing(self.h, self.w)
 
 
