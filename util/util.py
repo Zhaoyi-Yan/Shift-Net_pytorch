@@ -116,9 +116,6 @@ def cal_mask_given_mask_thred(img, mask, patch_size, stride, mask_thred):
     # print(offsets_tmp_vec) # checked
 
     non_mask_num = tmp_non_mask_idx
-    print('in util')
-    print(nonmask_point_idx_all.size())
-    print(non_mask_num)
     nonmask_point_idx = nonmask_point_idx_all.narrow(0, 0, non_mask_num)
 
     # get flatten_offsets
