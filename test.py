@@ -16,8 +16,7 @@ opt.loadSize = opt.fineSize  # Do not scale!
 data_loader = CreateDataLoader(opt)
 dataset = data_loader.load_data()
 model = create_model(opt)
-# for guidance loss, we need to presetting the target of innerCos
-model.preset_innerCos()
+
 
 visualizer = Visualizer(opt)
 # create website
