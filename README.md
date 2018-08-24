@@ -46,6 +46,12 @@ If you find this work useful, please cite:
   year={2018}
 }
 ```
+
+## A bug when training with single GPU
+This verison of code makes that `InnerCos` DO NOT support single gpu training. It is weried and I have not idea to
+solve it now. If you train our model in a single GPU, please set `skip=1` in `options/base_options`. Otherwise,
+when training with `InnerCos` working on a single GPU, please refer the code before commit [aa2382b](https://github.com/Zhaoyi-Yan/Shift-Net_pytorch/tree/aa2382b194f36cabf40dabc6d3007cdcdc112153)
+
 ## New things that I want to add
 - [x] Make U-Net handle with inputs of any sizes. (By resizing the size of features of decoder to fit that of the corresponding features of decoder.
 - [ ] Update the code for pytorch >= 0.4.
