@@ -193,16 +193,16 @@ class UnetGeneratorShiftTriple(nn.Module):
         super(UnetGeneratorShiftTriple, self).__init__()
 
         # construct unet structure
-        unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, norm_layer=norm_layer, innermost=True)
+        unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=None, norm_layer=norm_layer, innermost=True)
         print(unet_block)
         for i in range(num_downs - 5):  # The innner layers number is 3 (sptial size:512*512), if unet_256.
-            unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, unet_block, norm_layer=norm_layer, use_dropout=use_dropout)
-        unet_block = UnetSkipConnectionBlock(ngf * 4, ngf * 8, unet_block, norm_layer=norm_layer)
+            unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=unet_block, norm_layer=norm_layer, use_dropout=use_dropout)
+        unet_block = UnetSkipConnectionBlock(ngf * 4, ngf * 8, input_nc=None, submodule=unet_block, norm_layer=norm_layer)
 
         unet_shift_block = UnetSkipConnectionShiftTripleBlock(ngf * 2, ngf * 4, opt, innerCos_list, shift_list, mask_global, \
-                                                         unet_block, norm_layer=norm_layer)  # passing in unet_shift_block
-        unet_block = UnetSkipConnectionBlock(ngf, ngf * 2, unet_shift_block, norm_layer=norm_layer)
-        unet_block = UnetSkipConnectionBlock(output_nc, ngf, unet_block, outermost=True, norm_layer=norm_layer)
+                                                         input_nc=None, submodule=unet_block, norm_layer=norm_layer)  # passing in unet_shift_block
+        unet_block = UnetSkipConnectionBlock(ngf, ngf * 2, input_nc=None, submodule=unet_shift_block, norm_layer=norm_layer)
+        unet_block = UnetSkipConnectionBlock(output_nc, ngf, input_nc=None, submodule=unet_block, outermost=True, norm_layer=norm_layer)
 
         self.model = unet_block
 
@@ -211,12 +211,15 @@ class UnetGeneratorShiftTriple(nn.Module):
 
 # Mention: the TripleBlock differs in `upconv` defination.
 class UnetSkipConnectionShiftTripleBlock(nn.Module):
-    def __init__(self, outer_nc, inner_nc, opt, innerCos_list, shift_list, mask_global,
+    def __init__(self, outer_nc, inner_nc, opt, innerCos_list, shift_list, mask_global, input_nc, \
                  submodule=None, shift_layer=None, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d, use_dropout=False):
         super(UnetSkipConnectionShiftTripleBlock, self).__init__()
         self.outermost = outermost
 
-        downconv = nn.Conv2d(outer_nc, inner_nc, kernel_size=4,
+        if input_nc is None:
+            input_nc = outer_nc
+            
+        downconv = nn.Conv2d(input_nc, inner_nc, kernel_size=4,
                              stride=2, padding=1)
         downrelu = nn.LeakyReLU(0.2, True)
         downnorm = norm_layer(inner_nc, affine=True)
@@ -279,7 +282,8 @@ class UnetSkipConnectionShiftTripleBlock(nn.Module):
         else:
             x_latter = self.model(x)
             _, _, h, w = x.size()
-            x_latter = F.upsample(x_latter, (h, w), mode='bilinear')
+            if h != x_latter.size(2) or w != x_latter.size():
+                x_latter = F.upsample(x_latter, (h, w), mode='bilinear')
             return torch.cat([x_latter, x], 1)  # cat in the C channel
 
 
@@ -297,14 +301,14 @@ class UnetGenerator(nn.Module):
         super(UnetGenerator, self).__init__()
 
         # construct unet structure
-        unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, norm_layer=norm_layer, innermost=True)
+        unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=None, norm_layer=norm_layer, innermost=True)
         print(unet_block)
         for i in range(num_downs - 5):  # The innner layers number is 3 (sptial size:512*512), if unet_256.
-            unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, unet_block, norm_layer=norm_layer, use_dropout=use_dropout)
-        unet_block = UnetSkipConnectionBlock(ngf * 4, ngf * 8, unet_block, norm_layer=norm_layer)
-        unet_block = UnetSkipConnectionBlock(ngf * 2, ngf * 4, unet_block, norm_layer=norm_layer)
-        unet_block = UnetSkipConnectionBlock(ngf, ngf * 2, unet_block, norm_layer=norm_layer)
-        unet_block = UnetSkipConnectionBlock(output_nc, ngf, unet_block, outermost=True, norm_layer=norm_layer)
+            unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=unet_block, norm_layer=norm_layer, use_dropout=use_dropout)
+        unet_block = UnetSkipConnectionBlock(ngf * 4, ngf * 8, input_nc=None, submodule=unet_block, norm_layer=norm_layer)
+        unet_block = UnetSkipConnectionBlock(ngf * 2, ngf * 4, input_nc=None, submodule=unet_block, norm_layer=norm_layer)
+        unet_block = UnetSkipConnectionBlock(ngf, ngf * 2, input_nc=None, submodule=unet_block, norm_layer=norm_layer)
+        unet_block = UnetSkipConnectionBlock(output_nc, ngf, input_nc=input_nc, submodule=unet_block, outermost=True, norm_layer=norm_layer)
 
         self.model = unet_block
 
@@ -317,12 +321,15 @@ class UnetGenerator(nn.Module):
 # X -------------------identity---------------------- X
 #   |-- downsampling -- |submodule| -- upsampling --|
 class UnetSkipConnectionBlock(nn.Module):
-    def __init__(self, outer_nc, inner_nc,
+    def __init__(self, outer_nc, inner_nc, input_nc, 
                  submodule=None, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d, use_dropout=False):
         super(UnetSkipConnectionBlock, self).__init__()
         self.outermost = outermost
 
-        downconv = nn.Conv2d(outer_nc, inner_nc, kernel_size=4,
+        if input_nc is None:
+            input_nc = outer_nc
+            
+        downconv = nn.Conv2d(input_nc, inner_nc, kernel_size=4,
                              stride=2, padding=1)
         downrelu = nn.LeakyReLU(0.2, True)
         downnorm = norm_layer(inner_nc, affine=True)
@@ -367,7 +374,9 @@ class UnetSkipConnectionBlock(nn.Module):
         else:
             x_latter = self.model(x)
             _, _, h, w = x.size()
-            x_latter = F.upsample(x_latter, (h, w), mode='bilinear')
+            
+            if h != x_latter.size(2) or w != x_latter.size():
+                x_latter = F.upsample(x_latter, (h, w), mode='bilinear')
             return torch.cat([x_latter, x], 1)  # cat in the C channel
 
 
