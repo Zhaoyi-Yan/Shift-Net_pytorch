@@ -282,7 +282,7 @@ class UnetSkipConnectionShiftTripleBlock(nn.Module):
         else:
             x_latter = self.model(x)
             _, _, h, w = x.size()
-            if h != x_latter.size(2) or w != x_latter.size():
+            if h != x_latter.size(2) or w != x_latter.size(3):
                 x_latter = F.upsample(x_latter, (h, w), mode='bilinear')
             return torch.cat([x_latter, x], 1)  # cat in the C channel
 
@@ -375,7 +375,7 @@ class UnetSkipConnectionBlock(nn.Module):
             x_latter = self.model(x)
             _, _, h, w = x.size()
             
-            if h != x_latter.size(2) or w != x_latter.size():
+            if h != x_latter.size(2) or w != x_latter.size(3):
                 x_latter = F.upsample(x_latter, (h, w), mode='bilinear')
             return torch.cat([x_latter, x], 1)  # cat in the C channel
 
