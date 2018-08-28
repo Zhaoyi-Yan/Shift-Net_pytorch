@@ -58,6 +58,11 @@ when training with `InnerCos` working on a single GPU, please refer the code bef
 - [x] Clean the code and delete useless comments.
 - [ ] Lots of more crazy operations that help in performance.
 
+# What I am doing now
+- [ ] Guides of our code, we hope it helps you understanding our code more easily.
+- [ ] Directly resize the mask to save computation.
+- [ ] Guidance loss seems defined on the global region. Need make it works only in masked region.
+
 
 
 ## Acknowledgments
