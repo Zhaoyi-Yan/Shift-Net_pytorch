@@ -32,6 +32,23 @@ here, the `data` is dict contains `A` and `B`. Then we call `model.set_input(dat
 - `base_model` is the parent class of `shiftnet_model`. Three functions are not inherited by `shiftnet_model`. They are `save_network`, `load_network` and `update_learning_rate`. As these three functions are compatible with any models you define. Usually, you can just ignore this script.
 
 ### Shiftnet_model
-`shiftnet_model` **is one of the main script that you need to spend much time reading and writing.** 
-- In `initialize` function, it defines the G and D networks, two optimizers, three criterions(Reconstruction loss, GAN loss and guidance loss), and schedulers. As our model accepts masked images of three channels, `set_input` aims at filling `mean value` in the mask region on the input image, code refering to `self.input_A.narrow(1,1,1).masked_fill_(self.mask_global, 2*104.0/255.0 - 1.0)`. Of course, the mask is generated online.
-- Guidance loss is implemented in this way: as the guidance loss takes the encoder feature of groundtruth
+`shiftnet_model` **is one of the main scripts that you need to spend much time reading and writing.** 
+- In `initialize` function, it defines the G and D networks, two optimizers, three criterions(Reconstruction loss, GAN loss and guidance loss), and schedulers. As our model accepts masked images of three channels, 
+- `set_input` get the `input` receving from `train.py` and aims at filling `mean value` in the mask region on the input images, code refering to `self.input_A.narrow(1,1,1).masked_fill_(self.mask_global, 2*104.0/255.0 - 1.0)`. Of course, the mask is generated online. By now, you will know, why we just let `B` the same context with `A`. `B` is the groundtruth image, and `A` is the context of `B` with mask region.
+
+### How guidance loss is implemented
+The class of `guidance loss` is defined as `models/InnerCos.py`. As it is actually a `L2` constrain with novel target:
+the encoder feature of groundtruth(B). This means, for the same input, the target changes as the parameters of network vary
+in different iterations. Therefore, in each iteration, we firstly call `set_input`. This function also sets the `resized mask`(mask in shift layer) in `InnerCos`, which is essentially for shift operation. Then we call `set_gt_latent`, 
+```python
+    def set_gt_latent(self):
+        self.netG.forward(Variable(self.input_B, requires_grad=False)) # input ground truth
+        gt_latent = self.ng_innerCos_list[0].get_target()  # then get gt_latent(should be variable require_grad=False)
+        self.ng_innerCos_list[0].set_target(gt_latent)
+```
+it acts as a role, providing the latent of encoder feature of groundtruth. Thus the dynamic `target` of `InnerCos` is obtained.
+In the second iteration, we pass the `A` into the model as usual.
+In `InnerCos.py`, we can see that this class mainly computes the loss of input and target, proving the gradient of guidance
+loss.
+
+
