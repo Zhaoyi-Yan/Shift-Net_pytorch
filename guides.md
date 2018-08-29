@@ -1,4 +1,4 @@
-The code derives from [pytorch-CycleGAN-and-pix2pix](https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix), which results in not quite readable. I write this guide to give a brief description of our code.
+The code derives from [pytorch-CycleGAN-and-pix2pix](https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix), which results in its some unreadability. I write this guide to give a brief description of our code. I hope this can help you understand our code more easily.
 
 # Structure of Shift-Net
 ## Two main scripts
@@ -51,4 +51,39 @@ In the second iteration, we pass the `A` into the model as usual.
 In `InnerCos.py`, we can see that this class mainly computes the loss of input and target, proving the gradient of guidance
 loss.
 
+### Where is the model constructed
+It is defined in `models/networks.py`. The construction of `Unet` is interesting. `UnetSkipConnectionBlock` works as base component of Unet. Unet is constructed firstly from the innermost block, then we warp it with a new layer, it returns a new block on which we can continue warpping it with an instance of class `UnetSkipConnectionBlock`. When it reaches the outermost border, we can see:
+```python
+def forward(self, x):
+    if self.outermost:  # if it is the outermost, directly pass the input in.
+        return self.model(x)
+    else:
+        x_latter = self.model(x)
+        _, _, h, w = x.size()
+
+        if h != x_latter.size(2) or w != x_latter.size(3):
+            x_latter = F.upsample(x_latter, (h, w), mode='bilinear')
+        return torch.cat([x_latter, x], 1)  # cat in the C channel
+```
+It is easy to understand.
+As for our shift model, we need to add layer `Guidance loss layer` and `shift layer` inside the model.
+`UnetSkipConnectionShiftTripleBlock` is based on `UnetSkipConnectionBlock`. It demonstrates distinctiveness in
+```python
+      # shift triple differs in here. It is `*3` not `*2`.
+      upconv = nn.ConvTranspose2d(inner_nc * 3, outer_nc,
+                                  kernel_size=4, stride=2,
+                                  padding=1)
+      down = [downrelu, downconv, downnorm]
+      # shift should be placed after uprelu
+      # Note: innerCos are placed before shift. So need to add the latent gredient to
+      # to former part.
+      up = [uprelu, innerCos, shift, upconv, upnorm]
+```
+As the network is defined in this way, it is not quite elegant to directly get specific layer of the model. Thus, we
+pass in `innerCos_list` and `shift_list` as parameters. We build `guidance loss layer` and `shift layer` respectively by `InnerCos` and `InnerShiftTriple` in `UnetGeneratorShiftTriple`. `UnetGeneratorShiftTriple` is called in `define_G`. `define_G` decides which network architecture you will choose for our generative model. It returns `netG` as well as extra
+two layers `innerCos_list` and `shift_list`. And finally, we can get these two special layers in `shiftnet_model`. So we
+can construct the target of guidance loss layer with `set_gt_latent`. If you are still a bit confused, please refer to 
+the above section **`How guidance loss is implemented`**.
+
+### How the shift is implemented
 
