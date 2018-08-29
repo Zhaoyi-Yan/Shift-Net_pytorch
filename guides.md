@@ -85,5 +85,5 @@ two layers `innerCos_list` and `shift_list`. And finally, we can get these two s
 can construct the target of guidance loss layer with `set_gt_latent`. If you are still a bit confused, please refer to 
 the above section **`How guidance loss is implemented`**.
 
-### How the shift is implemented
-
+### How shift is implemented
+`InnerShiftTriple` and `InnerShiftTripleFunction` are the two main scripts. `InnerShiftTriple` get the features in `forward(self, input)`. As `input` here is the data consists of the concatenation of encoder feature with corresponding decoder feature. We split out `former_all` and `latter_all` in `forward` in `InnerShiftTripleFunction`. The known region of `latter_all` will be used to fill mask region of `former_all`. As for more details, it is a little bit complex, so please refer to the code.
