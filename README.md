@@ -52,6 +52,10 @@ This verison of code makes that `InnerCos` DO NOT support single gpu training. I
 solve it now. If you train our model in a single GPU, please set `skip=1` in `options/base_options`. Otherwise,
 when training with `InnerCos` working on a single GPU, please refer the code before commit [aa2382b](https://github.com/Zhaoyi-Yan/Shift-Net_pytorch/tree/aa2382b194f36cabf40dabc6d3007cdcdc112153)
 
+## Kindly remindier
+If you find it a little hard to read the code, you may read [Guides](https://github.com/Zhaoyi-Yan/Shift-Net_pytorch/blob/master/guides.md).
+
+
 ## New things that I want to add
 - [x] Make U-Net handle with inputs of any sizes. (By resizing the size of features of decoder to fit that of the corresponding features of decoder.
 - [ ] Update the code for pytorch >= 0.4.
@@ -59,9 +63,9 @@ when training with `InnerCos` working on a single GPU, please refer the code bef
 - [ ] Lots of more crazy operations that help in performance.
 
 # What I am doing now
-- [ ] Guides of our code, we hope it helps you understanding our code more easily.
+- [x] Guides of our code, we hope it helps you understand our code more easily.
 - [ ] Directly resize the mask to save computation.
-- [ ] Guidance loss seems defined on the global region. Need make it works only in masked region.
+- [ ] Guidance loss seems defined on the global region. Need make it work only in masked region.
 
 
 
