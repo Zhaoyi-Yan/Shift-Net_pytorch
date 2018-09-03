@@ -39,7 +39,7 @@ The test results will be saved to a html file here: `./results/`.
 
 If you find this work useful, please cite:
 ```
-@InProceedings{Yan_2018_ECCV,
+@InProceedings{Yan_2018_Shift,
 author = {Yan, Zhaoyi and Li, Xiaoming and Li, Mu and Zuo, Wangmeng and Shan, Shiguang},
 title = {Shift-Net: Image Inpainting via Deep Feature Rearrangement},
 booktitle = {The European Conference on Computer Vision (ECCV)},
