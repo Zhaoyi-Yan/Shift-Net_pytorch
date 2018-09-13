@@ -1,3 +1,6 @@
+# Architecutre
+<img src="architecture.png" width="1000"/> 
+
 # Shift-Net_pytorch
 This repositity is our Pytorch implementation for Shift-Net, it is just for those who are interesting in our work and want to get a skeleton Pytorch implemention. The original code is https://github.com/Zhaoyi-Yan/Shift-Net.
 I will upload pytorch models in months(Sorry for the delay).
