@@ -234,9 +234,7 @@ class ShiftNetModel(BaseModel):
         if not self.opt.skip:
             for gl in self.ng_innerCos_list:
                 self.ng_loss_value += Variable(gl.loss, requires_grad=True)
-
-        self.loss_G += self.ng_loss.value
-
+            self.loss_G += self.ng_loss.value
 
         self.loss_G.backward()
 
