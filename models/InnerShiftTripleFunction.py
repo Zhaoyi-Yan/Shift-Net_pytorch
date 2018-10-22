@@ -70,7 +70,7 @@ class InnerShiftTripleFunction(torch.autograd.Function):
                 for j in range(kbar_w):
                     indx = i*kbar_w + j
                     non_r_ch = ind[indx]
-                    offset = ctx.flatten_offsets[non_r_ch]
+                    offset = ctx.flatten_offsets[non_r_ch].type(torch.cuda.LongTensor)
                     correct_ch = int(non_r_ch + offset)
                     kbar[:,correct_ch,i,j] = 1
                     ind[indx] = correct_ch
