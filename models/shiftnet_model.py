@@ -230,11 +230,15 @@ class ShiftNetModel(BaseModel):
             self.loss_G = self.loss_G_L1 + self.loss_G_GAN * self.opt.gan_weight
 
         # Third add additional netG contraint loss!
+        # By now, it only works on multi-gpu, if you want to run the program in a single
+        # gpu, please set 'opt.skip=1', or read 'ReadMe.md'.
+        # Multi-gpu brings no much speed gain by now, as shift layer is not written all in parallel.
+        # I will optimize it after finishing my work at hand, maybe 2018-12-1, ^_^.
         self.ng_loss_value = 0
         if not self.opt.skip:
             for gl in self.ng_innerCos_list:
                 self.ng_loss_value += Variable(gl.loss, requires_grad=True)
-            self.loss_G += self.ng_loss.value
+            self.loss_G += self.ng_loss_value
 
         self.loss_G.backward()
 
