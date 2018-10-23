@@ -64,16 +64,16 @@ If you find it a little hard to read the code, you may read [Guides](https://git
 
 
 ## New things that I want to add
+Note: I am busy with other work, will continue this work after 12.1.
 - [x] Make U-Net handle with inputs of any sizes. (By resizing the size of features of decoder to fit that of the corresponding features of decoder.
 - [ ] Update the code for pytorch >= 0.4.
 - [x] Clean the code and delete useless comments.
-- [ ] Lots of more crazy operations that help in performance.
-
-# What I am doing now
 - [x] Guides of our code, we hope it helps you understand our code more easily.
 - [ ] Directly resize the mask to save computation.
 - [ ] Guidance loss seems defined on the global region. Need make it work only in masked region.
-
+- [ ] Add more GANs, like spectural norm and relativelistic GAN.
+- [ ] Boost the efficiency of shift layer.
+- [ ] Extensions of Shift-Net, which will help the performance a lot.
 
 
 ## Acknowledgments
