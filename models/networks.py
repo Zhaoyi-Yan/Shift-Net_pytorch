@@ -154,32 +154,6 @@ class GANLoss(nn.Module):
         target_tensor = self.get_target_tensor(input, target_is_real)
         return self.loss(input, target_tensor)
 
-# Defines the Unet generator.
-# |num_downs|: number of downsamplings in UNet. For example,
-# if |num_downs| == 7, image of size 128x128 will become of size 1x1
-# at the bottleneck
-class UnetGeneratorShiftTriple_Soft(nn.Module):
-    def __init__(self, input_nc, output_nc,  num_downs, opt, innerCos_list, shift_list, mask_global, ngf=64,
-                 norm_layer=nn.BatchNorm2d, use_dropout=False):
-        super(UnetGeneratorShiftTriple_Soft, self).__init__()
-
-        # construct unet structure
-        unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=None, norm_layer=norm_layer, innermost=True)
-        print(unet_block)
-        for i in range(num_downs - 5):  # The innner layers number is 3 (sptial size:512*512), if unet_256.
-            unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=unet_block, norm_layer=norm_layer, use_dropout=use_dropout)
-        unet_block = UnetSkipConnectionBlock(ngf * 4, ngf * 8, input_nc=None, submodule=unet_block, norm_layer=norm_layer)
-
-        unet_shift_block = UnetSkipConnectionShiftTriple_Soft(ngf * 2, ngf * 4, opt, innerCos_list, shift_list, mask_global, \
-                                                         input_nc=None, submodule=unet_block, norm_layer=norm_layer)  # passing in unet_shift_block
-        unet_block = UnetSkipConnectionBlock(ngf, ngf * 2, input_nc=None, submodule=unet_shift_block, norm_layer=norm_layer)
-        unet_block = UnetSkipConnectionBlock(output_nc, ngf, input_nc=input_nc, submodule=unet_block, outermost=True, norm_layer=norm_layer)
-
-        self.model = unet_block
-
-    def forward(self, input):
-        return self.model(input)
-
 
 ################################### ***************************  #####################################
 ################################### This the original Shift_net  #####################################

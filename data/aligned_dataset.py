@@ -11,15 +11,7 @@ class AlignedDataset(BaseDataset):
     def initialize(self, opt):
         self.opt = opt
         self.root = opt.dataroot
-        self.dir_A = None
-
-        if opt.dataroot.find('Paris') != -1:
-            # Only paris has `phase` folder inside.
-            self.dir_A = os.path.join(opt.dataroot, opt.phase)
-        else:
-            self.dir_A = opt.dataroot
-
-        print self.dir_A
+        self.dir_A = os.path.join(opt.dataroot, opt.phase)
         self.A_paths = sorted(make_dataset(self.dir_A))
 
         assert(opt.resize_or_crop == 'resize_and_crop')
