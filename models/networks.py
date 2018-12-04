@@ -1,8 +1,6 @@
-#-*-coding:utf-8-*-
 import torch
 import torch.nn as nn
 from torch.nn import init
-from torch.autograd import Variable
 import numpy as np
 import functools
 import torch.nn.functional as F
@@ -15,7 +13,6 @@ from .InnerCos import InnerCos
 ###############################################################################
 # Functions
 ###############################################################################
-
 def get_norm_layer(norm_type='instance'):
     if norm_type == 'batch':
         norm_layer = functools.partial(nn.BatchNorm2d, affine=True)
@@ -50,20 +47,20 @@ def init_weights(net, init_type='normal', gain=0.02):
         classname = m.__class__.__name__
         if hasattr(m, 'weight') and (classname.find('Conv') != -1 or classname.find('Linear') != -1):
             if init_type == 'normal':
-                init.normal(m.weight.data, 0.0, gain)
+                init.normal_(m.weight.data, 0.0, gain)
             elif init_type == 'xavier':
-                init.xavier_normal(m.weight.data, gain=gain)
+                init.xavier_normal_(m.weight.data, gain=gain)
             elif init_type == 'kaiming':
-                init.kaiming_normal(m.weight.data, a=0, mode='fan_in')
+                init.kaiming_normal_(m.weight.data, a=0, mode='fan_in')
             elif init_type == 'orthogonal':
-                init.orthogonal(m.weight.data, gain=gain)
+                init.orthogonal_(m.weight.data, gain=gain)
             else:
                 raise NotImplementedError('initialization method [%s] is not implemented' % init_type)
             if hasattr(m, 'bias') and m.bias is not None:
-                init.constant(m.bias.data, 0.0)
+                init.constant_(m.bias.data, 0.0)
         elif classname.find('BatchNorm2d') != -1:
-            init.normal(m.weight.data, 1.0, gain)
-            init.constant(m.bias.data, 0.0)
+            init.normal_(m.weight.data, 1.0, gain)
+            init.constant_(m.bias.data, 0.0)
 
     print('initialize network with %s' % init_type)
     net.apply(init_func)
@@ -72,10 +69,11 @@ def init_weights(net, init_type='normal', gain=0.02):
 def init_net(net, init_type='normal', init_gain=0.02, gpu_ids=[]):
     if len(gpu_ids) > 0:
         assert(torch.cuda.is_available())
-        net.cuda(gpu_ids[0])
+        net.to(gpu_ids[0])
         net = torch.nn.DataParallel(net, gpu_ids)
     init_weights(net, init_type, gain=init_gain)
     return net
+
 
 
 def define_G(input_nc, output_nc, ngf, which_model_netG, opt, mask_global, norm='batch', use_dropout=False, init_type='normal', gpu_ids=[], init_gain=0.02):
@@ -98,8 +96,6 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, opt, mask_global, norm=
                                                          ngf, norm_layer=norm_layer, use_dropout=use_dropout)
     else:
         raise NotImplementedError('Generator model name [%s] is not recognized' % which_model_netG)
- 
-    
 
     print('Constraint in netG:')
     print(innerCos_list)
@@ -120,38 +116,24 @@ def define_D(input_nc, ndf, which_model_netD,
     elif which_model_netD == 'n_layers':
         netD = NLayerDiscriminator(input_nc, ndf, n_layers_D, norm_layer=norm_layer, use_sigmoid=use_sigmoid)
     else:
-        raise NotImplementedError('Discriminator model name [%s] is not recognized' %
+        print('Discriminator model name [%s] is not recognized' %
               which_model_netD)
-    
     return init_net(netD, init_type, init_gain, gpu_ids)
-
-
-def print_network(net):
-    num_params = 0
-    for param in net.parameters():
-        num_params += param.numel()
-    print(net)
-    print('Total number of parameters: %d' % num_params)
 
 
 ##############################################################################
 # Classes
 ##############################################################################
 
-
 # Defines the GAN loss which uses either LSGAN or the regular GAN.
 # When LSGAN is used, it is basically same as MSELoss,
 # but it abstracts away the need to create the target label tensor
 # that has the same size as the input
 class GANLoss(nn.Module):
-    def __init__(self, gan_type='wgan_gp', target_real_label=1.0, target_fake_label=0.0,
-                 tensor=torch.FloatTensor):
+    def __init__(self, gan_type='wgan_gp', target_real_label=1.0, target_fake_label=0.0):
         super(GANLoss, self).__init__()
-        self.real_label = target_real_label
-        self.fake_label = target_fake_label
-        self.real_label_var = None
-        self.fake_label_var = None
-        self.Tensor = tensor
+        self.register_buffer('real_label', torch.tensor(target_real_label))
+        self.register_buffer('fake_label', torch.tensor(target_fake_label))
         if gan_type == 'wgan_gp':
             self.loss = nn.MSELoss()
         elif gan_type == 'lsgan':
@@ -162,29 +144,46 @@ class GANLoss(nn.Module):
             raise ValueError("GAN type [%s] not recognized." % gan_type)
 
     def get_target_tensor(self, input, target_is_real):
-        target_tensor = None
         if target_is_real:
-            create_label = ((self.real_label_var is None) or
-                            (self.real_label_var.numel() != input.numel()))
-            if create_label:
-                real_tensor = self.Tensor(input.size()).fill_(self.real_label)
-                self.real_label_var = Variable(real_tensor, requires_grad=False)
-            target_tensor = self.real_label_var
+            target_tensor = self.real_label
         else:
-            create_label = ((self.fake_label_var is None) or
-                            (self.fake_label_var.numel() != input.numel()))
-            if create_label:
-                fake_tensor = self.Tensor(input.size()).fill_(self.fake_label)
-                self.fake_label_var = Variable(fake_tensor, requires_grad=False)
-            target_tensor = self.fake_label_var
-        return target_tensor
+            target_tensor = self.fake_label
+        return target_tensor.expand_as(input)
 
     def __call__(self, input, target_is_real):
         target_tensor = self.get_target_tensor(input, target_is_real)
         return self.loss(input, target_tensor)
 
+# Defines the Unet generator.
+# |num_downs|: number of downsamplings in UNet. For example,
+# if |num_downs| == 7, image of size 128x128 will become of size 1x1
+# at the bottleneck
+class UnetGeneratorShiftTriple_Soft(nn.Module):
+    def __init__(self, input_nc, output_nc,  num_downs, opt, innerCos_list, shift_list, mask_global, ngf=64,
+                 norm_layer=nn.BatchNorm2d, use_dropout=False):
+        super(UnetGeneratorShiftTriple_Soft, self).__init__()
 
-################################### This is for Shift layer　#####################################
+        # construct unet structure
+        unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=None, norm_layer=norm_layer, innermost=True)
+        print(unet_block)
+        for i in range(num_downs - 5):  # The innner layers number is 3 (sptial size:512*512), if unet_256.
+            unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=unet_block, norm_layer=norm_layer, use_dropout=use_dropout)
+        unet_block = UnetSkipConnectionBlock(ngf * 4, ngf * 8, input_nc=None, submodule=unet_block, norm_layer=norm_layer)
+
+        unet_shift_block = UnetSkipConnectionShiftTriple_Soft(ngf * 2, ngf * 4, opt, innerCos_list, shift_list, mask_global, \
+                                                         input_nc=None, submodule=unet_block, norm_layer=norm_layer)  # passing in unet_shift_block
+        unet_block = UnetSkipConnectionBlock(ngf, ngf * 2, input_nc=None, submodule=unet_shift_block, norm_layer=norm_layer)
+        unet_block = UnetSkipConnectionBlock(output_nc, ngf, input_nc=input_nc, submodule=unet_block, outermost=True, norm_layer=norm_layer)
+
+        self.model = unet_block
+
+    def forward(self, input):
+        return self.model(input)
+
+
+################################### ***************************  #####################################
+################################### This the original Shift_net  #####################################
+################################### ***************************  #####################################
 # Defines the Unet generator.
 # |num_downs|: number of downsamplings in UNet. For example,
 # if |num_downs| == 7, image of size 128x128 will become of size 1x1
@@ -201,10 +200,10 @@ class UnetGeneratorShiftTriple(nn.Module):
             unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=unet_block, norm_layer=norm_layer, use_dropout=use_dropout)
         unet_block = UnetSkipConnectionBlock(ngf * 4, ngf * 8, input_nc=None, submodule=unet_block, norm_layer=norm_layer)
 
-        unet_shift_block = UnetSkipConnectionShiftTripleBlock(ngf * 2, ngf * 4, opt, innerCos_list, shift_list, mask_global, \
-                                                         input_nc=None, submodule=unet_block, norm_layer=norm_layer)  # passing in unet_shift_block
+        unet_shift_block = UnetSkipConnectionShiftTriple(ngf * 2, ngf * 4, opt, innerCos_list, shift_list, mask_global, input_nc=None, \
+                                                         submodule=unet_block, norm_layer=norm_layer)  # passing in unet_shift_block
         unet_block = UnetSkipConnectionBlock(ngf, ngf * 2, input_nc=None, submodule=unet_shift_block, norm_layer=norm_layer)
-        unet_block = UnetSkipConnectionBlock(output_nc, ngf, input_nc=None, submodule=unet_block, outermost=True, norm_layer=norm_layer)
+        unet_block = UnetSkipConnectionBlock(output_nc, ngf, input_nc=input_nc, submodule=unet_block, outermost=True, norm_layer=norm_layer)
 
         self.model = unet_block
 
@@ -212,15 +211,15 @@ class UnetGeneratorShiftTriple(nn.Module):
         return self.model(input)
 
 # Mention: the TripleBlock differs in `upconv` defination.
-class UnetSkipConnectionShiftTripleBlock(nn.Module):
+# 'cos' means that we add a `innerCos` layer in the block.
+class UnetSkipConnectionShiftTriple(nn.Module):
     def __init__(self, outer_nc, inner_nc, opt, innerCos_list, shift_list, mask_global, input_nc, \
                  submodule=None, shift_layer=None, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d, use_dropout=False):
-        super(UnetSkipConnectionShiftTripleBlock, self).__init__()
+        super(UnetSkipConnectionShiftTriple, self).__init__()
         self.outermost = outermost
-
         if input_nc is None:
             input_nc = outer_nc
-            
+
         downconv = nn.Conv2d(input_nc, inner_nc, kernel_size=4,
                              stride=2, padding=1)
         downrelu = nn.LeakyReLU(0.2, True)
@@ -267,7 +266,7 @@ class UnetSkipConnectionShiftTripleBlock(nn.Module):
                                         padding=1)
             down = [downrelu, downconv, downnorm]
             # shift should be placed after uprelu
-            # Note: innerCos are placed before shift. So need to add the latent gredient to
+            # NB: innerCos are placed before shift. So need to add the latent gredient to
             # to former part.
             up = [uprelu, innerCos, shift, upconv, upnorm]
 
@@ -285,13 +284,8 @@ class UnetSkipConnectionShiftTripleBlock(nn.Module):
             x_latter = self.model(x)
             _, _, h, w = x.size()
             if h != x_latter.size(2) or w != x_latter.size(3):
-                x_latter = F.upsample(x_latter, (h, w), mode='bilinear')
+                x_latter = F.interpolate(x_latter, (h, w), mode='bilinear')
             return torch.cat([x_latter, x], 1)  # cat in the C channel
-
-
-
-
-##################################### It is for Unet #######################################
 
 # Defines the Unet generator.
 # |num_downs|: number of downsamplings in UNet. For example,
@@ -304,8 +298,7 @@ class UnetGenerator(nn.Module):
 
         # construct unet structure
         unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=None, norm_layer=norm_layer, innermost=True)
-        print(unet_block)
-        for i in range(num_downs - 5):  # The innner layers number is 3 (sptial size:512*512), if unet_256.
+        for i in range(num_downs - 5):
             unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=unet_block, norm_layer=norm_layer, use_dropout=use_dropout)
         unet_block = UnetSkipConnectionBlock(ngf * 4, ngf * 8, input_nc=None, submodule=unet_block, norm_layer=norm_layer)
         unet_block = UnetSkipConnectionBlock(ngf * 2, ngf * 4, input_nc=None, submodule=unet_block, norm_layer=norm_layer)
@@ -317,20 +310,19 @@ class UnetGenerator(nn.Module):
     def forward(self, input):
         return self.model(input)
 
-
-# It construct network from the inside to the outside.
+# construct network from the inside to the outside.
 # Defines the submodule with skip connection.
 # X -------------------identity---------------------- X
 #   |-- downsampling -- |submodule| -- upsampling --|
 class UnetSkipConnectionBlock(nn.Module):
-    def __init__(self, outer_nc, inner_nc, input_nc, 
+    def __init__(self, outer_nc, inner_nc, input_nc,
                  submodule=None, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d, use_dropout=False):
         super(UnetSkipConnectionBlock, self).__init__()
         self.outermost = outermost
 
         if input_nc is None:
             input_nc = outer_nc
-            
+
         downconv = nn.Conv2d(input_nc, inner_nc, kernel_size=4,
                              stride=2, padding=1)
         downrelu = nn.LeakyReLU(0.2, True)
@@ -376,11 +368,9 @@ class UnetSkipConnectionBlock(nn.Module):
         else:
             x_latter = self.model(x)
             _, _, h, w = x.size()
-            
             if h != x_latter.size(2) or w != x_latter.size(3):
-                x_latter = F.upsample(x_latter, (h, w), mode='bilinear')
+                x_latter = F.interpolate(x_latter, (h, w), mode='bilinear')
             return torch.cat([x_latter, x], 1)  # cat in the C channel
-
 
 ################################### This is for D ###################################
 # Defines the PatchGAN discriminator with the specified arguments.

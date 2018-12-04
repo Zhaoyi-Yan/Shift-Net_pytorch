@@ -1,6 +1,5 @@
 import torch.nn as nn
 import torch
-from torch.autograd import Variable
 import util.util as util
 from .InnerShiftTripleFunction import InnerShiftTripleFunction
 
@@ -32,13 +31,13 @@ class InnerShiftTriple(nn.Module):
         if self.fixed_mask and self.cal_fixed_flag == False:
             assert torch.is_tensor(self.flag), 'flag must have been figured out and has to be a tensor!'
         else:
-            latter = input.narrow(1, self.c//2, self.c//2).narrow(0,0,1).data
-
+            latter = input.narrow(1, self.c//2, self.c//2).narrow(0,0,1).detach()
             self.flag, self.nonmask_point_idx, self.flatten_offsets = util.cal_mask_given_mask_thred(latter.squeeze(), self.mask, self.shift_sz, \
-                                                                                                        self.stride, self.mask_thred)
+                                                                                                   self.stride, self.mask_thred)
             self.cal_fixed_flag = False
 
         if not (torch.is_tensor(self.sp_x) or torch.is_tensor(self.sp_y)):
+ #           print('Pre-calculate constant assistant \'sp_x\' and \'sp_y\' for the layer, which channel is:', self.c, ', h is: ', self.h, ', w is ', self.w)
             self.sp_x, self.sp_y = util.cal_sps_for_Advanced_Indexing(self.h, self.w)
 
 

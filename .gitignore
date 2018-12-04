@@ -1,0 +1,13 @@
+*.JPG
+*.png
+*.jpg
+*.txt
+datasets/
+checkpoints/
+output/
+results/
+.vscode/
+log/
+logs/
+*.swp
+*.pyc

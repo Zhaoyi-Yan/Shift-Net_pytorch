@@ -3,7 +3,6 @@ import math
 import numpy as np
 import torch
 import torch.nn as nn
-from torch.autograd import Variable
 
 class NonparametricShift(object):
     def buildAutoencoder(self, target_img, normalize, interpolate,  nonmask_point_idx, patch_size=1, stride=1):

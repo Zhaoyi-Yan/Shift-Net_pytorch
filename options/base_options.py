@@ -8,7 +8,7 @@ class BaseOptions():
         self.initialized = False
 
     def initialize(self, parser):
-        parser.add_argument('--dataroot', default='./datasets/Paris_StreetView_Dataset', help='path to images (should have subfolders trainA, trainB, valA, valB, etc)')
+        parser.add_argument('--dataroot', default='./datasets_shift/Paris_StreetView_Dataset', help='path to images (should have subfolders trainA, trainB, valA, valB, etc)')
         parser.add_argument('--batchSize', type=int, default=1, help='input batch size')
         parser.add_argument('--loadSize', type=int, default=350, help='scale images to this size')
         parser.add_argument('--fineSize', type=int, default=256, help='then crop to this size')
@@ -17,21 +17,22 @@ class BaseOptions():
         parser.add_argument('--ngf', type=int, default=64, help='# of gen filters in first conv layer')
         parser.add_argument('--ndf', type=int, default=64, help='# of discrim filters in first conv layer')
         parser.add_argument('--which_model_netD', type=str, default='basic', help='selects model to use for netD')
-        parser.add_argument('--which_model_netG', type=str, default='unet_shift_triple', help='selects model to use for netG')  # use unet_swap
+        parser.add_argument('--which_model_netG', type=str, default='unet_shift_triple_soft', help='selects model to use for netG')  # use unet_swap
         parser.add_argument('--triple_weight', type=float, default=1, help='The weight on the gradient of skip connections from the gradient of swapped')
-        parser.add_argument('--name', type=str, default='exp_unet_shift_triple', help='name of the experiment. It decides where to store samples and models')
+        parser.add_argument('--name', type=str, default='unet_shift_triple_soft', help='name of the experiment. It decides where to store samples and models')
         parser.add_argument('--n_layers_D', type=int, default=3, help='only used if which_model_netD==n_layers')
         parser.add_argument('--gpu_ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2')
         parser.add_argument('--dataset_mode', type=str, default='aligned', help='chooses how datasets are loaded. [aligned | single]')
         parser.add_argument('--model', type=str, default='shiftnet',
                                  help='chooses which model to use. shiftnet, test')
         parser.add_argument('--nThreads', default=2, type=int, help='# threads for loading data')
-        parser.add_argument('--checkpoints_dir', type=str, default='./checkpoints', help='models are saved here')
+        parser.add_argument('--checkpoints_dir', type=str, default='./log', help='models are saved here')
         parser.add_argument('--norm', type=str, default='instance', help='instance normalization or batch normalization')
         parser.add_argument('--serial_batches', action='store_true', help='if true, takes images in order to make batches, otherwise takes them randomly')
         parser.add_argument('--display_winsize', type=int, default=256,  help='display window size')
         parser.add_argument('--display_id', type=int, default=1, help='window id of the web display')
         parser.add_argument('--display_port', type=int, default=8097, help='visdom port of the web display')
+        parser.add_argument('--display_server', type=str, default="http://localhost", help='visdom server of the web display')
         parser.add_argument('--suffix', default='', type=str, help='customized suffix: opt.name = opt.name + suffix: e.g., {model}_{which_model_netG}_size{loadSize}')
 
         parser.add_argument('--use_dropout', action='store_true', help='use dropout for the generator') #it means if using '--use_dropout then this option is true.
@@ -39,7 +40,8 @@ class BaseOptions():
         parser.add_argument('--resize_or_crop', type=str, default='resize_and_crop', help='scaling and cropping of images at load time [resize_and_crop|crop|scale_width]')
         parser.add_argument('--no_flip', action='store_true', help='if specified, do not flip the images for data argumentation')
         parser.add_argument('--init_type', type=str, default='normal', help='network initialization [normal|xavier|kaiming|orthogonal]')
-        # Shift feature relevant.
+        parser.add_argument('--verbose', action='store_true', help='if specified, print more debugging information')
+        ## new added
         parser.add_argument('--mask_type', type=str, default='center', help='the type of mask you want to apply, \'center\' or \'random\'')
         parser.add_argument('--fixed_mask', type=int, default=1, help='1 or 0, whether mask is fixed')
         parser.add_argument('--lambda_A', type=int, default=100, help='weight on L1 term in objective')
@@ -53,7 +55,7 @@ class BaseOptions():
         parser.add_argument('--constrain', type=str, default='MSE', help='guidance loss type')
         parser.add_argument('--strength', type=float, default=1, help='the weight of guidance loss')
         parser.add_argument('--init_gain', type=float, default=0.02, help='scaling factor for normal, xavier and orthogonal.')
-        parser.add_argument('--skip', type=int, default=0, help='Define whether the guidance layer is skipped.')
+        parser.add_argument('--skip', type=int, default=0, help='Define whether the guidance layer is skipped. Useful when using multiGPUs.')
         parser.add_argument('--gan_type', type=str, default='vanilla', help='wgan_gp, lsgan, vanilla, wgan_gp should never be used here.')
         parser.add_argument('--gan_weight', type=float, default=0.2, help='the weight of gan loss')
         parser.add_argument('--overlap', type=int, default=4, help='the overlap for center mask')

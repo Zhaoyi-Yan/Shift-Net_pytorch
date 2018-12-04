@@ -11,12 +11,12 @@ opt.nThreads = 1   # test code only supports nThreads = 1
 opt.batchSize = 1  # test code only supports batchSize = 1
 opt.serial_batches = True  # no shuffle
 opt.no_flip = True  # no flip
+opt.display_id = -1 # no visdom display
 opt.loadSize = opt.fineSize  # Do not scale!
 
 data_loader = CreateDataLoader(opt)
 dataset = data_loader.load_data()
 model = create_model(opt)
-
 
 visualizer = Visualizer(opt)
 # create website

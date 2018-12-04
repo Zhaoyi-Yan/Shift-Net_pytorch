@@ -8,17 +8,21 @@ import numpy as np
 import os
 import collections
 import math
-from torch.autograd import Variable
 import torch.nn as nn
-# Converts a Tensor into a Numpy array
+
+
+# Converts a Tensor into an image array (numpy)
 # |imtype|: the desired type of the converted numpy array
-def tensor2im(image_tensor, imtype=np.uint8):
+def tensor2im(input_image, imtype=np.uint8):
+    if isinstance(input_image, torch.Tensor):
+        image_tensor = input_image.data
+    else:
+        return input_image
     image_numpy = image_tensor[0].cpu().float().numpy()
     if image_numpy.shape[0] == 1:
-        image_numpy = np.tile(image_numpy, (3,1,1))
+        image_numpy = np.tile(image_numpy, (3, 1, 1))
     image_numpy = (np.transpose(image_numpy, (1, 2, 0)) + 1) / 2.0 * 255.0
     return image_numpy.astype(imtype)
-
 
 def diagnose_network(net, name='network'):
     mean = 0.0
@@ -70,7 +74,6 @@ def cal_feat_mask(inMask, conv_layers, threshold):
     assert inMask.size(0) == 1, "the first dimension must be 1 for mask"
     inMask = inMask.float()
     convs = []
-    inMask = Variable(inMask, requires_grad = False)
     for id_net in range(conv_layers):
         conv = nn.Conv2d(1,1,4,2,1, bias=False)
         conv.weight.data.fill_(1/16)
@@ -116,6 +119,9 @@ def cal_mask_given_mask_thred(img, mask, patch_size, stride, mask_thred):
     # print(offsets_tmp_vec) # checked
 
     non_mask_num = tmp_non_mask_idx
+ #   print('in util')
+ #   print(nonmask_point_idx_all.size())
+ #   print(non_mask_num)
     nonmask_point_idx = nonmask_point_idx_all.narrow(0, 0, non_mask_num)
 
     # get flatten_offsets

@@ -6,7 +6,6 @@ import torch.nn as nn
 import torch
 
 
-from torch.autograd import Variable
 class InnerShiftTripleFunction(torch.autograd.Function):
 
     @staticmethod
@@ -15,7 +14,6 @@ class InnerShiftTripleFunction(torch.autograd.Function):
         ctx.triple_w = triple_w
         ctx.flag = flag
         ctx.flatten_offsets = flatten_offsets
-
 
         ctx.bz, c_real, ctx.h, ctx.w = input.size()
         c = c_real
@@ -50,8 +48,8 @@ class InnerShiftTripleFunction(torch.autograd.Function):
             Nonparm = NonparametricShift()
             _, conv_enc, conv_new_dec, _, = Nonparm.buildAutoencoder(latter.squeeze(), False, False, nonmask_point_idx, shift_sz, stride)
 
-            former_var = Variable(former, requires_grad = False)
-            tmp1 = conv_enc(former_var)
+            tmp1 = conv_enc(former)
+
             latter_non_mask = latter.clone()
 
             latter_non_mask.masked_fill_(ex_mask, 0) # only save non_mask region
@@ -61,29 +59,26 @@ class InnerShiftTripleFunction(torch.autograd.Function):
             kbar, ind = maxcoor.update_output(tmp1.data, sp_x, sp_y)
 
             # calculate the real kbar and real self.ind
-            real_patches = kbar.size(1) + torch.sum(ctx.flag)
+            real_patches = (kbar.size(1) + torch.sum(ctx.flag)).item() #transfer to number.
             _, _, kbar_h, kbar_w = kbar.size()
             kbar = ctx.Tensor(1, real_patches, kbar_h, kbar_w).zero_()
-
             offset = 0
             for i in range(kbar_h):
                 for j in range(kbar_w):
                     indx = i*kbar_w + j
                     non_r_ch = ind[indx]
-                    offset = ctx.flatten_offsets[non_r_ch]
+                    offset = (ctx.flatten_offsets[non_r_ch]).item()
                     correct_ch = int(non_r_ch + offset)
                     kbar[:,correct_ch,i,j] = 1
                     ind[indx] = correct_ch
 
-            kbar_var = Variable(kbar, requires_grad =False)
-            result_tmp_var = conv_new_dec(kbar_var)
-            result_tmp = result_tmp_var.data
+            result_tmp = conv_new_dec(kbar)
+            result_tmp = result_tmp.detach()
             result_tmp_mask = result_tmp.clone()
 
             result_tmp_mask.masked_fill_(inv_ex_mask, 0)  # mask part
 
             swapped_latter = result_tmp_mask
-
             # construct final self.output
             output_lst[idx] = torch.cat((former, latter, swapped_latter), 1)
             ind_lst[idx] = ind
@@ -110,7 +105,7 @@ class InnerShiftTripleFunction(torch.autograd.Function):
 
         spatial_size = ctx.h * ctx.w
 
-        W_mat_all = Variable(ctx.Tensor(ctx.bz, spatial_size, spatial_size).zero_())
+        W_mat_all = ctx.Tensor(ctx.bz, spatial_size, spatial_size).zero_()
         for idx in range(ctx.bz):
             W_mat = W_mat_all.select(0,idx).clone()
             for cnt in range(spatial_size):
