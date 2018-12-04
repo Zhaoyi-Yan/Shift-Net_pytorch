@@ -11,7 +11,8 @@ This repositity is our Pytorch implementation for Shift-Net, it is just for thos
 - Linux or OSX.
 - Python 2 or Python 3.
 - CPU or NVIDIA GPU + CUDA CuDNN.
-- Tested on pytorch 0.3
+- Tested on pytorch 0.4.1
+If you are working on pytorch0.1-0.3, you may check branch pytorch0.3.1.
 
 ## Getting Started
 ### Installation
@@ -64,7 +65,7 @@ If you find it a little hard to read the code, you may read [Guides](https://git
 ## New things that I want to add
 Note: I am busy with other work, will continue this work after 12.1.
 - [x] Make U-Net handle with inputs of any sizes. (By resizing the size of features of decoder to fit that of the corresponding features of decoder.
-- [x ] Update the code for pytorch >= 0.4.
+- [x] Update the code for pytorch >= 0.4.
 - [x] Clean the code and delete useless comments.
 - [x] Guides of our code, we hope it helps you understand our code more easily.
 - [ ] Directly resize the mask to save computation.
