@@ -3,7 +3,7 @@ import torch
 import os
 import util.util as util
 from PIL import Image
-import torch.nn.functional as F
+from torch.nn import functional as F
 from .base_model import BaseModel
 from . import networks
 
@@ -47,7 +47,7 @@ class ShiftNetModel(BaseModel):
             MAX_SIZE = 10000
             maxPartition = 30
             low_pattern = torch.rand(1, 1, int(res*MAX_SIZE), int(res*MAX_SIZE)).mul(255)
-            pattern = F.functional.interpolate(low_pattern, (MAX_SIZE, MAX_SIZE), mode='bilinear').detach()
+            pattern = F.interpolate(low_pattern, (MAX_SIZE, MAX_SIZE), mode='bilinear').detach()
             low_pattern = None
             pattern.div_(255)
             pattern = torch.lt(pattern,density).byte()  # 25% 1s and 75% 0s

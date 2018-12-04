@@ -44,7 +44,7 @@ def binary_mask(in_mask, threshold):
 
     return output
 
-def create_gMask(gMask_opts):
+def create_gMask(gMask_opts, limit_cnt=2):
     pattern = gMask_opts['pattern']
     mask_global = gMask_opts['mask_global']
     MAX_SIZE = gMask_opts['MAX_SIZE']
@@ -53,7 +53,7 @@ def create_gMask(gMask_opts):
     if pattern is None:
         raise ValueError
     wastedIter = 0
-    while True:
+    while wastedIter <= limit_cnt:
         x = random.randint(1, MAX_SIZE-fineSize)
         y = random.randint(1, MAX_SIZE-fineSize)
         mask = pattern[y:y+fineSize, x:x+fineSize] # need check

@@ -7,9 +7,15 @@ def CreateDataset(opt):
     if opt.dataset_mode == 'aligned':
         from data.aligned_dataset import AlignedDataset
         dataset = AlignedDataset()
+
+    elif opt.dataset_mode == 'aligned_resized':
+        from data.aligned_dataset_resized import AlignedDatasetResized
+        dataset = AlignedDatasetResized()
+
     elif opt.dataset_mode == 'single':
         from data.single_dataset import SingleDataset
         dataset = SingleDataset()
+
     else:
         raise ValueError("Dataset [%s] not recognized." % opt.dataset_mode)
 

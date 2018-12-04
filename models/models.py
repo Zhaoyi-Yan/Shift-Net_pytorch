@@ -3,9 +3,10 @@ def create_model(opt):
     model = None
     print(opt.model)
     if opt.model == 'shiftnet':
-        assert(opt.dataset_mode == 'aligned')
+        assert (opt.dataset_mode == 'aligned' or opt.dataset_mode == 'aligned_resized')
         from .shiftnet_model import ShiftNetModel
         model = ShiftNetModel()
+
     elif opt.model == 'test':
         assert(opt.dataset_mode == 'single')
         from .test_model import TestModel

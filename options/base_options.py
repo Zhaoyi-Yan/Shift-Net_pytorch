@@ -8,7 +8,7 @@ class BaseOptions():
         self.initialized = False
 
     def initialize(self, parser):
-        parser.add_argument('--dataroot', default='./datasets_shift/Paris_StreetView_Dataset', help='path to images (should have subfolders trainA, trainB, valA, valB, etc)')
+        parser.add_argument('--dataroot', default='/mnt/hdd2/AIM/DAGM/Class4', help='path to images (should have subfolders trainA, trainB, valA, valB, etc)')
         parser.add_argument('--batchSize', type=int, default=1, help='input batch size')
         parser.add_argument('--loadSize', type=int, default=350, help='scale images to this size')
         parser.add_argument('--fineSize', type=int, default=256, help='then crop to this size')
@@ -16,17 +16,17 @@ class BaseOptions():
         parser.add_argument('--output_nc', type=int, default=3, help='# of output image channels')
         parser.add_argument('--ngf', type=int, default=64, help='# of gen filters in first conv layer')
         parser.add_argument('--ndf', type=int, default=64, help='# of discrim filters in first conv layer')
-        parser.add_argument('--which_model_netD', type=str, default='basic', help='selects model to use for netD')
-        parser.add_argument('--which_model_netG', type=str, default='unet_shift_triple_soft', help='selects model to use for netG')  # use unet_swap
+        parser.add_argument('--which_model_netD', type=str, default='spec_basic', help='selects model to use for netD')
+        parser.add_argument('--which_model_netG', type=str, default='unet_shift_triple', help='selects model to use for netG')  # use unet_swap
         parser.add_argument('--triple_weight', type=float, default=1, help='The weight on the gradient of skip connections from the gradient of swapped')
-        parser.add_argument('--name', type=str, default='unet_shift_triple_soft', help='name of the experiment. It decides where to store samples and models')
+        parser.add_argument('--name', type=str, default='unetShiftTriple_0', help='name of the experiment. It decides where to store samples and models')
         parser.add_argument('--n_layers_D', type=int, default=3, help='only used if which_model_netD==n_layers')
-        parser.add_argument('--gpu_ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2')
-        parser.add_argument('--dataset_mode', type=str, default='aligned', help='chooses how datasets are loaded. [aligned | single]')
+        parser.add_argument('--gpu_ids', type=str, default='1', help='gpu ids: e.g. 0  0,1,2, 0,2')
+        parser.add_argument('--dataset_mode', type=str, default='aligned_resized', help='chooses how datasets are loaded. [aligned | single]')
         parser.add_argument('--model', type=str, default='shiftnet',
                                  help='chooses which model to use. shiftnet, test')
         parser.add_argument('--nThreads', default=2, type=int, help='# threads for loading data')
-        parser.add_argument('--checkpoints_dir', type=str, default='./log', help='models are saved here')
+        parser.add_argument('--checkpoints_dir', type=str, default='/mnt/hdd2/AIM/checks', help='models are saved here')
         parser.add_argument('--norm', type=str, default='instance', help='instance normalization or batch normalization')
         parser.add_argument('--serial_batches', action='store_true', help='if true, takes images in order to make batches, otherwise takes them randomly')
         parser.add_argument('--display_winsize', type=int, default=256,  help='display window size')
@@ -42,7 +42,7 @@ class BaseOptions():
         parser.add_argument('--init_type', type=str, default='normal', help='network initialization [normal|xavier|kaiming|orthogonal]')
         parser.add_argument('--verbose', action='store_true', help='if specified, print more debugging information')
         ## new added
-        parser.add_argument('--mask_type', type=str, default='center', help='the type of mask you want to apply, \'center\' or \'random\'')
+        parser.add_argument('--mask_type', type=str, default='random', help='the type of mask you want to apply, \'center\' or \'random\'')
         parser.add_argument('--fixed_mask', type=int, default=1, help='1 or 0, whether mask is fixed')
         parser.add_argument('--lambda_A', type=int, default=100, help='weight on L1 term in objective')
         parser.add_argument('--threshold', type=float, default=5/16.0, help='making binary mask')
