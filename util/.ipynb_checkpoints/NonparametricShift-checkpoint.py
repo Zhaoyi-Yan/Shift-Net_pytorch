@@ -16,15 +16,22 @@ class Modified_NonparametricShift(object):
         i_1, i_2, i_3, i_4, i_5 = input_windows.size(0), input_windows.size(1), input_windows.size(2), input_windows.size(3), input_windows.size(4)
         
         input_windows = input_windows.permute(1,2,0,3,4).contiguous().view(i_2*i_3, i_1, i_4, i_5)
-
+        #print(input_windows.shape)
         ## EXTRACT MASK OR NOT DEPENDING ON VALUE
         input_window = input_windows[flag == value]
+        #print(input_windows.shape)
         input_window = input_window.view(input_window.size(0), -1)
         
-        for i in range(input_window.size(0)):
-            input_window[i] = input_window[i]*(1/(input_window[i].norm(2)+1e-8))
-            return input_window
-
+        ## NORMALIZATION
+        if normed == True:
+            for i in range(input_window.size(0)):
+                input_window[i] = input_window[i]*(1/(input_window[i].norm(2)+1e-8))
+                return input_window
+        else:
+            norms = torch.norm(input_window, dim=1, keepdim=True)
+            #print(norms.shape)
+            return input_window, norms.cuda()
+    
     def _norm(self, input_window):
         for i in range(input_window.size(0)):
             input_window[i] = input_window[i]*(1/(input_window[i].norm(2)+1e-8))
@@ -43,7 +50,7 @@ class Modified_NonparametricShift(object):
         input_windows = input_windows.view(input_windows.size(0), -1)      
         
         ## ADD NEW FEATURES
-        input_windows[flag == 1] = patch
+        input_windows[flag == 1] = input_windows[flag == 1]  + patch
         
         ## RESIZE TO CORRET CONV FEATURES FORMAT
         input_windows = input_windows.view(i_2, i_3, i_1, i_4)

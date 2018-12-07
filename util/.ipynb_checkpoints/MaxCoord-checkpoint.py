@@ -26,7 +26,7 @@ class MaxCoord():
 
         c_max_flatten = c_max.view(-1)
         
-        print(c_max_flatten)
+        print(c_max_flatten.shape)
 
         output[:, c_max_flatten, sp_x, sp_y] = 1
         ind = c_max_flatten
