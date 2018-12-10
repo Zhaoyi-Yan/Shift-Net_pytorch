@@ -9,6 +9,7 @@ import os
 import collections
 import math
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 # Converts a Tensor into an image array (numpy)
@@ -44,7 +45,32 @@ def binary_mask(in_mask, threshold):
 
     return output
 
-def create_gMask(gMask_opts, limit_cnt=2):
+
+def wrapper_gmask(opt):
+    # batchsize should be 1 for mask_global
+    mask_global = torch.ByteTensor(1, 1, \
+                                        opt.fineSize, opt.fineSize)
+
+    res = 0.06  # the lower it is, the more continuous the output will be. 0.01 is too small and 0.1 is too large
+    density = 0.25
+    MAX_SIZE = 350
+    maxPartition = 30
+    low_pattern = torch.rand(1, 1, int(res * MAX_SIZE), int(res * MAX_SIZE)).mul(255)
+    pattern = F.interpolate(low_pattern, (MAX_SIZE, MAX_SIZE), mode='bilinear').detach()
+    low_pattern = None
+    pattern.div_(255)
+    pattern = torch.lt(pattern, density).byte()  # 25% 1s and 75% 0s
+    pattern = torch.squeeze(pattern).byte()
+
+    gMask_opts = {}
+    gMask_opts['pattern'] = pattern
+    gMask_opts['MAX_SIZE'] = MAX_SIZE
+    gMask_opts['fineSize'] = opt.fineSize
+    gMask_opts['maxPartition'] = maxPartition
+    gMask_opts['mask_global'] = mask_global
+    return create_gMask(gMask_opts)  # create an initial random mask.
+
+def create_gMask(gMask_opts, limit_cnt=1):
     pattern = gMask_opts['pattern']
     mask_global = gMask_opts['mask_global']
     MAX_SIZE = gMask_opts['MAX_SIZE']
@@ -67,6 +93,45 @@ def create_gMask(gMask_opts, limit_cnt=2):
         mask_global = mask.expand(1, 1, mask.size(0), mask.size(1))
     return mask_global
 
+def create_rand_mask(h=256, w=256, mask_sizes=[64, 128], overlap=0.25):
+    mask = np.zeros((h, w))
+    positions = []
+    mask_size = 32#np.random.choice(mask_sizes)
+    step = int(overlap * mask_size)
+    for y in range(0, h-mask_size+1, step):
+        for x in range(0, w-mask_size+1, step):
+            positions.append([y, x])
+    arr = np.array(range(len(positions)))
+    idx = np.random.choice(arr)
+    pos = positions[idx]
+    y, x = pos
+    mask[y:y + mask_size, x:x + mask_size] = 1
+    mask = mask[np.newaxis, ...][np.newaxis, ...]
+    return torch.ByteTensor(mask).cuda()
+
+action_list = [[0, 1], [0, -1], [1, 0], [-1, 0]]
+def random_walk(canvas, ini_x, ini_y, length):
+    x = ini_x
+    y = ini_y
+    img_size = canvas.shape[-1]
+    x_list = []
+    y_list = []
+    for i in range(length):
+        r = random.choice(range(len(action_list)))
+        x = np.clip(x + action_list[r][0], a_min=0, a_max=img_size - 1)
+        y = np.clip(y + action_list[r][1], a_min=0, a_max=img_size - 1)
+        x_list.append(x)
+        y_list.append(y)
+    canvas[np.array(x_list), np.array(y_list)] = 0
+    return canvas
+
+def create_mask():
+    canvas = np.ones((256, 256)).astype("i")
+    ini_x = random.randint(0, 255)
+    ini_y = random.randint(0, 255)
+    print(ini_x, ini_y)
+    return random_walk(canvas, ini_x, ini_y, 128 ** 2)
+
 # inMask is tensor should be 1*1*256*256 float
 # Return: ByteTensor
 def cal_feat_mask(inMask, conv_layers, threshold):
@@ -85,6 +150,29 @@ def cal_feat_mask(inMask, conv_layers, threshold):
     output = (output > threshold).float().mul_(1)
 
     return output.data.byte()
+
+def cal_flag_given_mask_thred(img, mask, patch_size, stride, mask_thred):
+    assert img.dim() == 3, 'img has to be 3 dimenison!'
+    assert mask.dim() == 2, 'mask has to be 2 dimenison!'
+    dim = img.dim()
+    _, H, W = img.size(dim - 3), img.size(dim - 2), img.size(dim - 1)
+    nH = int(math.floor((H - patch_size) / stride + 1))
+    nW = int(math.floor((W - patch_size) / stride + 1))
+    N = nH * nW
+
+    flag = torch.zeros(N).long()
+    for i in range(N):
+        h = int(math.floor(i / nW))
+        w = int(math.floor(i % nW))
+        mask_tmp = mask[h * stride:h * stride + patch_size,
+                   w * stride:w * stride + patch_size]
+
+        if torch.sum(mask_tmp) < mask_thred:
+            pass
+        else:
+            flag[i] = 1
+    return flag
+
 
 
 def cal_mask_given_mask_thred(img, mask, patch_size, stride, mask_thred):

@@ -12,6 +12,67 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+class OptimizerMask:
+
+
+    '''
+    This class is designed to speed up inference time to cover the over all image with the minimun number of generated mask during training.
+
+
+    '''
+    def __init__(self, masks, stop_criteria=0.85):
+        self.masks = masks
+        self.indexes = []
+        self.stop_criteria = stop_criteria
+
+    def get_iou(self):
+        intersection = np.matmul(self.masks, self.masks.T)
+        diag = np.diag(intersection)
+        outer_add = np.add.outer(diag, diag)
+        self.iou = intersection / outer_add
+        self.shape = self.iou.shape
+
+    def _is_finished(self):
+        masks = self.masks[self.indexes]
+        # print(masks.shape)
+        masks = np.sum(masks, axis=0)
+        # print(masks.shape)
+        masks[masks > 0] = 1
+        #plt.imshow(masks.reshape((64, 64)))
+        area_coverage = np.sum(masks) / np.product(masks.shape)
+        # print(area_coverage)
+        if area_coverage < self.stop_criteria:
+            return False
+        else:
+            return True
+
+    def mean(self):
+        _mean = np.mean(np.sum(self.masks[self.indexes], axis=-1)) / (64 * 64)
+        print(_mean)
+
+    def _get_next_indexes(self):
+        ious = self.iou[self.indexes]
+        _mean_iou = np.mean(ious, axis=0)
+        idx = np.argmin(_mean_iou)
+        # print(idx)
+        self.indexes = np.append(self.indexes, np.argmin(_mean_iou))
+
+    def _solve(self):
+        self.indexes = list(np.unravel_index(np.argmin(self.iou), self.shape))
+        # print(self.indexes)
+        while not self._is_finished():
+            self._get_next_indexes()
+
+    def get_masks(self):
+        masks = self.masks[self.indexes]
+        full = np.ones_like(masks[0])
+        left = full - np.mean(masks, axis=0)
+        return np.append(masks, left).reshape((-1, 64, 64))
+
+    def solve(self):
+        self._solve()
+
+
 # Converts a Tensor into an image array (numpy)
 # |imtype|: the desired type of the converted numpy array
 def tensor2im(input_image, imtype=np.uint8):
@@ -53,7 +114,7 @@ def wrapper_gmask(opt):
 
     res = 0.06  # the lower it is, the more continuous the output will be. 0.01 is too small and 0.1 is too large
     density = 0.25
-    MAX_SIZE = 10000
+    MAX_SIZE = 350
     maxPartition = 30
     low_pattern = torch.rand(1, 1, int(res * MAX_SIZE), int(res * MAX_SIZE)).mul(255)
     pattern = F.interpolate(low_pattern, (MAX_SIZE, MAX_SIZE), mode='bilinear').detach()
@@ -70,7 +131,7 @@ def wrapper_gmask(opt):
     gMask_opts['mask_global'] = mask_global
     return create_gMask(gMask_opts)  # create an initial random mask.
 
-def create_gMask(gMask_opts, limit_cnt=2):
+def create_gMask(gMask_opts, limit_cnt=1):
     pattern = gMask_opts['pattern']
     mask_global = gMask_opts['mask_global']
     MAX_SIZE = gMask_opts['MAX_SIZE']
