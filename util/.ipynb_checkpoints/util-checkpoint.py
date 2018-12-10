@@ -10,6 +10,80 @@ import collections
 import math
 import torch.nn as nn
 import torch.nn.functional as F
+from skimage.transform import resize
+
+def create_masks(opt, N=10):
+    masks = []
+    masks_resized = []
+    for _ in range(N):
+        mask = wrapper_gmask (opt).cpu().numpy()
+        masks.append(mask)
+        
+        mask_resized = resize(np.squeeze(mask), (64, 64))
+        masks_resized.append(mask_resized)
+        
+    return np.array(masks_resized), np.array(masks)
+
+
+class OptimizerMask:
+
+
+    '''
+    This class is designed to speed up inference time to cover the over all image with the minimun number of generated mask during training.
+
+
+    '''
+    def __init__(self, masks, stop_criteria=0.85):
+        self.masks = masks
+        self.indexes = []
+        self.stop_criteria = stop_criteria
+
+    def get_iou(self):
+        intersection = np.matmul(self.masks, self.masks.T)
+        diag = np.diag(intersection)
+        outer_add = np.add.outer(diag, diag)
+        self.iou = intersection / outer_add
+        self.shape = self.iou.shape
+
+    def _is_finished(self):
+        masks = self.masks[self.indexes]
+        # print(masks.shape)
+        masks = np.sum(masks, axis=0)
+        # print(masks.shape)
+        masks[masks > 0] = 1
+        #plt.imshow(masks.reshape((64, 64)))
+        area_coverage = np.sum(masks) / np.product(masks.shape)
+        print(area_coverage)
+        if area_coverage < self.stop_criteria:
+            return False
+        else:
+            return True
+
+    def mean(self):
+        _mean = np.mean(np.sum(self.masks[self.indexes], axis=-1)) / (64 * 64)
+        print(_mean)
+
+    def _get_next_indexes(self):
+        ious = self.iou[self.indexes]
+        _mean_iou = np.mean(ious, axis=0)
+        idx = np.argmin(_mean_iou)
+        # print(idx)
+        self.indexes = np.append(self.indexes, np.argmin(_mean_iou))
+
+    def _solve(self):
+        self.indexes = list(np.unravel_index(np.argmin(self.iou), self.shape))
+        # print(self.indexes)
+        while not self._is_finished():
+            self._get_next_indexes()
+
+    def get_masks(self):
+        masks = self.masks[self.indexes]
+        full = np.ones_like(masks[0])
+        left = full - (np.mean(masks, axis=0) > 0)
+        return left.reshape((64, 64))
+
+    def solve(self):
+        self._solve()
 
 
 # Converts a Tensor into an image array (numpy)

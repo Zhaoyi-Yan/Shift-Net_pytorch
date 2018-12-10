@@ -140,6 +140,22 @@ class ShiftNetModel(BaseModel):
         self.real_A = real_A
         self.real_B = real_B
         self.image_paths = input['A_paths']
+        
+    def set_input_with_mask(self, input, mask):
+        real_A = input['A'].to(self.device)
+        real_B = input['B'].to(self.device)
+        
+        self.mask_global = mask
+
+        self.set_latent_mask(mask, 3, self.opt.threshold)
+
+        real_A.narrow(1,0,1).masked_fill_(mask, 2*123.0/255.0 - 1.0)
+        real_A.narrow(1,1,1).masked_fill_(mask, 2*104.0/255.0 - 1.0)
+        real_A.narrow(1,2,1).masked_fill_(self.mask_global, 2*117.0/255.0 - 1.0)
+
+        self.real_A = real_A
+        self.real_B = real_B
+        self.image_paths = input['A_paths']       
 
     def set_latent_mask(self, mask_global, layer_to_last, threshold):
         self.ng_shift_list[0].set_mask(mask_global, layer_to_last, threshold)

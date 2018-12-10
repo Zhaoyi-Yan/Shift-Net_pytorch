@@ -10,6 +10,19 @@ import collections
 import math
 import torch.nn as nn
 import torch.nn.functional as F
+from skimage.transform import resize
+
+def create_masks(opt, N=10):
+    masks = []
+    masks_resized = []
+    for _ in range(N):
+        mask = wrapper_gmask (opt).cpu().numpy()
+        masks.append(mask)
+        
+        mask_resized = resize(np.squeeze(mask), (64, 64))
+        masks_resized.append(mask_resized)
+        
+    return np.array(masks_resized), np.array(masks)
 
 
 class OptimizerMask:
@@ -40,7 +53,7 @@ class OptimizerMask:
         masks[masks > 0] = 1
         #plt.imshow(masks.reshape((64, 64)))
         area_coverage = np.sum(masks) / np.product(masks.shape)
-        # print(area_coverage)
+        print(area_coverage)
         if area_coverage < self.stop_criteria:
             return False
         else:
@@ -66,8 +79,8 @@ class OptimizerMask:
     def get_masks(self):
         masks = self.masks[self.indexes]
         full = np.ones_like(masks[0])
-        left = full - np.mean(masks, axis=0)
-        return np.append(masks, left).reshape((-1, 64, 64))
+        left = full - (np.mean(masks, axis=0) > 0)
+        return left.reshape((64, 64))
 
     def solve(self):
         self._solve()

@@ -2,9 +2,15 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="2ba33ac8-9fac-4c3f-b28f-bafdd56aae97" name="Default" comment="">
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/util/poisson_blending.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/notebooks/.ipynb_checkpoints/InspectingNN-checkpoint.ipynb" afterPath="$PROJECT_DIR$/notebooks/.ipynb_checkpoints/InspectingNN-checkpoint.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/notebooks/InspectingNN.ipynb" afterPath="$PROJECT_DIR$/notebooks/InspectingNN.ipynb" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/models/.ipynb_checkpoints/modified_shiftnet_model-checkpoint.py" afterPath="$PROJECT_DIR$/models/.ipynb_checkpoints/modified_shiftnet_model-checkpoint.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/models/modified_shiftnet_model.py" afterPath="$PROJECT_DIR$/models/modified_shiftnet_model.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/models/networks.py" afterPath="$PROJECT_DIR$/models/networks.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/notebooks/.ipynb_checkpoints/EvaluationTrainedModels-checkpoint.ipynb" afterPath="$PROJECT_DIR$/notebooks/.ipynb_checkpoints/EvaluationTrainedModels-checkpoint.ipynb" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/notebooks/.ipynb_checkpoints/OptimizingShift-checkpoint.ipynb" afterPath="$PROJECT_DIR$/notebooks/.ipynb_checkpoints/OptimizingShift-checkpoint.ipynb" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/notebooks/EvaluationTrainedModels.ipynb" afterPath="$PROJECT_DIR$/notebooks/EvaluationTrainedModels.ipynb" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/options/base_options.py" afterPath="$PROJECT_DIR$/options/base_options.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/util/.ipynb_checkpoints/util-checkpoint.py" afterPath="$PROJECT_DIR$/util/.ipynb_checkpoints/util-checkpoint.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/util/util.py" afterPath="$PROJECT_DIR$/util/util.py" />
     </list>
@@ -24,11 +30,21 @@
       <file leaf-file-name="modified_shiftnet_model.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/models/modified_shiftnet_model.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="300">
-              <caret line="20" column="35" lean-forward="false" selection-start-line="20" selection-start-column="35" selection-end-line="20" selection-end-column="35" />
+            <state relative-caret-position="87">
+              <caret line="9" column="24" lean-forward="false" selection-start-line="9" selection-start-column="24" selection-end-line="9" selection-end-column="24" />
               <folding>
                 <element signature="e#0#18#0" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="base_model.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/models/base_model.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="1260">
+              <caret line="86" column="50" lean-forward="false" selection-start-line="86" selection-start-column="50" selection-end-line="86" selection-end-column="50" />
+              <folding />
             </state>
           </provider>
         </entry>
@@ -58,20 +74,32 @@
       <file leaf-file-name="networks.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/models/networks.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="5897">
-              <caret line="532" column="44" lean-forward="false" selection-start-line="532" selection-start-column="44" selection-end-line="532" selection-end-column="44" />
+            <state relative-caret-position="2457">
+              <caret line="796" column="0" lean-forward="false" selection-start-line="796" selection-start-column="0" selection-end-line="796" selection-end-column="0" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="util.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="util.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/util/util.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="222">
-              <caret line="18" column="140" lean-forward="false" selection-start-line="18" selection-start-column="140" selection-end-line="18" selection-end-column="140" />
+            <state relative-caret-position="582">
+              <caret line="337" column="29" lean-forward="false" selection-start-line="337" selection-start-column="29" selection-end-line="337" selection-end-column="29" />
               <folding>
                 <element signature="e#0#37#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="poisson_blending.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/util/poisson_blending.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="150">
+              <caret line="28" column="53" lean-forward="true" selection-start-line="28" selection-start-column="53" selection-end-line="28" selection-end-column="53" />
+              <folding>
+                <element signature="e#0#18#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -80,8 +108,8 @@
       <file leaf-file-name="base_options.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/options/base_options.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="435">
-              <caret line="74" column="43" lean-forward="false" selection-start-line="74" selection-start-column="43" selection-end-line="74" selection-end-column="43" />
+            <state relative-caret-position="375">
+              <caret line="46" column="72" lean-forward="false" selection-start-line="46" selection-start-column="72" selection-end-line="46" selection-end-column="72" />
               <folding />
             </state>
           </provider>
@@ -162,14 +190,16 @@
         <option value="$PROJECT_DIR$/models/modified_shiftnet.py" />
         <option value="$PROJECT_DIR$/models/models.py" />
         <option value="$PROJECT_DIR$/options/train_options.py" />
-        <option value="$PROJECT_DIR$/models/networks.py" />
         <option value="$PROJECT_DIR$/models/InnerShiftTripleFunction.py" />
         <option value="$PROJECT_DIR$/models/modified_InnerShiftTriple.py" />
         <option value="$PROJECT_DIR$/util/NonparametricShift.py" />
         <option value="$PROJECT_DIR$/models/modified_InnerShiftTripleFunction.py" />
         <option value="$PROJECT_DIR$/models/modified_shiftnet_model.py" />
-        <option value="$PROJECT_DIR$/options/base_options.py" />
         <option value="$PROJECT_DIR$/util/util.py" />
+        <option value="$PROJECT_DIR$/options/base_options.py" />
+        <option value="$PROJECT_DIR$/models/base_model.py" />
+        <option value="$PROJECT_DIR$/models/networks.py" />
+        <option value="$PROJECT_DIR$/util/poisson_blending.py" />
       </list>
     </option>
   </component>
@@ -445,7 +475,7 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-1" y="28" width="1922" height="1027" extended-state="7" />
+    <frame x="-1" y="28" width="1922" height="1027" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.15052083" sideWeight="0.5" order="1" side_tool="false" content_ui="combo" />
@@ -494,7 +524,6 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/data/aligned_dataset_resized.py" />
     <entry file="file://$PROJECT_DIR$/models/modules/att_unet_shift_triple.py" />
     <entry file="file://$PROJECT_DIR$/models/modules/discrimators.py" />
     <entry file="file://$PROJECT_DIR$/models/shiftnet_model.py">
@@ -647,14 +676,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/models/base_model.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="147">
-          <caret line="62" column="69" lean-forward="false" selection-start-line="62" selection-start-column="65" selection-end-line="62" selection-end-column="69" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/models/shiftnet_model.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="418">
@@ -729,24 +750,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/models/networks.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="5897">
-          <caret line="532" column="44" lean-forward="false" selection-start-line="532" selection-start-column="44" selection-end-line="532" selection-end-column="44" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/models/modified_shiftnet_model.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="300">
-          <caret line="20" column="35" lean-forward="false" selection-start-line="20" selection-start-column="35" selection-end-line="20" selection-end-column="35" />
-          <folding>
-            <element signature="e#0#18#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/util/__init__.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
@@ -757,18 +760,54 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/options/base_options.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="435">
-          <caret line="74" column="43" lean-forward="false" selection-start-line="74" selection-start-column="43" selection-end-line="74" selection-end-column="43" />
+        <state relative-caret-position="375">
+          <caret line="46" column="72" lean-forward="false" selection-start-line="46" selection-start-column="72" selection-end-line="46" selection-end-column="72" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/models/base_model.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1260">
+          <caret line="86" column="50" lean-forward="false" selection-start-line="86" selection-start-column="50" selection-end-line="86" selection-end-column="50" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/models/modified_shiftnet_model.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="87">
+          <caret line="9" column="24" lean-forward="false" selection-start-line="9" selection-start-column="24" selection-end-line="9" selection-end-column="24" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/models/networks.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2457">
+          <caret line="796" column="0" lean-forward="false" selection-start-line="796" selection-start-column="0" selection-end-line="796" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/util/util.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="222">
-          <caret line="18" column="140" lean-forward="false" selection-start-line="18" selection-start-column="140" selection-end-line="18" selection-end-column="140" />
+        <state relative-caret-position="582">
+          <caret line="337" column="29" lean-forward="false" selection-start-line="337" selection-start-column="29" selection-end-line="337" selection-end-column="29" />
           <folding>
             <element signature="e#0#37#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/util/poisson_blending.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="150">
+          <caret line="28" column="53" lean-forward="true" selection-start-line="28" selection-start-column="53" selection-end-line="28" selection-end-column="53" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
           </folding>
         </state>
       </provider>
