@@ -1,8 +1,5 @@
-import torch
-import torch.nn as nn
-from torch.nn import init
 import functools
-from torch.optim import lr_scheduler
+from .denset_net import *
 
 from .modules import *
 ################################### This is for D ###################################
@@ -68,7 +65,7 @@ class SpecNLayerDiscriminator(nn.Module):
         padw = 1
         sequence = [
             SpectralNorm(nn.Conv2d(input_nc, ndf, kernel_size=kw, stride=2, padding=padw)),
-            nn.LeakyReLU(0.2, True)
+            nn.LeakyReLU(0.2)
         ]
 
         nf_mult = 1
@@ -80,7 +77,7 @@ class SpecNLayerDiscriminator(nn.Module):
                 SpectralNorm(nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult,
                           kernel_size=kw, stride=2, padding=padw, bias=use_bias)),
                 norm_layer(ndf * nf_mult),
-                nn.LeakyReLU(0.2, True)
+                nn.LeakyReLU(0.2)
             ]
 
         nf_mult_prev = nf_mult
@@ -89,7 +86,7 @@ class SpecNLayerDiscriminator(nn.Module):
             SpectralNorm(nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult,
                       kernel_size=kw, stride=1, padding=padw, bias=use_bias)),
             norm_layer(ndf * nf_mult),
-            nn.LeakyReLU(0.2, True)
+            nn.LeakyReLU(0.2)
         ]
 
         sequence += [SpectralNorm(nn.Conv2d(ndf * nf_mult, 1, kernel_size=kw, stride=1, padding=padw))]
@@ -98,6 +95,16 @@ class SpecNLayerDiscriminator(nn.Module):
             sequence += [nn.Sigmoid()]
 
         self.model = nn.Sequential(*sequence)
+
+    def forward(self, input):
+        return self.model(input)
+
+
+# Defines a densetnet inspired discriminator (Should improve its ability to create stronger representation)
+class DenseNetDiscrimator(nn.Module):
+    def __init__(self, input_nc, ndf=64, n_layers=3, norm_layer=nn.BatchNorm2d, use_sigmoid=False):
+        super(DenseNetDiscrimator, self).__init__()
+        self.model = densenet121()
 
     def forward(self, input):
         return self.model(input)

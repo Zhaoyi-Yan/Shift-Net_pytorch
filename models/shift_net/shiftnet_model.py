@@ -136,9 +136,9 @@ class ShiftNetModel(BaseModel):
 
         self.set_latent_mask(self.mask_global, 3, self.opt.threshold)
 
-        real_A.narrow(1,0,1).masked_fill_(self.mask_global, 2*123.0/255.0 - 1.0)
-        real_A.narrow(1,1,1).masked_fill_(self.mask_global, 2*104.0/255.0 - 1.0)
-        real_A.narrow(1,2,1).masked_fill_(self.mask_global, 2*117.0/255.0 - 1.0)
+        real_A.narrow(1,0,1).masked_fill_(self.mask_global, 0)
+        real_A.narrow(1,1,1).masked_fill_(self.mask_global, 0)
+        real_A.narrow(1,2,1).masked_fill_(self.mask_global, 0)
 
         self.real_A = real_A
         self.real_B = real_B

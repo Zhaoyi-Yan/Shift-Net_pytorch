@@ -1,5 +1,9 @@
-from .modules import *
+#-*-coding:utf-8-*-
+from torch.nn import init
+from torch.optim import lr_scheduler
 
+
+from .modules import *
 
 ###############################################################################
 # Functions
@@ -122,6 +126,9 @@ def define_D(input_nc, ndf, which_model_netD,
 
     elif which_model_netD == 'spec_basic':
         netD = SpecNLayerDiscriminator(input_nc, ndf, n_layers=3, norm_layer=norm_layer, use_sigmoid=use_sigmoid)
+
+    elif which_model_netD == 'densenet':
+        netD = DenseNetDiscrimator(input_nc, ndf, n_layers=3, norm_layer=norm_layer, use_sigmoid=use_sigmoid)
 
     else:
         print('Discriminator model name [%s] is not recognized' %

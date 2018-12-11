@@ -60,6 +60,6 @@ class InnerSoftShiftTripleModule(nn.Module):
             # PASTE VALUES INTO HOLDER
             former_masked = Nonparm._paste(former_masked.squeeze(), 1, stride, flag, patches_former)
 
-            former_masked = former_masked.detach() # DOESN'T WORK WITHOUT DETACHING THE LAYER
+            former_masked = former_masked.detach().clone() # DOESN'T WORK WITHOUT DETACHING THE LAYER
 
         return torch.cat((former, latter, former_masked), 1)
