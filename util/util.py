@@ -24,14 +24,11 @@ def create_masks(opt, N=10):
         
     return np.array(masks_resized), np.array(masks)
 
-
+''''''
 class OptimizerMask:
-
-
     '''
     This class is designed to speed up inference time to cover the over all image with the minimun number of generated mask during training.
-
-
+    It is used in the notebook to create masks covering the entire image.
     '''
     def __init__(self, masks, stop_criteria=0.85):
         self.masks = masks
@@ -47,11 +44,8 @@ class OptimizerMask:
 
     def _is_finished(self):
         masks = self.masks[self.indexes]
-        # print(masks.shape)
         masks = np.sum(masks, axis=0)
-        # print(masks.shape)
         masks[masks > 0] = 1
-        #plt.imshow(masks.reshape((64, 64)))
         area_coverage = np.sum(masks) / np.product(masks.shape)
         print(area_coverage)
         if area_coverage < self.stop_criteria:
@@ -67,7 +61,6 @@ class OptimizerMask:
         ious = self.iou[self.indexes]
         _mean_iou = np.mean(ious, axis=0)
         idx = np.argmin(_mean_iou)
-        # print(idx)
         self.indexes = np.append(self.indexes, np.argmin(_mean_iou))
 
     def _solve(self):
@@ -276,8 +269,6 @@ def cal_mask_given_mask_thred(img, mask, patch_size, stride, mask_thred):
         else:
             flag[i] = 1
             offsets_tmp_vec[i] = -1
-    # print(flag)  #checked
-    # print(offsets_tmp_vec) # checked
 
     non_mask_num = tmp_non_mask_idx
  #   print('in util')
@@ -358,3 +349,45 @@ def mkdirs(paths):
 def mkdir(path):
     if not os.path.exists(path):
         os.makedirs(path)
+
+def hist_match(source, template):
+    """
+    Adjust the pixel values of a grayscale image such that its histogram
+    matches that of a target image
+
+    Arguments:
+    -----------
+        source: np.ndarray
+            Image to transform; the histogram is computed over the flattened
+            array
+        template: np.ndarray
+            Template image; can have different dimensions to source
+    Returns:
+    -----------
+        matched: np.ndarray
+            The transformed output image
+    """
+
+    oldshape = source.shape
+    source = source.ravel()
+    template = template.ravel()
+
+    # get the set of unique pixel values and their corresponding indices and
+    # counts
+    s_values, bin_idx, s_counts = np.unique(source, return_inverse=True,
+                                            return_counts=True)
+    t_values, t_counts = np.unique(template, return_counts=True)
+
+    # take the cumsum of the counts and normalize by the number of pixels to
+    # get the empirical cumulative distribution functions for the source and
+    # template images (maps pixel value --> quantile)
+    s_quantiles = np.cumsum(s_counts).astype(np.float64)
+    s_quantiles /= s_quantiles[-1]
+    t_quantiles = np.cumsum(t_counts).astype(np.float64)
+    t_quantiles /= t_quantiles[-1]
+
+    # interpolate linearly to find the pixel values in the template image
+    # that correspond most closely to the quantiles in the source image
+    interp_t_values = np.interp(s_quantiles, t_quantiles, t_values)
+
+    return interp_t_values[bin_idx].reshape(oldshape)

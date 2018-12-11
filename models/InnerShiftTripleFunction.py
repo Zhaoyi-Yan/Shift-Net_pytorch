@@ -50,9 +50,7 @@ class InnerShiftTripleFunction(torch.autograd.Function):
             _, conv_enc, conv_new_dec, _, = Nonparm.buildAutoencoder(latter.squeeze(), False, False, nonmask_point_idx, shift_sz, stride)
 
             
-            print(former.shape)
             tmp1 = conv_enc(former)
-            print(tmp1.shape)
 
             latter_non_mask = latter.clone()
 
@@ -62,8 +60,6 @@ class InnerShiftTripleFunction(torch.autograd.Function):
             # mention: kbar and ind are all 0-index
             kbar, ind = maxcoor.update_output(tmp1.data, sp_x, sp_y)
             
-            #print(kbar.shape)
-            #print(kbar)
 
             # calculate the real kbar and real self.ind
             real_patches = (kbar.size(1) + torch.sum(ctx.flag)).item() #transfer to number.
@@ -78,9 +74,7 @@ class InnerShiftTripleFunction(torch.autograd.Function):
                     correct_ch = int(non_r_ch + offset)
                     kbar[:,correct_ch,i,j] = 1
                     ind[indx] = correct_ch
-            print(ind)
 
-            print(kbar.shape)
             result_tmp = conv_new_dec(kbar)
             result_tmp = result_tmp.detach()
             result_tmp_mask = result_tmp.clone()
@@ -98,7 +92,6 @@ class InnerShiftTripleFunction(torch.autograd.Function):
         ctx.ind_lst = ind_lst
 
         return output
-
 
     @staticmethod
     def backward(ctx, grad_output):

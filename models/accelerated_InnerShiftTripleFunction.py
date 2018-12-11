@@ -7,7 +7,7 @@ from torch.nn import functional as F
 import torch
 
 
-class ModifiedInnerShiftTripleFunction(torch.autograd.Function):
+class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, input, mask, shift_sz, stride, triple_w, flag):
@@ -83,7 +83,7 @@ class ModifiedInnerShiftTripleFunction(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_output):
-        ind_lst = ctx.ind_lst.cuda()
+        ind_lst = ctx.ind_lst
 
         c = grad_output.size(1)
 

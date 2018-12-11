@@ -1,11 +1,11 @@
 import torch.nn as nn
 import torch
 import util.util as util
-from .modified_InnerShiftTripleFunction import ModifiedInnerShiftTripleFunction
+from .accelerated_InnerShiftTripleFunction import AcceleratedInnerShiftTripleFunction
 
-class ModifiedInnerShiftTriple(nn.Module):
+class AcceleratedInnerShiftTriple(nn.Module):
     def __init__(self, threshold, fixed_mask, shift_sz=1, stride=1, mask_thred=1, triple_weight=1):
-        super(ModifiedInnerShiftTriple, self).__init__()
+        super(AcceleratedInnerShiftTriple, self).__init__()
         self.threshold = threshold
         self.fixed_mask = fixed_mask
 
@@ -37,7 +37,7 @@ class ModifiedInnerShiftTriple(nn.Module):
                                                                                                    self.stride, self.mask_thred)
             self.cal_fixed_flag = False
 
-        return ModifiedInnerShiftTripleFunction.apply(input, self.mask, self.shift_sz, self.stride, self.triple_weight, self.flag) # input, mask, shift_sz, stride, triple_w, flag
+        return AcceleratedInnerShiftTripleFunction.apply(input, self.mask, self.shift_sz, self.stride, self.triple_weight, self.flag) # input, mask, shift_sz, stride, triple_w, flag
 
     def __repr__(self):
         return self.__class__.__name__+ '(' \

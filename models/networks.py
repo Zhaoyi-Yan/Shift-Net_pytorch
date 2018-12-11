@@ -8,7 +8,7 @@ from torch.optim import lr_scheduler
 from torch.nn import Parameter
 import util.util as util
 from .InnerShiftTriple import InnerShiftTriple
-from .modified_InnerShiftTriple import ModifiedInnerShiftTriple
+from .accelerated_InnerShiftTriple import AcceleratedInnerShiftTriple
 from .InnerCos import InnerCos
 
 
@@ -98,9 +98,9 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, opt, mask_global, norm=
         netG = UnetGeneratorShiftTriple(input_nc, output_nc, 8, opt, innerCos_list, shift_list, mask_global, \
                                                          ngf, norm_layer=norm_layer, use_dropout=use_dropout)
 
-    elif which_model_netG == 'modi_unet_shift_triple':
+    elif which_model_netG == 'acc_unet_shift_triple':
         print('[CREATING] MODEL')
-        netG = ModifiedUnetGeneratorShiftTriple(input_nc, output_nc, 8, opt, innerCos_list, shift_list, mask_global, \
+        netG = AcceleratedUnetGeneratorShiftTriple(input_nc, output_nc, 8, opt, innerCos_list, shift_list, mask_global, \
                                                          ngf, norm_layer=norm_layer, use_dropout=use_dropout)
         print('[CREATED] MODEL')
     else:
@@ -266,7 +266,7 @@ class UnetSkipConnectionShiftTriple(nn.Module):
             # shift should be placed after uprelu
             # NB: innerCos are placed before shift. So need to add the latent gredient to
             # to former part.
-            up = [uprelu, innerCos, shift, upconv, upnorm]
+            up = [uprelu, innerCos, shift, innerCos, upconv, upnorm]
 
             if use_dropout:
                 model = down + [submodule] + up + [nn.Dropout(0.5)]
@@ -294,10 +294,10 @@ class UnetSkipConnectionShiftTriple(nn.Module):
 # |num_downs|: number of downsamplings in UNet. For example,
 # if |num_downs| == 7, image of size 128x128 will become of size 1x1
 # at the bottleneck
-class ModifiedUnetGeneratorShiftTriple(nn.Module):
+class AcceleratedUnetGeneratorShiftTriple(nn.Module):
     def __init__(self, input_nc, output_nc,  num_downs, opt, innerCos_list, shift_list, mask_global, ngf=64,
                  norm_layer=nn.BatchNorm2d, use_dropout=False):
-        super(ModifiedUnetGeneratorShiftTriple, self).__init__()
+        super(AcceleratedUnetGeneratorShiftTriple, self).__init__()
 
         # construct unet structure
         unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=None, norm_layer=norm_layer, innermost=True)
@@ -306,7 +306,7 @@ class ModifiedUnetGeneratorShiftTriple(nn.Module):
             unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=unet_block, norm_layer=norm_layer, use_dropout=use_dropout)
         unet_block = UnetSkipConnectionBlock(ngf * 4, ngf * 8, input_nc=None, submodule=unet_block, norm_layer=norm_layer)
 
-        unet_shift_block = ModifiedUnetSkipConnectionShiftTriple(ngf * 2, ngf * 4, opt, innerCos_list, shift_list, mask_global, input_nc=None, \
+        unet_shift_block = AcceleratedUnetSkipConnectionShiftTriple(ngf * 2, ngf * 4, opt, innerCos_list, shift_list, mask_global, input_nc=None, \
                                                          submodule=unet_block, norm_layer=norm_layer)  # passing in unet_shift_block
         unet_block = UnetSkipConnectionBlock(ngf, ngf * 2, input_nc=None, submodule=unet_shift_block, norm_layer=norm_layer)
         unet_block = UnetSkipConnectionBlock(output_nc, ngf, input_nc=input_nc, submodule=unet_block, outermost=True, norm_layer=norm_layer)
@@ -318,10 +318,10 @@ class ModifiedUnetGeneratorShiftTriple(nn.Module):
 
 # Mention: the TripleBlock differs in `upconv` defination.
 # 'cos' means that we add a `innerCos` layer in the block.
-class ModifiedUnetSkipConnectionShiftTriple(nn.Module):
+class AcceleratedUnetSkipConnectionShiftTriple(nn.Module):
     def __init__(self, outer_nc, inner_nc, opt, innerCos_list, shift_list, mask_global, input_nc, \
                  submodule=None, shift_layer=None, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d, use_dropout=False):
-        super(ModifiedUnetSkipConnectionShiftTriple, self).__init__()
+        super(AcceleratedUnetSkipConnectionShiftTriple, self).__init__()
         self.outermost = outermost
         if input_nc is None:
             input_nc = outer_nc
@@ -335,7 +335,7 @@ class ModifiedUnetSkipConnectionShiftTriple(nn.Module):
 
         # As the downconv layer is outer_nc in and inner_nc out.
         # So the shift define like this:
-        shift = ModifiedInnerShiftTriple(opt.threshold, opt.fixed_mask, opt.shift_sz, opt.stride, opt.mask_thred, opt.triple_weight)
+        shift = AcceleratedInnerShiftTriple(opt.threshold, opt.fixed_mask, opt.shift_sz, opt.stride, opt.mask_thred, opt.triple_weight)
 
         shift.set_mask(mask_global, 3, opt.threshold)
         shift_list.append(shift)
@@ -676,44 +676,6 @@ class Self_Attn (nn.Module):
 		else:
 			return out
 
-class PartialConv(nn.Module):
-	def __init__(self, in_channels, out_channels, kernel_size, stride=1,
-				 padding=0, dilation=1, groups=1, bias=True):
-		super(PartialConv).__init__()
-		self.input_conv = nn.Conv2d(in_channels, out_channels, kernel_size,
-									stride, padding, dilation, groups, bias)
-		self.mask_conv = nn.Conv2d(in_channels, out_channels, kernel_size,
-								   stride, padding, dilation, groups, False)
-
-		torch.nn.init.constant_(self.mask_conv.weight, 1.0)
-
-		# mask is not updated
-		for param in self.mask_conv.parameters():
-			param.requires_grad = False
-
-	def forward(self, input, mask):
-
-		output = self.input_conv(input * mask)
-		if self.input_conv.bias is not None:
-			output_bias = self.input_conv.bias.view(1, -1, 1, 1).expand_as(
-				output)
-		else:
-			output_bias = torch.zeros_like(output)
-
-		with torch.no_grad():
-			output_mask = self.mask_conv(mask)
-
-		no_update_holes = output_mask == 0
-		mask_sum = output_mask.masked_fill_(no_update_holes, 1.0)
-
-		output_pre = (output - output_bias) / mask_sum + output_bias
-		output = output_pre.masked_fill_(no_update_holes, 0.0)
-
-		new_mask = torch.ones_like(output)
-		new_mask = new_mask.masked_fill_(no_update_holes, 0.0)
-
-		return output, new_mask
-
 
 ################################### ***************************  #####################################
 ################################### This the modified Shift_net  #####################################
@@ -816,3 +778,191 @@ class InceptionPartialUnetSkipConnectionBlock(nn.Module):
             if h != x_latter.size(2) or w != x_latter.size(3):
                 x_latter = F.interpolate(x_latter, (h, w), mode='bilinear')
             return torch.cat([x_latter, x], 1)  # cat in the C channel
+
+
+class PartialConv(nn.Module):
+	def __init__(self, in_channels, out_channels, kernel_size, stride=1,
+				 padding=0, dilation=1, groups=1, bias=True):
+		super(PartialConv).__init__()
+		self.input_conv = nn.Conv2d(in_channels, out_channels, kernel_size,
+									stride, padding, dilation, groups, bias)
+		self.mask_conv = nn.Conv2d(in_channels, out_channels, kernel_size,
+								   stride, padding, dilation, groups, False)
+
+		#self.input_conv.apply(weights_init('kaiming'))
+
+		torch.nn.init.constant_(self.mask_conv.weight, 1.0)
+
+		# mask is not updated
+		for param in self.mask_conv.parameters():
+			param.requires_grad = False
+
+	def forward(self, input, mask):
+
+		output = self.input_conv(input * mask)
+		if self.input_conv.bias is not None:
+			output_bias = self.input_conv.bias.view(1, -1, 1, 1).expand_as(
+				output)
+		else:
+			output_bias = torch.zeros_like(output)
+
+		with torch.no_grad():
+			output_mask = self.mask_conv(mask)
+
+		no_update_holes = output_mask == 0
+		mask_sum = output_mask.masked_fill_(no_update_holes, 1.0)
+
+		output_pre = (output - output_bias) / mask_sum + output_bias
+		output = output_pre.masked_fill_(no_update_holes, 0.0)
+
+		new_mask = torch.ones_like(output)
+		new_mask = new_mask.masked_fill_(no_update_holes, 0.0)
+
+		return output, new_mask
+
+class InceptionDown(nn.Module):
+    def __init__(self, in_channels, out_channels, stride=1,
+                 padding=1, dilation=1, groups=1, bias=True, intermediate=None):
+        super(InceptionDown, self).__init__()
+
+        if intermediate is None:
+            intermediate = np.max([out_channels // 8, 16])
+            print(in_channels, out_channels, intermediate)
+        out_channels = out_channels // 4
+
+
+        ## LEVEL 0
+        self.conv0_1x1_0 = nn.Conv2d(in_channels, intermediate, 1,
+                                    stride, 0, dilation, groups, bias)
+
+        self.conv0_1x1_1 = nn.Conv2d(in_channels, intermediate, 1,
+                                    stride, 0, dilation, groups, bias)
+
+        self.max_pool0 = nn.MaxPool2d(2, 2)
+
+        self.conv0_1x1_2 = nn.Conv2d(in_channels, out_channels, 1,
+                                    stride, 0, dilation, groups, bias)
+
+        ## LEVEL 2
+        self.conv1_3x3 = nn.Conv2d(intermediate, intermediate, 3,
+                                    stride, 1, dilation, groups, bias)
+
+        self.conv1_1x3 = nn.Conv2d(intermediate, out_channels, (1, 3),
+                                    stride, (0, 1), dilation, groups, bias)
+
+        self.conv1_3x1 = nn.Conv2d(intermediate, out_channels, (3, 1),
+                                    stride, (1, 0), dilation, groups, bias)
+
+        self.conv1_1x1 = nn.Conv2d(in_channels, out_channels, 1,
+                                    stride, 0, dilation, groups, bias)
+
+        ## LEVEL 3
+        self.conv2_1x3 = nn.Conv2d(intermediate, out_channels, (1, 3),
+                                   stride, (0, 1), dilation, groups, bias)
+
+        self.conv2_3x1 = nn.Conv2d(intermediate, out_channels, (3, 1),
+                                   stride, (1, 0), dilation, groups, bias)
+
+    def forward(self, input):
+        #LEVEL 1
+
+        #print(input.shape)
+
+        conv0_1x1_0 = self.conv0_1x1_0(input)
+
+        conv0_1x1_1 = self.conv0_1x1_1(input)
+
+        max_pool0 = self.max_pool0(input)
+
+        conv0_1x1_2 = self.conv0_1x1_2(input)
+
+        # LEVEL 2
+
+        conv1_3x3 = self.conv1_3x3(conv0_1x1_0)
+
+        conv1_1x3 = self.conv1_1x3(conv0_1x1_1)
+
+        conv1_3x1 = self.conv1_3x1(conv0_1x1_1)
+
+        conv1_1x1 = self.conv1_1x1(max_pool0)
+
+        # LEVEL 2
+        conv2_1x3 = self.conv2_1x3(conv1_3x3)
+
+        conv2_3x1 = self.conv2_3x1(conv1_3x3)
+
+        conv2_1x3_3x1 = conv2_1x3 + conv2_3x1
+
+        conv1_1x3_3x1 = conv1_3x1 + conv1_1x3
+
+        holder = [conv2_1x3_3x1, conv1_1x3_3x1, conv0_1x1_2]
+        out = []
+        for conv in holder:
+            conv = self.max_pool0(conv)
+            out.append(conv)
+
+        out.append(conv1_1x1)
+        for o in out:
+            print(o.shape)
+
+        return torch.cat(out, 1)
+
+class InceptionUp(nn.Module):
+    def __init__(self, in_channels, out_channels, stride=1,
+                 padding=1, dilation=1, groups=1, bias=True, intermediate=None):
+        super(InceptionUp, self).__init__()
+
+        if intermediate is None:
+            intermediate = np.max([out_channels // 8, 16])
+            print(in_channels, out_channels, intermediate)
+        out_channels = out_channels // 4
+
+
+        ## LEVEL 0
+        self.conv0_1x1_0 = nn.ConvTranspose2d(in_channels, out_channels, 1,
+                                              stride=2, padding=0, output_padding=1,
+                                              groups=1, bias=True, dilation=1)
+
+        self.conv0_1x1_1 = nn.ConvTranspose2d(in_channels, intermediate, 1,
+                                              stride=2, padding=0, output_padding=1,
+                                              groups=1, bias=True, dilation=1)
+
+        self.upsample0 = nn.Upsample(scale_factor=2, mode='bilinear')
+
+        self.conv0_1x1_2 = nn.ConvTranspose2d(in_channels, intermediate, 1,
+                                              stride=2, padding=0, output_padding=1,
+                                              groups=1, bias=True, dilation=1)
+
+        ## LEVEL 2
+        self.conv1_3x3 = nn.ConvTranspose2d(intermediate, out_channels, 3,
+                                              stride=1, padding=1, output_padding=0,
+                                              groups=1, bias=True, dilation=1)
+
+        self.conv1_5x5 = nn.ConvTranspose2d(intermediate, out_channels, 5,
+                                              stride=1, padding=2, output_padding=0,
+                                              groups=1, bias=True, dilation=1)
+
+        self.conv1_1x1 = nn.ConvTranspose2d(in_channels, out_channels, 1,
+                                              stride=1, padding=0, output_padding=0,
+                                              groups=1, bias=True, dilation=1)
+
+    def forward(self, input):
+        #LEVEL 1
+        conv0_1x1_0 = self.conv0_1x1_0(input)
+
+        conv0_1x1_1 = self.conv0_1x1_1(input)
+
+        upsample0 = self.upsample0(input)
+
+        conv0_1x1_2 = self.conv0_1x1_2(input)
+
+        # LEVEL 2
+        conv1_3x3 = self.conv1_3x3(conv0_1x1_1)
+
+        conv1_5x5 = self.conv1_5x5(conv0_1x1_2)
+
+        conv1_1x1 = self.conv1_1x1(upsample0)
+
+        holder = [conv0_1x1_0, conv1_3x3, conv1_5x5, conv1_1x1]
+
+        return torch.cat(holder, 1)
