@@ -1,9 +1,4 @@
-import torch
-from util.NonparametricShift import NonparametricShift, Modified_NonparametricShift
-from util.MaxCoord import MaxCoord
-import util.util as util
-import torch.nn as nn
-from torch.nn import functional as F
+from util.NonparametricShift import Modified_NonparametricShift
 import torch
 
 

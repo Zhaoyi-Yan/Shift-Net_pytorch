@@ -5,7 +5,10 @@ import torch.nn.functional as F
 from models.accelerated_shift_net.accelerated_InnerShiftTriple import AcceleratedInnerShiftTriple
 from models.shift_net.InnerCos import InnerCos
 from models.shift_net.InnerShiftTriple import InnerShiftTriple
+from models.soft_shift_net.innerSoftShiftTriple import InnerSoftShiftTriple
+
 from .unet import UnetSkipConnectionBlock
+
 
 
 ################################### ***************************  #####################################
@@ -116,7 +119,7 @@ class UnetSkipConnectionShiftTriple(nn.Module):
 
 
 ################################### ***************************  #####################################
-################################### This the modified Shift_net  #####################################
+################################### This the accelerated Shift_net  #####################################
 ################################### ***************************  #####################################
 # Defines the Unet generator.
 # |num_downs|: number of downsamplings in UNet. For example,
@@ -231,28 +234,28 @@ class AcceleratedUnetSkipConnectionShiftTriple(nn.Module):
             return torch.cat([x_latter, x], 1)  # cat in the C channel
 
 
-class InceptionPartialUnetGeneratorShiftTriple(nn.Module):
+class SoftUnetGeneratorShiftTriple(nn.Module):
     def __init__(self, input_nc, output_nc, num_downs, opt, innerCos_list, shift_list, mask_global, ngf=64,
                  norm_layer=nn.BatchNorm2d, use_dropout=False):
-        super(InceptionPartialUnetGeneratorShiftTriple, self).__init__()
+        super(SoftUnetGeneratorShiftTriple, self).__init__()
 
         # construct unet structure
-        unet_block = InceptionPartialUnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=None, norm_layer=norm_layer,
+        unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=None, norm_layer=norm_layer,
                                              innermost=True)
         print(unet_block)
         for i in range(num_downs - 5):  # The innner layers number is 3 (sptial size:512*512), if unet_256.
-            unet_block = InceptionPartialUnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=unet_block,
+            unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=unet_block,
                                                  norm_layer=norm_layer, use_dropout=use_dropout)
-        unet_block = InceptionPartialUnetSkipConnectionBlock(ngf * 4, ngf * 8, input_nc=None, submodule=unet_block,
+        unet_block = UnetSkipConnectionBlock(ngf * 4, ngf * 8, input_nc=None, submodule=unet_block,
                                              norm_layer=norm_layer)
 
-        unet_shift_block = InceptionPartialUnetSkipConnectionBlock(ngf * 2, ngf * 4, opt, innerCos_list, shift_list,
+        unet_shift_block = SoftUnetSkipConnectionBlock(ngf * 2, ngf * 4, opt, innerCos_list, shift_list,
                                                                  mask_global, input_nc=None, \
                                                                  submodule=unet_block,
                                                                  norm_layer=norm_layer, shift_layer=True)  # passing in unet_shift_block
-        unet_block = InceptionPartialUnetSkipConnectionBlock(ngf, ngf * 2, input_nc=None, submodule=unet_shift_block,
+        unet_block = UnetSkipConnectionBlock(ngf, ngf * 2, input_nc=None, submodule=unet_shift_block,
                                              norm_layer=norm_layer)
-        unet_block = InceptionPartialUnetSkipConnectionBlock(output_nc, ngf, input_nc=input_nc, submodule=unet_block, outermost=True,
+        unet_block = UnetSkipConnectionBlock(output_nc, ngf, input_nc=input_nc, submodule=unet_block, outermost=True,
                                              norm_layer=norm_layer)
 
         self.model = unet_block
@@ -265,12 +268,11 @@ class InceptionPartialUnetGeneratorShiftTriple(nn.Module):
 # Defines the submodule with skip connection.
 # X -------------------identity---------------------- X
 #   |-- downsampling -- |submodule| -- upsampling --|
-class InceptionPartialUnetSkipConnectionBlock(nn.Module):
-    def __init__(self, outer_nc, inner_nc, input_nc,
-                 submodule=None, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d, use_dropout=False, shift_layer=True):
-        super(InceptionPartialUnetSkipConnectionBlock, self).__init__()
+class SoftUnetSkipConnectionBlock(nn.Module):
+    def __init__(self, outer_nc, inner_nc, opt, innerCos_list, shift_list, mask_global, input_nc, \
+                 submodule=None, shift_layer=None, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d, use_dropout=False):
+        super(SoftUnetSkipConnectionBlock, self).__init__()
         self.outermost = outermost
-
         if input_nc is None:
             input_nc = outer_nc
 
@@ -280,6 +282,24 @@ class InceptionPartialUnetSkipConnectionBlock(nn.Module):
         downnorm = norm_layer(inner_nc, affine=True)
         uprelu = nn.ReLU(True)
         upnorm = norm_layer(outer_nc, affine=True)
+
+        # As the downconv layer is outer_nc in and inner_nc out.
+        # So the shift define like this:
+        shift = InnerSoftShiftTriple(opt.threshold, opt.fixed_mask, opt.shift_sz, opt.stride, opt.mask_thred, opt.triple_weight)
+
+        shift.set_mask(mask_global, 3, opt.threshold)
+        shift_list.append(shift)
+
+        # Add latent constraint
+        # Then add the constraint to the constrain layer list!
+        innerCosBefore = InnerCos(strength=opt.strength, skip=opt.skip)
+        innerCosBefore.set_mask(mask_global, opt)  # Here we need to set mask for innerCos layer too.
+        innerCos_list.append(innerCosBefore)
+
+        innerCosAfter = InnerCos(strength=opt.strength, skip=opt.skip)
+        innerCosAfter.set_mask(mask_global, opt)  # Here we need to set mask for innerCos layer too.
+        innerCos_list.append(innerCosAfter)
+
 
         # Different position only has differences in `upconv`
             # for the outermost, the special is `tanh`
@@ -300,19 +320,20 @@ class InceptionPartialUnetSkipConnectionBlock(nn.Module):
             model = down + up
             # else, the normal
         else:
-            if shift_layer:
-                pass
-            else:
-                upconv = nn.ConvTranspose2d(inner_nc * 2, outer_nc,
-                                            kernel_size=4, stride=2,
-                                            padding=1)
-                down = [downrelu, downconv, downnorm]
-                up = [uprelu, upconv, upnorm]
+            # shift triple differs in here. It is `*3` not `*2`.
+            upconv = nn.ConvTranspose2d(inner_nc * 3, outer_nc,
+                                        kernel_size=4, stride=2,
+                                        padding=1)
+            down = [downrelu, downconv, downnorm]
+            # shift should be placed after uprelu
+            # NB: innerCos are placed before shift. So need to add the latent gredient to
+            # to former part.
+            up = [uprelu, innerCosBefore, shift, innerCosAfter, upconv, upnorm]
 
-                if use_dropout:
-                    model = down + [submodule] + up + [nn.Dropout(0.5)]
-                else:
-                    model = down + [submodule] + up
+            if use_dropout:
+                model = down + [submodule] + up + [nn.Dropout(0.5)]
+            else:
+                model = down + [submodule] + up
 
         self.model = nn.Sequential(*model)
 
