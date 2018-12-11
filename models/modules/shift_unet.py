@@ -2,11 +2,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-
+from models.accelerated_shift_net.accelerated_InnerShiftTriple import AcceleratedInnerShiftTriple
+from models.shift_net.InnerCos import InnerCos
+from models.shift_net.InnerShiftTriple import InnerShiftTriple
 from .unet import UnetSkipConnectionBlock
-from ..InnerShiftTriple import InnerShiftTriple
-from ..accelerated_InnerShiftTriple import AcceleratedInnerShiftTriple
-from ..InnerCos import InnerCos
+
 
 ################################### ***************************  #####################################
 ################################### This the original Shift_net  #####################################

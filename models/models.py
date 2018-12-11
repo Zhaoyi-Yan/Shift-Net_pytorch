@@ -4,12 +4,12 @@ def create_model(opt):
     print(opt.model)
     if opt.model == 'shiftnet':
         assert (opt.dataset_mode == 'aligned' or opt.dataset_mode == 'aligned_resized')
-        from .shiftnet_model import ShiftNetModel
+        from models.shift_net.shiftnet_model import ShiftNetModel
         model = ShiftNetModel()
 
     elif opt.model == 'accelerated_shiftnet':
         assert (opt.dataset_mode == 'aligned' or opt.dataset_mode == 'aligned_resized')
-        from .accelerated_shiftnet_model import ShiftNetModel
+        from models.accelerated_shift_net.accelerated_shiftnet_model import ShiftNetModel
         model = ShiftNetModel()
 
     elif opt.model == 'test':
