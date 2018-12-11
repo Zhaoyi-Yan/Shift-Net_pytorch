@@ -2,37 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="2ba33ac8-9fac-4c3f-b28f-bafdd56aae97" name="Default" comment="">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/.ipynb_checkpoints/train-checkpoint.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/data/.ipynb_checkpoints/aligned_dataset_resized-checkpoint.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/data/.ipynb_checkpoints/custom_dataset_data_loader-checkpoint.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/models/.ipynb_checkpoints/InnerShiftTriple-checkpoint.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/models/.ipynb_checkpoints/InnerShiftTripleFunction-checkpoint.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/models/.ipynb_checkpoints/base_model-checkpoint.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/models/.ipynb_checkpoints/modified_InnerShiftTripleFunction-checkpoint.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/models/.ipynb_checkpoints/modified_shiftnet_model-checkpoint.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/models/.ipynb_checkpoints/networks-checkpoint.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/models/.ipynb_checkpoints/shiftnet_model-checkpoint.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/notebooks/.ipynb_checkpoints/EvaluationTrainedModels-checkpoint.ipynb" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/notebooks/.ipynb_checkpoints/InspectingNN-checkpoint.ipynb" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/notebooks/.ipynb_checkpoints/NewModule-checkpoint.ipynb" afterPath="" />
       <change type="DELETED" beforePath="$PROJECT_DIR$/notebooks/.ipynb_checkpoints/OptimizingShift-checkpoint.ipynb" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/notebooks/EvaluationTrainedModels.ipynb" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/notebooks/InspectingNN.ipynb" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/util/.ipynb_checkpoints/MaxCoord-checkpoint.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/util/.ipynb_checkpoints/NonparametricShift-checkpoint.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/util/.ipynb_checkpoints/poisson_blending-checkpoint.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/util/.ipynb_checkpoints/util-checkpoint.py" afterPath="" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/models/modified_InnerShiftTriple.py" afterPath="$PROJECT_DIR$/models/accelerated_InnerShiftTriple.py" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/models/modified_InnerShiftTripleFunction.py" afterPath="$PROJECT_DIR$/models/accelerated_InnerShiftTripleFunction.py" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/models/modified_shiftnet_model.py" afterPath="$PROJECT_DIR$/models/accelerated_shiftnet_model.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/models/InnerShiftTripleFunction.py" afterPath="$PROJECT_DIR$/models/InnerShiftTripleFunction.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/models/models.py" afterPath="$PROJECT_DIR$/models/models.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/models/networks.py" afterPath="$PROJECT_DIR$/models/networks.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/notebooks/OptimizingShift.ipynb" afterPath="$PROJECT_DIR$/notebooks/OptimizingShift.ipynb" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/options/base_options.py" afterPath="$PROJECT_DIR$/options/base_options.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/util/MaxCoord.py" afterPath="$PROJECT_DIR$/util/MaxCoord.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/util/NonparametricShift.py" afterPath="$PROJECT_DIR$/util/NonparametricShift.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/util/util.py" afterPath="$PROJECT_DIR$/util/util.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -508,9 +479,9 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-1" y="28" width="1922" height="1027" extended-state="6" />
-    <editor active="true" />
+    <editor active="false" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.128125" sideWeight="0.5" order="1" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.128125" sideWeight="0.5" order="1" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
