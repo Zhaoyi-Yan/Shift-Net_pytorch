@@ -236,10 +236,12 @@ class ShiftNetModel(BaseModel):
                 self.loss_G_GAN =  (self.criterionGAN (self.pred_real - torch.mean(self.pred_fake), False) \
                                + self.criterionGAN (self.pred_fake - torch.mean(self.pred_real), True)) / 2.
 
-        mask = self.mask_global.clone().float()
+        #mask = self.mask_global.clone().float()
 
-        self.former_in_mask = torch.mul(self.fake_B, mask)
-        self.loss_G_L1 = (self.criterionL1(self.former_in_mask, self.real_B) + self.criterionL1(self.fake_B, self.real_B)) * self.opt.lambda_A #* (1 / torch.sum(mask))
+        #self.former_in_mask = torch.mul(self.fake_B, mask)
+        self.loss_G_L1 = 0
+        #self.loss_G_L1 += self.criterionL1(self.former_in_mask, self.real_B) * self.opt.lambda_A
+        self.loss_G_L1 += self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_A
             # Second, G(A) = B
         #self.loss_G_L1 = self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_A
 

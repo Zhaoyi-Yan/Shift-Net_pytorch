@@ -1,6 +1,7 @@
 import numpy as np
 from util.NonparametricShift import Modified_NonparametricShift
 import torch
+from time import time
 
 
 class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
@@ -18,28 +19,25 @@ class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
 
         ctx.Tensor = torch.cuda.FloatTensor if torch.cuda.is_available else torch.FloatTensor
 
-        ctx.ind_lst = torch.zeros(ctx.bz, ctx.h*ctx.w, ctx.h*ctx.w).long()
+        ctx.ind_lst = torch.cuda.FloatTensor(ctx.bz, ctx.h*ctx.w, ctx.h*ctx.w).fill_(0)
 
         # former and latter are all tensors
         former_all = input.narrow(1, 0, c//2) ### UPCONV
         latter_all = input.narrow(1, c//2, c//2) ### UNET ADD
 
         assert mask.dim() == 2, "Mask dimension must be 2"
-        ex_mask = mask.expand(1, c//2, mask.size(0), mask.size(1)) # 1*c*h*w
-        inv_ex_mask = torch.add(torch.neg(ex_mask.float()), 1).byte()
 
         if torch.cuda.is_available:
             ctx.ind_lst = ctx.ind_lst.cuda()
             flag = flag.cuda()
 
-            inv_ex_mask = inv_ex_mask.cuda()
-
         # None batch version
+        Nonparm = Modified_NonparametricShift()
+        #ts = []
+        #names = []
         for idx in range(ctx.bz):
             latter = latter_all.narrow(0, idx, 1) ### UNET ADD
             former = former_all.narrow(0, idx, 1) ### UPCONV
-
-            Nonparm = Modified_NonparametricShift()
 
             ## EXTRACT MASK PATCHES FROM FORMER
             patches_former = Nonparm._extract_patches_from_flag(former.clone().squeeze(), 1, stride, flag, 1)
@@ -47,29 +45,22 @@ class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
             ## EXTRACT NON-MASK PATCHES FROM FORMER
             patches_latter = Nonparm._extract_patches_from_flag(latter.clone().squeeze(), 1, stride, flag, 0)
 
-            patches_latter_norm = Nonparm._norm(patches_latter.clone())
-
             ## CALCULATE ABSOLUTE COSINE SIMILARITY
-            cosine = torch.mm(patches_former, patches_latter_norm.permute(1,0))
+            cosine = torch.mm(patches_former, patches_latter.permute(1,0))
 
             ## GET INDEXES THAT MAXIMIZE COSINE SIMILARITY
             _, indexes = torch.max(cosine, dim=1)
 
-            ## GET PATCHES CORRESPONDING
-            patches_former = patches_latter[indexes]
-
-            # CREATE HOLDER
-            former_masked = torch.zeros(former.size()).cuda()
-
-            # PASTE VALUES INTO HOLDER
-            former_masked = Nonparm._paste(former_masked.squeeze(), 1, stride, flag, patches_former)
-
-            former_masked = former_masked.detach()
 
             # SET  TRANSITION MATRIX
             mask_indexes = (flag == 1).nonzero()
             non_mask_indexes = (flag == 0).nonzero()[indexes]
             ctx.ind_lst[idx][tuple((mask_indexes, non_mask_indexes))] = 1
+
+            # PASTE VALUES INTO HOLDER
+            former_masked = Nonparm._paste(former.clone().squeeze(), 1, stride, ctx.ind_lst[idx])
+
+            former_masked = former_masked.detach()
 
         return torch.cat((former, latter, former_masked), 1)
 

@@ -156,6 +156,9 @@ class InceptionDown(nn.Module):
 
         self.is_norm = is_norm
 
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+
         if intermediate is None:
             intermediate = np.max([out_channels // 8, 16])
             if intermediate % 2 != 0:
@@ -208,6 +211,7 @@ class InceptionDown(nn.Module):
         self.bconv2_3x1 = norm_layer(out_channels, affine=True)
 
     def _forward(self, input, conv, normalization):
+        print(self.in_channels, self.out_channels, input.shape)
         input = conv(input)
         input = normalization(input)
         return self.act(input)
@@ -282,6 +286,9 @@ class InceptionUp(nn.Module):
 
         self.is_norm = is_norm
 
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+
         if intermediate is None:
             intermediate = np.max([out_channels // 8, 16])
             print(in_channels, out_channels, intermediate)
@@ -325,6 +332,7 @@ class InceptionUp(nn.Module):
         self.bconv1_1x1 = norm_layer(out_channels, affine=True)
 
     def _forward(self, input, conv, normalization):
+        print(self.in_channels, self.out_channels, input.shape)
         input = conv(input)
         input = normalization(input)
         return self.act(input)

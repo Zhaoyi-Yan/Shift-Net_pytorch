@@ -360,14 +360,15 @@ class InceptionUnetGeneratorShiftTriple(nn.Module):
         for i in range(num_downs - 5):  # The innner layers number is 3 (sptial size:512*512), if unet_256.
             unet_block = InceptionUnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=unet_block,
                                                  norm_layer=norm_layer, use_dropout=use_dropout)
-        unet_block = InceptionUnetSkipConnectionBlock(ngf * 4, ngf * 8, input_nc=None, submodule=unet_block,
+
+        unet_block = InceptionUnetSkipConnectionBlock(ngf * 8, ngf * 4, input_nc=None, submodule=unet_block,
                                              norm_layer=norm_layer)
 
-        unet_shift_block = InceptionUnetSkipConnectionBlock(ngf * 2, ngf * 4, opt=opt, innerCos_list=innerCos_list, shift_list=shift_list,
+        unet_shift_block = InceptionUnetSkipConnectionBlock(ngf * 4, ngf * 2, opt=opt, innerCos_list=innerCos_list, shift_list=shift_list,
                                                                  mask_global=mask_global, input_nc=None, \
                                                                  submodule=unet_block,
                                                                  norm_layer=norm_layer, shift_layer=True)  # passing in unet_shift_block
-        unet_block = InceptionUnetSkipConnectionBlock(ngf, ngf * 2, input_nc=None, submodule=unet_shift_block,
+        unet_block = InceptionUnetSkipConnectionBlock(ngf* 2, ngf, input_nc=None, submodule=unet_shift_block,
                                              norm_layer=norm_layer)
         unet_block = InceptionUnetSkipConnectionBlock(output_nc, ngf, input_nc=input_nc, submodule=unet_block, outermost=True,
                                              norm_layer=norm_layer)
@@ -393,7 +394,6 @@ class InceptionUnetSkipConnectionBlock(nn.Module):
 
         downconv = InceptionDown(inner_nc, outer_nc)
 
-        downnorm = norm_layer(inner_nc, affine=True)
         uprelu = nn.ReLU(True)
         upnorm = norm_layer(outer_nc, affine=True)
 
@@ -419,10 +419,10 @@ class InceptionUnetSkipConnectionBlock(nn.Module):
         # Different position only has differences in `upconv`
             # for the outermost, the special is `tanh`
         if outermost:
-            upconv = nn.ConvTranspose2d(inner_nc * 2, outer_nc,
+            upconv = nn.ConvTranspose2d(inner_nc, outer_nc,
                                         kernel_size=4, stride=2,
                                         padding=1)
-            downconv = nn.Conv2d(input_nc, inner_nc * 2, kernel_size=4,
+            downconv = nn.Conv2d(input_nc, inner_nc, kernel_size=4,
                                  stride=2, padding=1)
 
             down = [downconv]
@@ -430,6 +430,7 @@ class InceptionUnetSkipConnectionBlock(nn.Module):
             model = down + [submodule] + up
             # for the innermost, the special is `inner_nc` instead of `inner_nc*2`
         elif innermost:
+            print('innermost')
             upconv = InceptionUp(inner_nc, outer_nc)
 
             down = [downconv]  # for the innermost, no submodule, and delete the bn
@@ -438,26 +439,27 @@ class InceptionUnetSkipConnectionBlock(nn.Module):
             # else, the normal
         else:
             # shift triple differs in here. It is `*3` not `*2`.
-
-            down = [ downconv]
+            down = [downconv]
+            upconv = InceptionUp(inner_nc, outer_nc)
             # shift should be placed after uprelu
             # NB: innerCos are placed before shift. So need to add the latent gredient to
             # to former part.
             if shift_layer:
-                upconv = InceptionUp(inner_nc * 3, outer_nc)
-                up = [innerCosBefore, shift, innerCosAfter, upconv, upnorm]
-            else:
-                upconv = InceptionUp(inner_nc * 2, outer_nc)
                 up = [upconv, upnorm]
 
-            if use_dropout:
-                model = down + [submodule] + up + [nn.Dropout(0.5)]
-            else:
                 model = down + [submodule] + up
+            else:
+                up = [upconv, upnorm]
+
+                if use_dropout:
+                    model = down + [submodule] + up + [nn.Dropout(0.5)]
+                else:
+                    model = down + [submodule] + up
 
         self.model = nn.Sequential(*model)
 
     def forward(self, x):
+        print('Input', x.shape)
         if self.outermost:  # if it is the outermost, directly pass the input in.
             return self.model(x)
         else:
@@ -465,4 +467,6 @@ class InceptionUnetSkipConnectionBlock(nn.Module):
             _, _, h, w = x.size()
             if h != x_latter.size(2) or w != x_latter.size(3):
                 x_latter = F.interpolate(x_latter, (h, w), mode='bilinear')
+            x = torch.cat([x_latter, x], 1)
+            print('Output', x.shape)
             return torch.cat([x_latter, x], 1)  # cat in the C channel
