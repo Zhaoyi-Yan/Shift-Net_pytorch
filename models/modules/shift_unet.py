@@ -355,22 +355,22 @@ class InceptionUnetGeneratorShiftTriple(nn.Module):
         super(InceptionUnetGeneratorShiftTriple, self).__init__()
 
         # construct unet structure
-        unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=None, norm_layer=norm_layer,
+        unet_block = InceptionUnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=None, norm_layer=norm_layer,
                                              innermost=True)
         print(unet_block)
         for i in range(num_downs - 5):  # The innner layers number is 3 (sptial size:512*512), if unet_256.
-            unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=unet_block,
+            unet_block = InceptionUnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=unet_block,
                                                  norm_layer=norm_layer, use_dropout=use_dropout)
-        unet_block = UnetSkipConnectionBlock(ngf * 4, ngf * 8, input_nc=None, submodule=unet_block,
+        unet_block = InceptionUnetSkipConnectionBlock(ngf * 4, ngf * 8, input_nc=None, submodule=unet_block,
                                              norm_layer=norm_layer)
 
-        unet_shift_block = SoftUnetSkipConnectionBlock(ngf * 2, ngf * 4, opt, innerCos_list, shift_list,
+        unet_shift_block = InceptionUnetSkipConnectionBlock(ngf * 2, ngf * 4, opt, innerCos_list, shift_list,
                                                                  mask_global, input_nc=None, \
                                                                  submodule=unet_block,
                                                                  norm_layer=norm_layer, shift_layer=True)  # passing in unet_shift_block
-        unet_block = UnetSkipConnectionBlock(ngf, ngf * 2, input_nc=None, submodule=unet_shift_block,
+        unet_block = InceptionUnetSkipConnectionBlock(ngf, ngf * 2, input_nc=None, submodule=unet_shift_block,
                                              norm_layer=norm_layer)
-        unet_block = UnetSkipConnectionBlock(output_nc, ngf, input_nc=input_nc, submodule=unet_block, outermost=True,
+        unet_block = InceptionUnetSkipConnectionBlock(output_nc, ngf, input_nc=input_nc, submodule=unet_block, outermost=True,
                                              norm_layer=norm_layer)
 
         self.model = unet_block
@@ -385,8 +385,9 @@ class InceptionUnetGeneratorShiftTriple(nn.Module):
 #   |-- downsampling -- |submodule| -- upsampling --|
 class InceptionUnetSkipConnectionBlock(nn.Module):
     def __init__(self, outer_nc, inner_nc, opt, innerCos_list, shift_list, mask_global, input_nc, \
-                 submodule=None, shift_layer=None, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d, use_dropout=False):
+                 submodule=None, shift_layer=False, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d, use_dropout=False):
         super(InceptionUnetSkipConnectionBlock, self).__init__()
+
         self.outermost = outermost
         if input_nc is None:
             input_nc = outer_nc
@@ -396,6 +397,7 @@ class InceptionUnetSkipConnectionBlock(nn.Module):
         downrelu = nn.LeakyReLU(0.2, True)
         downnorm = norm_layer(inner_nc, affine=True)
         uprelu = nn.ReLU(True)
+
         upnorm = norm_layer(outer_nc, affine=True)
 
         # As the downconv layer is outer_nc in and inner_nc out.

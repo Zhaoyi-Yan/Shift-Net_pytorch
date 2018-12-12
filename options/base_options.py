@@ -17,11 +17,11 @@ class BaseOptions():
         parser.add_argument('--ngf', type=int, default=64, help='# of gen filters in first conv layer')
         parser.add_argument('--ndf', type=int, default=64, help='# of discrim filters in first conv layer')
         parser.add_argument('--which_model_netD', type=str, default='densenet', help='selects model to use for netD')
-        parser.add_argument('--which_model_netG', type=str, default='soft_unet_shift_triple', help='selects model to use for netG')  # use unet_swap
+        parser.add_argument('--which_model_netG', type=str, default='acc_unet_shift_triple', help='selects model to use for netG')  # use unet_swap
         parser.add_argument('--triple_weight', type=float, default=1, help='The weight on the gradient of skip connections from the gradient of swapped')
-        parser.add_argument('--name', type=str, default='class5_2', help='name of the experiment. It decides where to store samples and models')
+        parser.add_argument('--name', type=str, default='class5_4', help='name of the experiment. It decides where to store samples and models')
         parser.add_argument('--n_layers_D', type=int, default=3, help='only used if which_model_netD==n_layers')
-        parser.add_argument('--gpu_ids', type=str, default='1', help='gpu ids: e.g. 0  0,1,2, 0,2')
+        parser.add_argument('--gpu_ids', type=str, default='2', help='gpu ids: e.g. 0  0,1,2, 0,2')
         parser.add_argument('--dataset_mode', type=str, default='aligned_resized', help='chooses how datasets are loaded. [aligned | single]')
         parser.add_argument('--model', type=str, default='soft_shiftnet',
                                  help='chooses which model to use. shiftnet, test')

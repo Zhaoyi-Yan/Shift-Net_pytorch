@@ -11,3 +11,5 @@ log/
 logs/
 *.swp
 *.pyc
+.idea/
+*.ipynb_checkpoints/

@@ -14,7 +14,7 @@ def create_model(opt):
 
     elif opt.model == 'soft_shiftnet':
         assert (opt.dataset_mode == 'aligned' or opt.dataset_mode == 'aligned_resized')
-        from models.accelerated_shift_net.accelerated_shiftnet_model import ShiftNetModel
+        from models.soft_shift_net.soft_shiftnet_model import ShiftNetModel
         model = ShiftNetModel()
 
     elif opt.model == 'test':
