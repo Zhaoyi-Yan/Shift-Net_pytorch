@@ -151,7 +151,7 @@ class ShiftNetModel(BaseModel):
 
         self.set_latent_mask(mask, 3, self.opt.threshold)
 
-        print(torch.max(real_A), torch.min(real_A))
+        #print(torch.max(real_A), torch.min(real_A))
 
         real_A.narrow(1,0,1).masked_fill_(mask, 0.)#2*123.0/255.0 - 1.0
         real_A.narrow(1,1,1).masked_fill_(mask, 0.)#2*104.0/255.0 - 1.0
@@ -239,7 +239,7 @@ class ShiftNetModel(BaseModel):
         mask = self.mask_global.clone().float()
 
         self.former_in_mask = torch.mul(self.fake_B, mask)
-        self.loss_G_L1 = self.criterionL1(self.former_in_mask, self.real_B) * self.opt.lambda_A #* (1 / torch.sum(mask))
+        self.loss_G_L1 = (self.criterionL1(self.former_in_mask, self.real_B) + self.criterionL1(self.fake_B, self.real_B)) * self.opt.lambda_A #* (1 / torch.sum(mask))
             # Second, G(A) = B
         #self.loss_G_L1 = self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_A
 

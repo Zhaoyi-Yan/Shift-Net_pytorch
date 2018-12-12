@@ -19,11 +19,11 @@ class BaseOptions():
         parser.add_argument('--which_model_netD', type=str, default='densenet', help='selects model to use for netD')
         parser.add_argument('--which_model_netG', type=str, default='acc_unet_shift_triple', help='selects model to use for netG')  # use unet_swap
         parser.add_argument('--triple_weight', type=float, default=1, help='The weight on the gradient of skip connections from the gradient of swapped')
-        parser.add_argument('--name', type=str, default='class5_4', help='name of the experiment. It decides where to store samples and models')
+        parser.add_argument('--name', type=str, default='class5_6', help='name of the experiment. It decides where to store samples and models')
         parser.add_argument('--n_layers_D', type=int, default=3, help='only used if which_model_netD==n_layers')
-        parser.add_argument('--gpu_ids', type=str, default='2', help='gpu ids: e.g. 0  0,1,2, 0,2')
+        parser.add_argument('--gpu_ids', type=str, default='3', help='gpu ids: e.g. 0  0,1,2, 0,2')
         parser.add_argument('--dataset_mode', type=str, default='aligned_resized', help='chooses how datasets are loaded. [aligned | single]')
-        parser.add_argument('--model', type=str, default='soft_shiftnet',
+        parser.add_argument('--model', type=str, default='accelerated_shiftnet',
                                  help='chooses which model to use. shiftnet, test')
         parser.add_argument('--nThreads', default=2, type=int, help='# threads for loading data')
         parser.add_argument('--checkpoints_dir', type=str, default='/mnt/hdd2/AIM/checks', help='models are saved here')
@@ -44,10 +44,10 @@ class BaseOptions():
         ## new added
         parser.add_argument('--mask_type', type=str, default='random',
                             help='the type of mask you want to apply, \'center\' or \'random\'')
-        parser.add_argument('--mask_sub_type', type=str, default='island',
+        parser.add_argument('--mask_sub_type', type=str, default='rect',
                             help='the type of mask you want to apply, \'rect \' or \'fractal \ or \'island \'')
 
-        parser.add_argument('--fixed_mask', type=int, default=1, help='1 or 0, whether mask is fixed')
+        parser.add_argument('--fixed_mask', type=int, default=0, help='1 or 0, whether mask is fixed')
         parser.add_argument('--lambda_A', type=int, default=100, help='weight on L1 term in objective')
         parser.add_argument('--threshold', type=float, default=5/16.0, help='making binary mask')
         parser.add_argument('--stride', type=int, default=1, help='should be dense, 1 is a good option.')
