@@ -73,7 +73,7 @@ def cal_feat_mask(inMask, conv_layers, threshold):
     inMask = Variable(inMask, requires_grad = False)
     for id_net in range(conv_layers):
         conv = nn.Conv2d(1,1,4,2,1, bias=False)
-        conv.weight.data.fill_(1/16)
+        conv.weight.data.fill_(1/16.0) # 16.0 not 16
         convs.append(conv)
     lnet = nn.Sequential(*convs)
     if inMask.is_cuda:
