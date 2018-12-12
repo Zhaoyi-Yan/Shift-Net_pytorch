@@ -2,7 +2,7 @@ import time
 import os
 from options.test_options import TestOptions
 from data.data_loader import CreateDataLoader
-from models.models import create_model
+from models import create_model
 from util.visualizer import Visualizer
 from util import html
 

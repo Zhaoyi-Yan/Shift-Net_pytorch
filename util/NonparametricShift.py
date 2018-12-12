@@ -8,7 +8,6 @@ class Modified_NonparametricShift(object):
 
     def _extract_patches_from_flag(self, img, patch_size, stride, flag, value):
         input_windows = self._unfold(img, patch_size, stride)
-
         input_windows = self._filter(input_windows, flag, value)
 
         return self._norm(input_windows)

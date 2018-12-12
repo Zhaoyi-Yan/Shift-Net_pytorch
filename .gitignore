@@ -11,3 +11,6 @@ log/
 logs/
 *.swp
 *.pyc
+.idea/
+*-checkpoint.py
+
