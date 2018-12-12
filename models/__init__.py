@@ -2,7 +2,7 @@ def create_model(opt):
     model = None
     if opt.model == 'shiftnet':
         assert(opt.dataset_mode == 'aligned')
-        from .shiftnet_model import ShiftNetModel
+        from models.shift_net.shiftnet_model import ShiftNetModel
         model = ShiftNetModel()
     elif opt.model == 'test':
         assert(opt.dataset_mode == 'single')

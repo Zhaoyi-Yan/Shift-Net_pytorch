@@ -1,6 +1,7 @@
 from collections import OrderedDict
+
 import util.util as util
-from .base_model import BaseModel
+from models.shift_net.base_model import BaseModel
 from . import networks
 
 

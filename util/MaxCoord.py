@@ -14,16 +14,15 @@ class MaxCoord():
         pass
 
     def update_output(self, input, sp_x, sp_y):
-        input_dim = input.dim()
         assert input.dim() == 4, "Input must be 3D or 4D(batch)."
         assert input.size(0) == 1, "The first dimension of input has to be 1!"
 
         output = torch.zeros_like(input)
 
         _,c_max = torch.max(input, 1)
-
+        
         c_max_flatten = c_max.view(-1)
-
+        
         output[:, c_max_flatten, sp_x, sp_y] = 1
         ind = c_max_flatten
 

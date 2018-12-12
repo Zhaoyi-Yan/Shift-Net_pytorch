@@ -20,8 +20,8 @@ class InnerShiftTripleFunction(torch.autograd.Function):
         ctx.Tensor = torch.cuda.FloatTensor if torch.cuda.is_available else torch.FloatTensor
 
         # former and latter are all tensors
-        former_all = input.narrow(1, 0, c//2)
-        latter_all = input.narrow(1, c//2, c//2)
+        former_all = input.narrow(1, 0, c//2) ### UPCONV
+        latter_all = input.narrow(1, c//2, c//2) ### UNET ADD
 
         assert mask.dim() == 2, "Mask dimension must be 2"
         ex_mask = mask.expand(1, c//2, mask.size(0), mask.size(1)) # 1*c*h*w
@@ -43,11 +43,13 @@ class InnerShiftTripleFunction(torch.autograd.Function):
 
 
         for idx in range(ctx.bz):
-            latter = latter_all.narrow(0, idx, 1)
-            former = former_all.narrow(0, idx, 1)
+            latter = latter_all.narrow(0, idx, 1) ### UNET ADD
+            former = former_all.narrow(0, idx, 1) ### UPCONV
+
             Nonparm = NonparametricShift()
             _, conv_enc, conv_new_dec, _, = Nonparm.buildAutoencoder(latter.squeeze(), False, False, nonmask_point_idx, shift_sz, stride)
 
+            
             tmp1 = conv_enc(former)
 
             latter_non_mask = latter.clone()
@@ -57,6 +59,7 @@ class InnerShiftTripleFunction(torch.autograd.Function):
             maxcoor = MaxCoord()
             # mention: kbar and ind are all 0-index
             kbar, ind = maxcoor.update_output(tmp1.data, sp_x, sp_y)
+            
 
             # calculate the real kbar and real self.ind
             real_patches = (kbar.size(1) + torch.sum(ctx.flag)).item() #transfer to number.
@@ -89,7 +92,6 @@ class InnerShiftTripleFunction(torch.autograd.Function):
         ctx.ind_lst = ind_lst
 
         return output
-
 
     @staticmethod
     def backward(ctx, grad_output):
