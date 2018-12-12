@@ -357,15 +357,14 @@ class InceptionUnetGeneratorShiftTriple(nn.Module):
         # construct unet structure
         unet_block = InceptionUnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=None, norm_layer=norm_layer,
                                              innermost=True)
-        print(unet_block)
         for i in range(num_downs - 5):  # The innner layers number is 3 (sptial size:512*512), if unet_256.
             unet_block = InceptionUnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=unet_block,
                                                  norm_layer=norm_layer, use_dropout=use_dropout)
         unet_block = InceptionUnetSkipConnectionBlock(ngf * 4, ngf * 8, input_nc=None, submodule=unet_block,
                                              norm_layer=norm_layer)
 
-        unet_shift_block = InceptionUnetSkipConnectionBlock(ngf * 2, ngf * 4, opt, innerCos_list, shift_list,
-                                                                 mask_global, input_nc=None, \
+        unet_shift_block = InceptionUnetSkipConnectionBlock(ngf * 2, ngf * 4, opt=opt, innerCos_list=innerCos_list, shift_list=shift_list,
+                                                                 mask_global=mask_global, input_nc=None, \
                                                                  submodule=unet_block,
                                                                  norm_layer=norm_layer, shift_layer=True)  # passing in unet_shift_block
         unet_block = InceptionUnetSkipConnectionBlock(ngf, ngf * 2, input_nc=None, submodule=unet_shift_block,
@@ -384,7 +383,7 @@ class InceptionUnetGeneratorShiftTriple(nn.Module):
 # X -------------------identity---------------------- X
 #   |-- downsampling -- |submodule| -- upsampling --|
 class InceptionUnetSkipConnectionBlock(nn.Module):
-    def __init__(self, outer_nc, inner_nc, opt, innerCos_list, shift_list, mask_global, input_nc, \
+    def __init__(self, outer_nc, inner_nc, innerCos_list=None, shift_list=None, mask_global=None, input_nc=None, opt=None,\
                  submodule=None, shift_layer=False, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d, use_dropout=False):
         super(InceptionUnetSkipConnectionBlock, self).__init__()
 
@@ -392,30 +391,29 @@ class InceptionUnetSkipConnectionBlock(nn.Module):
         if input_nc is None:
             input_nc = outer_nc
 
-        downconv = nn.Conv2d(input_nc, inner_nc, kernel_size=4,
-                             stride=2, padding=1)
-        downrelu = nn.LeakyReLU(0.2, True)
+        downconv = InceptionDown(inner_nc, outer_nc)
+
         downnorm = norm_layer(inner_nc, affine=True)
         uprelu = nn.ReLU(True)
-
         upnorm = norm_layer(outer_nc, affine=True)
 
-        # As the downconv layer is outer_nc in and inner_nc out.
-        # So the shift define like this:
-        shift = InnerSoftShiftTriple(opt.threshold, opt.fixed_mask, opt.shift_sz, opt.stride, opt.mask_thred, opt.triple_weight)
+        if shift_layer:
+            # As the downconv layer is outer_nc in and inner_nc out.
+            # So the shift define like this:
+            shift = InnerSoftShiftTriple(opt.threshold, opt.fixed_mask, opt.shift_sz, opt.stride, opt.mask_thred, opt.triple_weight)
 
-        shift.set_mask(mask_global, 3, opt.threshold)
-        shift_list.append(shift)
+            shift.set_mask(mask_global, 3, opt.threshold)
+            shift_list.append(shift)
 
-        # Add latent constraint
-        # Then add the constraint to the constrain layer list!
-        innerCosBefore = InnerCos(strength=opt.strength, skip=opt.skip)
-        innerCosBefore.set_mask(mask_global, opt)  # Here we need to set mask for innerCos layer too.
-        innerCos_list.append(innerCosBefore)
+            # Add latent constraint
+            # Then add the constraint to the constrain layer list!
+            innerCosBefore = InnerCos(strength=opt.strength, skip=opt.skip)
+            innerCosBefore.set_mask(mask_global, opt)  # Here we need to set mask for innerCos layer too.
+            innerCos_list.append(innerCosBefore)
 
-        innerCosAfter = InnerCos(strength=opt.strength, skip=opt.skip)
-        innerCosAfter.set_mask(mask_global, opt)  # Here we need to set mask for innerCos layer too.
-        innerCos_list.append(innerCosAfter)
+            innerCosAfter = InnerCos(strength=opt.strength, skip=opt.skip)
+            innerCosAfter.set_mask(mask_global, opt)  # Here we need to set mask for innerCos layer too.
+            innerCos_list.append(innerCosAfter)
 
 
         # Different position only has differences in `upconv`
@@ -424,28 +422,33 @@ class InceptionUnetSkipConnectionBlock(nn.Module):
             upconv = nn.ConvTranspose2d(inner_nc * 2, outer_nc,
                                         kernel_size=4, stride=2,
                                         padding=1)
+            downconv = nn.Conv2d(input_nc, inner_nc * 2, kernel_size=4,
+                                 stride=2, padding=1)
+
             down = [downconv]
             up = [uprelu, upconv, nn.Tanh()]
             model = down + [submodule] + up
             # for the innermost, the special is `inner_nc` instead of `inner_nc*2`
         elif innermost:
-            upconv = nn.ConvTranspose2d(inner_nc, outer_nc,
-                                        kernel_size=4, stride=2,
-                                        padding=1)
-            down = [downrelu, downconv]  # for the innermost, no submodule, and delete the bn
-            up = [uprelu, upconv, upnorm]
+            upconv = InceptionUp(inner_nc, outer_nc)
+
+            down = [downconv]  # for the innermost, no submodule, and delete the bn
+            up = [upconv, upnorm]
             model = down + up
             # else, the normal
         else:
             # shift triple differs in here. It is `*3` not `*2`.
-            upconv = nn.ConvTranspose2d(inner_nc * 3, outer_nc,
-                                        kernel_size=4, stride=2,
-                                        padding=1)
-            down = [downrelu, downconv, downnorm]
+
+            down = [ downconv]
             # shift should be placed after uprelu
             # NB: innerCos are placed before shift. So need to add the latent gredient to
             # to former part.
-            up = [uprelu, innerCosBefore, shift, innerCosAfter, upconv, upnorm]
+            if shift_layer:
+                upconv = InceptionUp(inner_nc * 3, outer_nc)
+                up = [innerCosBefore, shift, innerCosAfter, upconv, upnorm]
+            else:
+                upconv = InceptionUp(inner_nc * 2, outer_nc)
+                up = [upconv, upnorm]
 
             if use_dropout:
                 model = down + [submodule] + up + [nn.Dropout(0.5)]

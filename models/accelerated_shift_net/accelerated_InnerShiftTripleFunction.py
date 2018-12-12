@@ -1,3 +1,4 @@
+import numpy as np
 from util.NonparametricShift import Modified_NonparametricShift
 import torch
 
@@ -17,7 +18,7 @@ class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
 
         ctx.Tensor = torch.cuda.FloatTensor if torch.cuda.is_available else torch.FloatTensor
 
-        ctx.ind_lst = torch.LongTensor(ctx.bz, ctx.h * ctx.w, ctx.h * ctx.w)
+        ctx.ind_lst = torch.zeros(ctx.bz, ctx.h*ctx.w, ctx.h*ctx.w).long()
 
         # former and latter are all tensors
         former_all = input.narrow(1, 0, c//2) ### UPCONV
@@ -65,15 +66,12 @@ class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
 
             former_masked = former_masked.detach()
 
-            # CREATE MAPPING MATRIX
-            tmp = ctx.ind_lst[idx][flag == 1]
-
-            tmp = tmp[:, flag == 0]
-
-            tmp[:, indexes] = 1
+            # SET  TRANSITION MATRIX
+            mask_indexes = (flag == 1).nonzero()
+            non_mask_indexes = (flag == 0).nonzero()[indexes]
+            ctx.ind_lst[idx][tuple((mask_indexes, non_mask_indexes))] = 1
 
         return torch.cat((former, latter, former_masked), 1)
-
 
 
     @staticmethod
