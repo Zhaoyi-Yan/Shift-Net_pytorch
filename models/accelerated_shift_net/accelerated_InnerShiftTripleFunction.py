@@ -92,7 +92,7 @@ class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
 
             grad = grad_swapped_all[idx].view(c//3, -1).t()
 
-            grad_swapped_weighted = torch.mm(W_mat_t, grad)
+            grad_swapped_weighted = torch.mm(W_mat_t.t(), grad)
 
             # Then transpose it back
             grad_swapped_weighted = grad_swapped_weighted.t().contiguous().view(1, c//3, ctx.h, ctx.w)
