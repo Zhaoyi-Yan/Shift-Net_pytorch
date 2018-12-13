@@ -131,9 +131,13 @@ class ShiftNetModel(BaseModel):
 
         self.set_latent_mask(self.mask_global, 3, self.opt.threshold)
 
-        real_A.narrow(1,0,1).masked_fill_(self.mask_global, 0)
-        real_A.narrow(1,1,1).masked_fill_(self.mask_global, 0)
-        real_A.narrow(1,2,1).masked_fill_(self.mask_global, 0)
+        #print(torch.max(real_A), torch.min(real_A))
+
+        real_A.narrow(1,0,1).masked_fill_(self.mask_global, 0.)#2*123.0/255.0 - 1.0
+        real_A.narrow(1,1,1).masked_fill_(self.mask_global, 0.)#2*104.0/255.0 - 1.0
+        real_A.narrow(1,2,1).masked_fill_(self.mask_global, 0.)#2*117.0/255.0 - 1.0
+
+        #print(torch.sum(real_A[:, 0, self.mask_global[0, 0]]))
 
         self.real_A = real_A
         self.real_B = real_B
@@ -147,13 +151,15 @@ class ShiftNetModel(BaseModel):
 
         self.set_latent_mask(mask, 3, self.opt.threshold)
 
-        real_A.narrow(1,0,1).masked_fill_(mask, 0)
-        real_A.narrow(1,1,1).masked_fill_(mask, 0)
-        real_A.narrow(1,2,1).masked_fill_(mask, 0)
+        #print(torch.max(real_A), torch.min(real_A))
+
+        real_A.narrow(1,0,1).masked_fill_(mask, 0.)#2*123.0/255.0 - 1.0
+        real_A.narrow(1,1,1).masked_fill_(mask, 0.)#2*104.0/255.0 - 1.0
+        real_A.narrow(1,2,1).masked_fill_(mask, 0.)#2*117.0/255.0 - 1.0
 
         self.real_A = real_A
         self.real_B = real_B
-        self.image_paths = input['A_paths']
+        self.image_paths = input['A_paths']       
 
     def set_latent_mask(self, mask_global, layer_to_last, threshold):
         self.ng_shift_list[0].set_mask(mask_global, layer_to_last, threshold)
@@ -230,8 +236,12 @@ class ShiftNetModel(BaseModel):
                 self.loss_G_GAN =  (self.criterionGAN (self.pred_real - torch.mean(self.pred_fake), False) \
                                + self.criterionGAN (self.pred_fake - torch.mean(self.pred_real), True)) / 2.
 
+
+        self.loss_G_L1 = 0
+        self.loss_G_L1 += self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_A
             # Second, G(A) = B
-        self.loss_G_L1 = self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_A
+        #self.loss_G_L1 = self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_A
+
 
         self.loss_G = self.loss_G_L1 - self.loss_G_GAN * self.opt.gan_weight
 

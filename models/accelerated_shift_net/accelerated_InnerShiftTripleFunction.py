@@ -1,5 +1,7 @@
+import numpy as np
 from util.NonparametricShift import Modified_NonparametricShift
 import torch
+from time import time
 
 
 class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
@@ -17,28 +19,25 @@ class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
 
         ctx.Tensor = torch.cuda.FloatTensor if torch.cuda.is_available else torch.FloatTensor
 
-        ctx.ind_lst = torch.LongTensor(ctx.bz, ctx.h * ctx.w, ctx.h * ctx.w).zero_() # we need zero it out.
+        ctx.ind_lst = ctx.Tensor(ctx.bz, ctx.h * ctx.w, ctx.h * ctx.w).zero_()
 
         # former and latter are all tensors
-        former_all = input.narrow(1, 0, c//2) ### UPCONV
-        latter_all = input.narrow(1, c//2, c//2) ### UNET ADD
+        former_all = input.narrow(1, 0, c//2) ### decoder feature
+        latter_all = input.narrow(1, c//2, c//2) ### encoder feature
 
         assert mask.dim() == 2, "Mask dimension must be 2"
-        ex_mask = mask.expand(1, c//2, mask.size(0), mask.size(1)) # 1*c*h*w
-        inv_ex_mask = torch.add(torch.neg(ex_mask.float()), 1).byte()
 
         if torch.cuda.is_available:
-            ctx.ind_lst = ctx.ind_lst.cuda()
             flag = flag.cuda()
 
-            inv_ex_mask = inv_ex_mask.cuda()
-
         # None batch version
-        for idx in range(ctx.bz):
-            latter = latter_all.narrow(0, idx, 1) ### UNET ADD
-            former = former_all.narrow(0, idx, 1) ### UPCONV
+        Nonparm = Modified_NonparametricShift()
 
-            Nonparm = Modified_NonparametricShift()
+        #ts = []
+        #names = []
+        for idx in range(ctx.bz):
+            latter = latter_all.narrow(0, idx, 1) ### encoder feature
+            former = former_all.narrow(0, idx, 1) ### decoder feature
 
             ## EXTRACT MASK PATCHES FROM FORMER
             patches_former = Nonparm._extract_patches_from_flag(former.clone().squeeze(), 1, stride, flag, 1)
@@ -46,23 +45,19 @@ class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
             ## EXTRACT NON-MASK PATCHES FROM FORMER
             patches_latter = Nonparm._extract_patches_from_flag(latter.clone().squeeze(), 1, stride, flag, 0)
 
-            patches_latter_norm = Nonparm._norm(patches_latter.clone())
-
             ## CALCULATE ABSOLUTE COSINE SIMILARITY
-            cosine = torch.mm(patches_former, patches_latter_norm.permute(1,0))
+            cosine = torch.mm(patches_former, patches_latter.permute(1,0))
 
             ## GET INDEXES THAT MAXIMIZE COSINE SIMILARITY
             _, indexes = torch.max(cosine, dim=1) # indexes: the same size with patches_former(masked part)'s patches.
 
             ## GET PATCHES CORRESPONDING
-            patches_former = patches_latter[indexes] # extract the corresponding (most correlative) patches from patches_latter.
+            # DO NOT use patches_former as the variable, it is confusing.
+            patches_latter_pasted = patches_latter[indexes] # extract the corresponding (most correlative) patches from patches_latter.
 
 
             # CREATE HOLDER
-            former_masked = torch.zeros(former.size()).type_as(input)
-
-            # PASTE VALUES INTO HOLDER
-            former_masked = Nonparm._paste(former_masked.squeeze(), 1, stride, flag, patches_former)
+            shift_masked = torch.zeros(former.size()).type_as(input)
 
 
             # CREATE MAPPING MATRIX
@@ -70,6 +65,7 @@ class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
             non_mask_indexes = (flag == 0).nonzero()[indexes]
             ctx.ind_lst[idx][tuple((mask_indexes, non_mask_indexes))] = 1 # advanced indexing
 
+            
             # It has been checked.
             # For example, when setting 'center=mask', 252 lines will be one-hot in 1024*1024 matrix.
             # Try verify the correctness manually...
@@ -83,8 +79,33 @@ class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
 
             # print(ctx.ind_lst[idx])
 
+            # PASTE VALUES INTO HOLDER
+            shift_masked = Nonparm._paste(latter.clone().squeeze(), 1, stride, ctx.ind_lst[idx])
 
-        return torch.cat((former, latter, former_masked), 1)
+
+            # print(shift_masked.size())
+            # print('original pixel index')
+            # ind_mask_0 = mask_indexes[0]
+            # print(ind_mask_0)
+            # print('Replacing by index')
+            # ind_non_mask_0 = non_mask_indexes[0]
+            # print(ind_non_mask_0)
+
+            # print('pixel value 1')
+            # print(latter[:, 0, ind_mask_0//32, ind_mask_0 % 32])
+            # print('pixel value 2')
+            # print(latter[:, 0, ind_non_mask_0//32, ind_non_mask_0 % 32])
+
+            # print('After shift')
+            # print(shift_masked[:, 0, ind_mask_0//32, ind_mask_0 % 32])
+            # print(shift_masked[:, 0, ind_non_mask_0//32, ind_non_mask_0 % 32])
+
+
+
+
+            shift_masked = shift_masked.detach()
+
+        return torch.cat((former, latter, shift_masked), 1)
 
 
 
@@ -115,7 +136,7 @@ class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
             # This means the graident in S will **`be replaced`(to be precise, enhanced)** by N.
             
             # So we need to transpose `W_mat`
-            W_mat_t = ind_lst[idx].t().type_as(grad_output)
+            W_mat_t = ind_lst[idx].t()
 
             grad = grad_shifted_all[idx].view(c//3, -1).t()
 

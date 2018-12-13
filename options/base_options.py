@@ -17,8 +17,8 @@ class BaseOptions():
         parser.add_argument('--ngf', type=int, default=64, help='# of gen filters in first conv layer')
         parser.add_argument('--ndf', type=int, default=64, help='# of discrim filters in first conv layer')
         parser.add_argument('--which_model_netD', type=str, default='densenet', help='selects model to use for netD')
-        parser.add_argument('--which_model_netG', type=str, default='unet_shift_triple', help='selects model to use for netG [unet_256| unet_shift_triple|acc_unet_shift_triple|soft_unet_shift_triple]')
-        parser.add_argument('--model', type=str, default='shiftnet',
+        parser.add_argument('--which_model_netG', type=str, default='acc_unet_shift_triple', help='selects model to use for netG [unet_256| unet_shift_triple|acc_unet_shift_triple|soft_unet_shift_triple]')
+        parser.add_argument('--model', type=str, default='accelerated_shiftnet',
                                  help='chooses which model to use. [shiftnet|accelerated_shiftnet|soft_shiftnet|test]')
         parser.add_argument('--triple_weight', type=float, default=1, help='The weight on the gradient of skip connections from the gradient of swapped')
         parser.add_argument('--name', type=str, default='', help='name of the experiment. It decides where to store samples and models')

@@ -160,10 +160,9 @@ def create_gMask(gMask_opts, limit_cnt=1):
         mask_global = mask.expand(1, 1, mask.size(0), mask.size(1))
     return mask_global
 
-def create_rand_mask(h=256, w=256, mask_sizes=[64, 128], overlap=0.25):
+def create_rand_mask(h=256, w=256, mask_size=64, overlap=0.25):
     mask = np.zeros((h, w))
     positions = []
-    mask_size = 32#np.random.choice(mask_sizes)
     step = int(overlap * mask_size)
     for y in range(0, h-mask_size+1, step):
         for x in range(0, w-mask_size+1, step):

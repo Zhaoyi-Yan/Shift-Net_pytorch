@@ -151,74 +151,119 @@ class PartialConv(nn.Module):
 
 class InceptionDown(nn.Module):
     def __init__(self, in_channels, out_channels, stride=1,
-                 padding=1, dilation=1, groups=1, bias=True, intermediate=None):
+                 padding=1, dilation=1, groups=1, bias=True, intermediate=None, norm_layer=nn.BatchNorm2d, is_norm=True):
         super(InceptionDown, self).__init__()
+
+        self.is_norm = is_norm
+
+        self.in_channels = in_channels
+        self.out_channels = out_channels
 
         if intermediate is None:
             intermediate = np.max([out_channels // 8, 16])
+            if intermediate % 2 != 0:
+                intermediate = out_channels
             print(in_channels, out_channels, intermediate)
         out_channels = out_channels // 4
 
+        # ACTIVATION
+        self.act = nn.LeakyReLU(0.2, True)
 
         ## LEVEL 0
         self.conv0_1x1_0 = nn.Conv2d(in_channels, intermediate, 1,
                                     stride, 0, dilation, groups, bias)
+        self.bconv0_1x1_0 = norm_layer(intermediate, affine=True)
 
         self.conv0_1x1_1 = nn.Conv2d(in_channels, intermediate, 1,
                                     stride, 0, dilation, groups, bias)
+        self.bconv0_1x1_1 = norm_layer(intermediate, affine=True)
 
         self.max_pool0 = nn.MaxPool2d(2, 2)
 
         self.conv0_1x1_2 = nn.Conv2d(in_channels, out_channels, 1,
                                     stride, 0, dilation, groups, bias)
+        self.bconv0_1x1_2 = norm_layer(out_channels, affine=True)
 
         ## LEVEL 2
         self.conv1_3x3 = nn.Conv2d(intermediate, intermediate, 3,
                                     stride, 1, dilation, groups, bias)
+        self.bconv1_3x3 = norm_layer(intermediate, affine=True)
 
         self.conv1_1x3 = nn.Conv2d(intermediate, out_channels, (1, 3),
                                     stride, (0, 1), dilation, groups, bias)
+        self.bconv1_1x3 = norm_layer(out_channels, affine=True)
 
         self.conv1_3x1 = nn.Conv2d(intermediate, out_channels, (3, 1),
                                     stride, (1, 0), dilation, groups, bias)
+        self.bconv1_3x1 = norm_layer(out_channels, affine=True)
 
         self.conv1_1x1 = nn.Conv2d(in_channels, out_channels, 1,
                                     stride, 0, dilation, groups, bias)
+        self.bconv1_1x1 = norm_layer(out_channels, affine=True)
 
         ## LEVEL 3
         self.conv2_1x3 = nn.Conv2d(intermediate, out_channels, (1, 3),
                                    stride, (0, 1), dilation, groups, bias)
+        self.bconv2_1x3 = norm_layer(out_channels, affine=True)
 
         self.conv2_3x1 = nn.Conv2d(intermediate, out_channels, (3, 1),
                                    stride, (1, 0), dilation, groups, bias)
+        self.bconv2_3x1 = norm_layer(out_channels, affine=True)
+
+    def _forward(self, input, conv, normalization):
+        print(self.in_channels, self.out_channels, input.shape)
+        input = conv(input)
+        input = normalization(input)
+        return self.act(input)
 
     def forward(self, input):
-        #LEVEL 1
 
-        #print(input.shape)
+        if self.is_norm:
+            #LEVEL 0
+            conv0_1x1_0 = self._forward(input, self.conv0_1x1_0, self.bconv0_1x1_0)
 
-        conv0_1x1_0 = self.conv0_1x1_0(input)
+            conv0_1x1_1 = self._forward(input, self.conv0_1x1_1, self.bconv0_1x1_1) #self.conv0_1x1_1(input)
 
-        conv0_1x1_1 = self.conv0_1x1_1(input)
+            max_pool0 = self.max_pool0(input)
 
-        max_pool0 = self.max_pool0(input)
+            conv0_1x1_2 = self._forward(input, self.conv0_1x1_2, self.bconv0_1x1_2)#self.conv0_1x1_2(input)
 
-        conv0_1x1_2 = self.conv0_1x1_2(input)
+            # LEVEL 1
+            conv1_3x3 = self._forward(conv0_1x1_0, self.conv1_3x3, self.bconv1_3x3)#self.conv1_3x3(conv0_1x1_0)
 
-        # LEVEL 2
+            conv1_1x3 = self._forward(conv0_1x1_1, self.conv1_1x3, self.bconv1_1x3)#self.conv1_1x3(conv0_1x1_1)
 
-        conv1_3x3 = self.conv1_3x3(conv0_1x1_0)
+            conv1_3x1 = self._forward(conv0_1x1_1, self.conv1_3x1, self.bconv1_3x1)#self.conv1_3x1(conv0_1x1_1)
 
-        conv1_1x3 = self.conv1_1x3(conv0_1x1_1)
+            conv1_1x1 = self._forward(max_pool0, self.conv1_1x1, self.bconv1_1x1)#self.conv1_1x1(max_pool0)
 
-        conv1_3x1 = self.conv1_3x1(conv0_1x1_1)
+            # LEVEL 2
+            conv2_1x3 = self._forward(conv1_3x3, self.conv2_1x3, self.bconv2_1x3)#self.conv2_1x3(conv1_3x3)
 
-        conv1_1x1 = self.conv1_1x1(max_pool0)
+            conv2_3x1 = self._forward(conv1_3x3, self.conv2_3x1, self.bconv2_3x1)#self.conv2_3x1(conv1_3x3)
+        else:
+            # LEVEL 0
+            conv0_1x1_0 = self.conv0_1x1_0(input)
 
-        # LEVEL 2
-        conv2_1x3 = self.conv2_1x3(conv1_3x3)
+            conv0_1x1_1 = self.conv0_1x1_1(input)
 
-        conv2_3x1 = self.conv2_3x1(conv1_3x3)
+            max_pool0 = self.max_pool0(input)
+
+            conv0_1x1_2 = self.conv0_1x1_2(input)
+
+            # LEVEL 1
+            conv1_3x3 = self.conv1_3x3(conv0_1x1_0)
+
+            conv1_1x3 = self.conv1_1x3(conv0_1x1_1)
+
+            conv1_3x1 = self.conv1_3x1(conv0_1x1_1)
+
+            conv1_1x1 = self.conv1_1x1(max_pool0)
+
+            # LEVEL 2
+            conv2_1x3 = self.conv2_1x3(conv1_3x3)
+
+            conv2_3x1 = self.conv2_3x1(conv1_3x3)
 
         conv2_1x3_3x1 = conv2_1x3 + conv2_3x1
 
@@ -231,68 +276,105 @@ class InceptionDown(nn.Module):
             out.append(conv)
 
         out.append(conv1_1x1)
-        for o in out:
-            print(o.shape)
 
         return torch.cat(out, 1)
 
 class InceptionUp(nn.Module):
     def __init__(self, in_channels, out_channels, stride=1,
-                 padding=1, dilation=1, groups=1, bias=True, intermediate=None):
+                 padding=1, dilation=1, groups=1, bias=True, intermediate=None, norm_layer=nn.BatchNorm2d, is_norm=True):
         super(InceptionUp, self).__init__()
+
+        self.is_norm = is_norm
+
+        self.in_channels = in_channels
+        self.out_channels = out_channels
 
         if intermediate is None:
             intermediate = np.max([out_channels // 8, 16])
             print(in_channels, out_channels, intermediate)
         out_channels = out_channels // 4
 
+        # ACTIVATION
+        self.act = nn.LeakyReLU(0.2, True)
 
         ## LEVEL 0
         self.conv0_1x1_0 = nn.ConvTranspose2d(in_channels, out_channels, 1,
                                               stride=2, padding=0, output_padding=1,
                                               groups=1, bias=True, dilation=1)
+        self.bconv0_1x1_0 = norm_layer(out_channels, affine=True)
 
         self.conv0_1x1_1 = nn.ConvTranspose2d(in_channels, intermediate, 1,
                                               stride=2, padding=0, output_padding=1,
                                               groups=1, bias=True, dilation=1)
+        self.bconv0_1x1_1 = norm_layer(intermediate, affine=True)
 
         self.upsample0 = nn.Upsample(scale_factor=2, mode='bilinear')
 
         self.conv0_1x1_2 = nn.ConvTranspose2d(in_channels, intermediate, 1,
                                               stride=2, padding=0, output_padding=1,
                                               groups=1, bias=True, dilation=1)
+        self.bconv0_1x1_2 = norm_layer(intermediate, affine=True)
 
         ## LEVEL 2
         self.conv1_3x3 = nn.ConvTranspose2d(intermediate, out_channels, 3,
                                               stride=1, padding=1, output_padding=0,
                                               groups=1, bias=True, dilation=1)
+        self.bconv1_3x3 = norm_layer(out_channels, affine=True)
 
         self.conv1_5x5 = nn.ConvTranspose2d(intermediate, out_channels, 5,
                                               stride=1, padding=2, output_padding=0,
                                               groups=1, bias=True, dilation=1)
+        self.bconv1_5x5 = norm_layer(out_channels, affine=True)
 
         self.conv1_1x1 = nn.ConvTranspose2d(in_channels, out_channels, 1,
                                               stride=1, padding=0, output_padding=0,
                                               groups=1, bias=True, dilation=1)
+        self.bconv1_1x1 = norm_layer(out_channels, affine=True)
+
+    def _forward(self, input, conv, normalization):
+        print(self.in_channels, self.out_channels, input.shape)
+        input = conv(input)
+        input = normalization(input)
+        return self.act(input)
 
     def forward(self, input):
-        #LEVEL 1
-        conv0_1x1_0 = self.conv0_1x1_0(input)
 
-        conv0_1x1_1 = self.conv0_1x1_1(input)
+        if self.is_norm:
+            #LEVEL 1
+            conv0_1x1_0 = self._forward(input, self.conv0_1x1_0, self.bconv0_1x1_0)
 
-        upsample0 = self.upsample0(input)
+            conv0_1x1_1 = self._forward(input, self.conv0_1x1_1, self.bconv0_1x1_1)#self.conv0_1x1_1(input)
 
-        conv0_1x1_2 = self.conv0_1x1_2(input)
+            upsample0 = self.upsample0(input)
 
-        # LEVEL 2
-        conv1_3x3 = self.conv1_3x3(conv0_1x1_1)
+            conv0_1x1_2 = self._forward(input, self.conv0_1x1_2, self.bconv0_1x1_2)#self.conv0_1x1_2(input)
 
-        conv1_5x5 = self.conv1_5x5(conv0_1x1_2)
+            # LEVEL 2
+            conv1_3x3 = self._forward(conv0_1x1_1, self.conv1_3x3, self.bconv1_3x3)#self.conv1_3x3(conv0_1x1_1)
 
-        conv1_1x1 = self.conv1_1x1(upsample0)
+            conv1_5x5 = self._forward(conv0_1x1_2, self.conv1_5x5, self.bconv1_5x5)#self.conv1_5x5(conv0_1x1_2)
 
-        holder = [conv0_1x1_0, conv1_3x3, conv1_5x5, conv1_1x1]
+            conv1_1x1 = self._forward(upsample0, self.conv1_1x1, self.bconv1_1x1)#self.conv1_1x1(upsample0)
+
+            holder = [conv0_1x1_0, conv1_3x3, conv1_5x5, conv1_1x1]
+        else:
+            # LEVEL 1
+            conv0_1x1_0 = self.conv0_1x1_0(input)
+
+            conv0_1x1_1 = self.conv0_1x1_1(input)
+
+            upsample0 = self.upsample0(input)
+
+            conv0_1x1_2 = self.conv0_1x1_2(input)
+
+            # LEVEL 2
+            conv1_3x3 = self.conv1_3x3(conv0_1x1_1)
+
+            conv1_5x5 = self.conv1_5x5(conv0_1x1_2)
+
+            conv1_1x1 = self.conv1_1x1(upsample0)
+
+            holder = [conv0_1x1_0, conv1_3x3, conv1_5x5, conv1_1x1]
 
         return torch.cat(holder, 1)
 

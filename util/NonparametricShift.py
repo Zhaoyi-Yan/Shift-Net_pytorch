@@ -3,20 +3,31 @@ import math
 import numpy as np
 import torch
 import torch.nn as nn
+from time import time
 
 class Modified_NonparametricShift(object):
 
     def _extract_patches_from_flag(self, img, patch_size, stride, flag, value):
         input_windows = self._unfold(img, patch_size, stride)
+
         input_windows = self._filter(input_windows, flag, value)
 
         return self._norm(input_windows)
 
-    def _paste(self, img, patch_size, stride, flag, patch):
+    def _paste(self, img, patch_size, stride, transition_matrix):
+        #t0 = time()
         input_windows, i_2, i_3, i_1, i_4 = self._unfold(img, patch_size, stride, with_indexes=True)
+        
+        #t1 = time()
+        #print('_unfold', t1 - t0)
 
+        #print(input_windows.shape)
+        #print(transition_matrix.shape)
+        #t0 = time()
         ## PASTE NEW FEATURES
-        input_windows[flag == 1] = patch
+        input_windows = torch.mm(transition_matrix, input_windows) #patch * input_windows#[flag == 1] = patch
+        #t1 = time()
+        #print('PASTE', t1 - t0)
 
         ## RESIZE TO CORRET CONV FEATURES FORMAT
         input_windows = input_windows.view(i_2, i_3, i_1, i_4)
@@ -48,8 +59,11 @@ class Modified_NonparametricShift(object):
 
 
     def _norm(self, input_window):
+        # This norm is incorrect.
+        #return torch.norm(input_window, dim=1, keepdim=True)
         for i in range(input_window.size(0)):
-            input_window[i] = input_window[i]*(1/(input_window[i].norm(2)+1e-8))
+           input_window[i] = input_window[i]*(1/(input_window[i].norm(2)+1e-8))
+
         return input_window
 
 class NonparametricShift(object):
