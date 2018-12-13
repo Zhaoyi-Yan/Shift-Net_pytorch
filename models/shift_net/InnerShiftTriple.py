@@ -22,8 +22,6 @@ class InnerShiftTriple(nn.Module):
 
     def set_mask(self, mask_global, layer_to_last, threshold):
         mask = util.cal_feat_mask(mask_global, layer_to_last, threshold)
-        print('In normal shiftTriple')
-        print(mask.sum())
         self.mask = mask.squeeze()
         return self.mask
 
