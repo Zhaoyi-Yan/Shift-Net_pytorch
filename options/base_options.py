@@ -17,16 +17,16 @@ class BaseOptions():
         parser.add_argument('--ngf', type=int, default=64, help='# of gen filters in first conv layer')
         parser.add_argument('--ndf', type=int, default=64, help='# of discrim filters in first conv layer')
         parser.add_argument('--which_model_netD', type=str, default='densenet', help='selects model to use for netD')
-        parser.add_argument('--which_model_netG', type=str, default='acc_unet_shift_triple', help='selects model to use for netG')  # use unet_swap
+        parser.add_argument('--which_model_netG', type=str, default='inception_unet_shift_triple', help='selects model to use for netG')  # use unet_swap
         parser.add_argument('--triple_weight', type=float, default=1, help='The weight on the gradient of skip connections from the gradient of swapped')
-        parser.add_argument('--name', type=str, default='test-1', help='name of the experiment. It decides where to store samples and models')
+        parser.add_argument('--name', type=str, default='class4_2', help='name of the experiment. It decides where to store samples and models')
         parser.add_argument('--n_layers_D', type=int, default=3, help='only used if which_model_netD==n_layers')
-        parser.add_argument('--gpu_ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2')
+        parser.add_argument('--gpu_ids', type=str, default='3', help='gpu ids: e.g. 0  0,1,2, 0,2')
         parser.add_argument('--dataset_mode', type=str, default='aligned_resized', help='chooses how datasets are loaded. [aligned | single]')
         parser.add_argument('--model', type=str, default='accelerated_shiftnet',
                                  help='chooses which model to use. shiftnet, test')
         parser.add_argument('--nThreads', default=2, type=int, help='# threads for loading data')
-        parser.add_argument('--checkpoints_dir', type=str, default='/mnt/hdd2/AIM/checks', help='models are saved here')
+        parser.add_argument('--checkpoints_dir', type=str, default='/mnt/hdd2/AIM/checkpoints/', help='models are saved here')
         parser.add_argument('--norm', type=str, default='instance', help='instance normalization or batch normalization')
         parser.add_argument('--serial_batches', action='store_true', help='if true, takes images in order to make batches, otherwise takes them randomly')
         parser.add_argument('--display_winsize', type=int, default=256,  help='display window size')
@@ -44,7 +44,7 @@ class BaseOptions():
         ## new added
         parser.add_argument('--mask_type', type=str, default='random',
                             help='the type of mask you want to apply, \'center\' or \'random\'')
-        parser.add_argument('--mask_sub_type', type=str, default='rect',
+        parser.add_argument('--mask_sub_type', type=str, default='island',
                             help='the type of mask you want to apply, \'rect \' or \'fractal \ or \'island \'')
 
         parser.add_argument('--fixed_mask', type=int, default=0, help='1 or 0, whether mask is fixed')
@@ -68,6 +68,8 @@ class BaseOptions():
                                                                             're_avg_hinGan (Relativistic average HingeGAN),  WARNING: wgan_gp should never be used here.')
         parser.add_argument('--gan_weight', type=float, default=0.2, help='the weight of gan loss')
         parser.add_argument('--overlap', type=int, default=4, help='the overlap for center mask')
+
+        parser.add_argument('--weights_saving', type=bool, default=True, help='If True, it will save only the lastest weights and the one minimizing the L1 loss')
 
         self.initialized = True
         return parser

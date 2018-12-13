@@ -151,7 +151,7 @@ class PartialConv(nn.Module):
 
 class InceptionDown(nn.Module):
     def __init__(self, in_channels, out_channels, stride=1,
-                 padding=1, dilation=1, groups=1, bias=True, intermediate=None, norm_layer=nn.BatchNorm2d, is_norm=True):
+                 padding=1, dilation=1, groups=1, bias=True, intermediate=None, norm_layer=nn.BatchNorm2d, is_norm=False):
         super(InceptionDown, self).__init__()
 
         self.is_norm = is_norm
@@ -163,7 +163,6 @@ class InceptionDown(nn.Module):
             intermediate = np.max([out_channels // 8, 16])
             if intermediate % 2 != 0:
                 intermediate = out_channels
-            print(in_channels, out_channels, intermediate)
         out_channels = out_channels // 4
 
         # ACTIVATION
@@ -211,7 +210,7 @@ class InceptionDown(nn.Module):
         self.bconv2_3x1 = norm_layer(out_channels, affine=True)
 
     def _forward(self, input, conv, normalization):
-        print(self.in_channels, self.out_channels, input.shape)
+        #print(self.in_channels, self.out_channels, input.shape)
         input = conv(input)
         input = normalization(input)
         return self.act(input)
@@ -281,7 +280,7 @@ class InceptionDown(nn.Module):
 
 class InceptionUp(nn.Module):
     def __init__(self, in_channels, out_channels, stride=1,
-                 padding=1, dilation=1, groups=1, bias=True, intermediate=None, norm_layer=nn.BatchNorm2d, is_norm=True):
+                 padding=1, dilation=1, groups=1, bias=True, intermediate=None, norm_layer=nn.BatchNorm2d, is_norm=False):
         super(InceptionUp, self).__init__()
 
         self.is_norm = is_norm
@@ -291,7 +290,7 @@ class InceptionUp(nn.Module):
 
         if intermediate is None:
             intermediate = np.max([out_channels // 8, 16])
-            print(in_channels, out_channels, intermediate)
+            #print(in_channels, out_channels, intermediate)
         out_channels = out_channels // 4
 
         # ACTIVATION
@@ -332,7 +331,7 @@ class InceptionUp(nn.Module):
         self.bconv1_1x1 = norm_layer(out_channels, affine=True)
 
     def _forward(self, input, conv, normalization):
-        print(self.in_channels, self.out_channels, input.shape)
+        #print(self.in_channels, self.out_channels, input.shape)
         input = conv(input)
         input = normalization(input)
         return self.act(input)

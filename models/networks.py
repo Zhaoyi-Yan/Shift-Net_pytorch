@@ -96,6 +96,11 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, opt, mask_global, norm=
         netG = AcceleratedUnetGeneratorShiftTriple(input_nc, output_nc, 8, opt, innerCos_list, shift_list, mask_global, \
                                                          ngf, norm_layer=norm_layer, use_dropout=use_dropout)
         print('[CREATED] MODEL')
+
+    elif which_model_netG == 'inception_unet_shift_triple':
+        netG = InceptionUnetGeneratorShiftTriple(input_nc, output_nc, 8, opt, innerCos_list, shift_list, mask_global, \
+                                                         ngf, norm_layer=norm_layer, use_dropout=use_dropout)
+
     elif which_model_netG == 'soft_unet_shift_triple':
         print('[CREATING] MODEL')
         netG = SoftUnetGeneratorShiftTriple(input_nc, output_nc, 8, opt, innerCos_list, shift_list, mask_global, \
