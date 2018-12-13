@@ -16,17 +16,17 @@ class Modified_NonparametricShift(object):
         return self._norm(input_windows)
 
     def cosine_similarity(self, former, latter, patch_size, stride, flag):
-        input_windows, i_2, i_3, i_1, i_4 = self._unfold(former, patch_size, stride, with_indexes=True)# self._unfold(former, patch_size, stride)
-        former = self._filter(input_windows, flag, 1)
+        former = self._unfold(former, patch_size, stride)
+        former = self._filter(former, flag, 1)
 
-        latter = self._unfold(latter, patch_size, stride)
-        latter = self._filter(latter, flag, 0)
+        latter_windows, i_2, i_3, i_1, i_4 = self._unfold(latter, patch_size, stride, with_indexes=True)
+        latter = self._filter(latter_windows, flag, 0)
 
         num = torch.einsum('ik,jk->ij', [former, latter])
         norm_latter = torch.einsum("ij,ij->i", [latter, latter])
         norm_former = torch.einsum("ij,ij->i", [former, former])
         den = torch.sqrt(torch.einsum('i,j->ij', [norm_former, norm_latter]))
-        return num / den, input_windows, i_2, i_3, i_1, i_4
+        return num / den, latter_windows, i_2, i_3, i_1, i_4
 
 
     def _paste(self, input_windows, transition_matrix, i_2, i_3, i_1, i_4):

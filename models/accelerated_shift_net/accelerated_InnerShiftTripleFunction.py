@@ -38,7 +38,7 @@ class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
             former = former_all.narrow(0, idx, 1) ### UPCONV
 
             #GET COSINE, RESHAPED FORMER AND ITS INDEXES
-            cosine, input_windows, i_2, i_3, i_1, i_4 = Nonparm.cosine_similarity(former.clone().squeeze(), latter.clone().squeeze(), 1, stride, flag)
+            cosine, latter_windows, i_2, i_3, i_1, i_4 = Nonparm.cosine_similarity(former.clone().squeeze(), latter.clone().squeeze(), 1, stride, flag)
 
             ## GET INDEXES THAT MAXIMIZE COSINE SIMILARITY
             _, indexes = torch.max(cosine, dim=1)
@@ -49,7 +49,7 @@ class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
             ctx.ind_lst[idx][tuple((mask_indexes, non_mask_indexes))] = 1
 
             # TRANSITION MATRIX
-            former_masked = Nonparm._paste(input_windows, ctx.ind_lst[idx], i_2, i_3, i_1, i_4)
+            former_masked = Nonparm._paste(latter_windows, ctx.ind_lst[idx], i_2, i_3, i_1, i_4)
 
             former_masked = former_masked.detach()
 
