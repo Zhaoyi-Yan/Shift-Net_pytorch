@@ -55,11 +55,11 @@ class InnerSoftShiftTripleModule(nn.Module):
             patches_former = torch.matmul(attention, patches_latter)
 
             # CREATE HOLDER
-            shift_masked = torch.zeros(former.size()).cuda()
+            shift_masked_all[idx] = torch.zeros(former.size()).cuda()
 
             # PASTE VALUES INTO HOLDER
-            shift_masked = Nonparm._paste(shift_masked.squeeze(), 1, stride, flag, patches_former)
+            shift_masked_all[idx] = Nonparm._paste(shift_masked.squeeze(), 1, stride, flag, patches_former)
 
-            shift_masked = shift_masked.detach().clone() # DOESN'T WORK WITHOUT DETACHING THE LAYER
+            shift_masked_all[idx] = shift_masked_all[idx].detach().clone() # DOESN'T WORK WITHOUT DETACHING THE LAYER
 
-        return torch.cat((former, latter, shift_masked), 1)
+        return torch.cat((former_all, latter_all, shift_masked_all), 1)
