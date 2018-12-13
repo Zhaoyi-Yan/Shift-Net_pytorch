@@ -37,7 +37,7 @@ class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
             latter = latter_all.narrow(0, idx, 1) ### UNET ADD
             former = former_all.narrow(0, idx, 1) ### UPCONV
 
-            #GET COSINE, RESHAPED FORMER AND ITS INDEXES
+            #GET COSINE, RESHAPED LATTER AND ITS INDEXES
             cosine, latter_windows, i_2, i_3, i_1, i_4 = Nonparm.cosine_similarity(former.clone().squeeze(), latter.clone().squeeze(), 1, stride, flag)
 
             ## GET INDEXES THAT MAXIMIZE COSINE SIMILARITY
