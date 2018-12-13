@@ -33,6 +33,7 @@ class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
 
         # None batch version
         Nonparm = Modified_NonparametricShift()
+        shift_masked = None
         for idx in range(ctx.bz):
             latter = latter_all.narrow(0, idx, 1) ### UNET ADD
             former = former_all.narrow(0, idx, 1) ### UPCONV
@@ -52,8 +53,12 @@ class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
             former_masked = Nonparm._paste(latter_windows, ctx.ind_lst[idx], i_2, i_3, i_1, i_4)
 
             former_masked = former_masked.detach()
+            if idx == 0:
+                shift_masked = former_masked
+            else:
+                shift_masked = torch.cat((shift_masked, former_masked), 0)
 
-        return torch.cat((former, latter, former_masked), 1)
+        return torch.cat((former_all, latter_all, shift_masked), 1)
 
 
     @staticmethod
