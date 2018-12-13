@@ -62,7 +62,7 @@ class Modified_NonparametricShift(object):
         # This norm is incorrect.
         #return torch.norm(input_window, dim=1, keepdim=True)
         for i in range(input_window.size(0)):
-           input_window[i] = input_window[i]*(1/(input_window[i].norm(2)+1e-8))
+            input_window[i] = input_window[i]*(1/(input_window[i].norm(2)+1e-8))
 
         return input_window
 
