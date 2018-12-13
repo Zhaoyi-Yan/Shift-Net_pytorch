@@ -12,5 +12,9 @@ logs/
 *.swp
 *.pyc
 .idea/
+<<<<<<< HEAD
 *-checkpoint.py
 
+=======
+*.ipynb_checkpoints/
+>>>>>>> 439453a204adc778d810b527372b3bc8f5da692d

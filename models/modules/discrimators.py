@@ -104,7 +104,7 @@ class SpecNLayerDiscriminator(nn.Module):
 class DenseNetDiscrimator(nn.Module):
     def __init__(self, input_nc, ndf=64, n_layers=3, norm_layer=nn.BatchNorm2d, use_sigmoid=False):
         super(DenseNetDiscrimator, self).__init__()
-        self.model = densenet121()
+        self.model = densenet121(pretrained=False)
 
     def forward(self, input):
         return self.model(input)
