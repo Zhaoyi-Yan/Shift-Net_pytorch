@@ -8,7 +8,7 @@ class BaseOptions():
         self.initialized = False
 
     def initialize(self, parser):
-        parser.add_argument('--dataroot', default='/mnt/hdd2/AIM/DAGM/Class5', help='path to images (should have subfolders trainA, trainB, valA, valB, etc)')
+        parser.add_argument('--dataroot', default='/mnt/hdd2/AIM/DAGM/Class4', help='path to images (should have subfolders trainA, trainB, valA, valB, etc)')
         parser.add_argument('--batchSize', type=int, default=1, help='input batch size')
         parser.add_argument('--loadSize', type=int, default=350, help='scale images to this size')
         parser.add_argument('--fineSize', type=int, default=256, help='then crop to this size')
@@ -19,9 +19,9 @@ class BaseOptions():
         parser.add_argument('--which_model_netD', type=str, default='densenet', help='selects model to use for netD')
         parser.add_argument('--which_model_netG', type=str, default='acc_unet_shift_triple', help='selects model to use for netG')  # use unet_swap
         parser.add_argument('--triple_weight', type=float, default=1, help='The weight on the gradient of skip connections from the gradient of swapped')
-        parser.add_argument('--name', type=str, default='class5_7', help='name of the experiment. It decides where to store samples and models')
+        parser.add_argument('--name', type=str, default='test-1', help='name of the experiment. It decides where to store samples and models')
         parser.add_argument('--n_layers_D', type=int, default=3, help='only used if which_model_netD==n_layers')
-        parser.add_argument('--gpu_ids', type=str, default='3', help='gpu ids: e.g. 0  0,1,2, 0,2')
+        parser.add_argument('--gpu_ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2')
         parser.add_argument('--dataset_mode', type=str, default='aligned_resized', help='chooses how datasets are loaded. [aligned | single]')
         parser.add_argument('--model', type=str, default='accelerated_shiftnet',
                                  help='chooses which model to use. shiftnet, test')

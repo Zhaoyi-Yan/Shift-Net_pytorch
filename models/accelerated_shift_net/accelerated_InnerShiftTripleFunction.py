@@ -33,32 +33,23 @@ class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
 
         # None batch version
         Nonparm = Modified_NonparametricShift()
-        #ts = []
-        #names = []
         for idx in range(ctx.bz):
             latter = latter_all.narrow(0, idx, 1) ### UNET ADD
             former = former_all.narrow(0, idx, 1) ### UPCONV
 
-            ## EXTRACT MASK PATCHES FROM FORMER
-            patches_former = Nonparm._extract_patches_from_flag(former.clone().squeeze(), 1, stride, flag, 1)
-
-            ## EXTRACT NON-MASK PATCHES FROM FORMER
-            patches_latter = Nonparm._extract_patches_from_flag(latter.clone().squeeze(), 1, stride, flag, 0)
-
-            ## CALCULATE ABSOLUTE COSINE SIMILARITY
-            cosine = torch.mm(patches_former, patches_latter.permute(1,0))
+            #GET COSINE, RESHAPED FORMER AND ITS INDEXES
+            cosine, input_windows, i_2, i_3, i_1, i_4 = Nonparm.cosine_similarity(former.clone().squeeze(), latter.clone().squeeze(), 1, stride, flag)
 
             ## GET INDEXES THAT MAXIMIZE COSINE SIMILARITY
             _, indexes = torch.max(cosine, dim=1)
-
 
             # SET  TRANSITION MATRIX
             mask_indexes = (flag == 1).nonzero()
             non_mask_indexes = (flag == 0).nonzero()[indexes]
             ctx.ind_lst[idx][tuple((mask_indexes, non_mask_indexes))] = 1
 
-            # PASTE VALUES INTO HOLDER
-            former_masked = Nonparm._paste(former.clone().squeeze(), 1, stride, ctx.ind_lst[idx])
+            # TRANSITION MATRIX
+            former_masked = Nonparm._paste(input_windows, ctx.ind_lst[idx], i_2, i_3, i_1, i_4)
 
             former_masked = former_masked.detach()
 
@@ -73,21 +64,21 @@ class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
 
         # # the former and the latter are keep original. Only the thrid part is shifted.
         grad_former_all = grad_output[:, 0:c//3, :, :]
-        grad_latter_all = grad_output[:, c//3: c*2//3, :, :].clone()
-        grad_swapped_all = grad_output[:, c*2//3:c, :, :].clone().long().cpu()
+        grad_latter_all = grad_output[:, c//3: c*2//3, :, :]#.cuda()
+        grad_swapped_all = grad_output[:, c*2//3:c, :, :]#.cuda()
 
         for idx in range(ctx.bz):
 
             ## MASK TO NON-MASK (NOT NEEDED TO TRANSPOSE)
-            W_mat_t = ind_lst[idx].long().cpu()
+            W_mat_t = ind_lst[idx].cuda().t()
 
             grad = grad_swapped_all[idx].view(c//3, -1).t()
 
-            grad_swapped_weighted = torch.mm(W_mat_t.t(), grad)
+            grad_swapped_weighted = torch.mm(W_mat_t, grad)
 
             # Then transpose it back
             grad_swapped_weighted = grad_swapped_weighted.t().contiguous().view(1, c//3, ctx.h, ctx.w)
-            grad_latter_all[idx] = torch.add(grad_latter_all[idx].long().cpu(), grad_swapped_weighted.mul(ctx.triple_w))
+            grad_latter_all[idx] = torch.add(grad_latter_all[idx], grad_swapped_weighted.mul(ctx.triple_w))
 
         # note the input channel and the output channel are all c, as no mask input for now.
         grad_input = torch.cat([grad_former_all, grad_latter_all], 1)
