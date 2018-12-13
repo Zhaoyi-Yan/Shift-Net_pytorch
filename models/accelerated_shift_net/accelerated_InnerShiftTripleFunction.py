@@ -33,77 +33,24 @@ class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
         # None batch version
         Nonparm = Modified_NonparametricShift()
 
-        #ts = []
-        #names = []
         for idx in range(ctx.bz):
-            latter = latter_all.narrow(0, idx, 1) ### encoder feature
-            former = former_all.narrow(0, idx, 1) ### decoder feature
+            latter = latter_all.narrow(0, idx, 1) ### UNET ADD
+            former = former_all.narrow(0, idx, 1) ### UPCONV
 
-            ## EXTRACT MASK PATCHES FROM FORMER
-            patches_former = Nonparm._extract_patches_from_flag(former.clone().squeeze(), 1, stride, flag, 1)
-
-            ## EXTRACT NON-MASK PATCHES FROM FORMER
-            patches_latter = Nonparm._extract_patches_from_flag(latter.clone().squeeze(), 1, stride, flag, 0)
-
-            ## CALCULATE ABSOLUTE COSINE SIMILARITY
-            cosine = torch.mm(patches_former, patches_latter.permute(1,0))
+            #GET COSINE, RESHAPED FORMER AND ITS INDEXES
+            cosine, latter_windows, i_2, i_3, i_1, i_4 = Nonparm.cosine_similarity(former.clone().squeeze(), latter.clone().squeeze(), 1, stride, flag)
 
             ## GET INDEXES THAT MAXIMIZE COSINE SIMILARITY
-            _, indexes = torch.max(cosine, dim=1) # indexes: the same size with patches_former(masked part)'s patches.
+            _, indexes = torch.max(cosine, dim=1)
 
-            ## GET PATCHES CORRESPONDING
-            # DO NOT use patches_former as the variable, it is confusing.
-            patches_latter_pasted = patches_latter[indexes] # extract the corresponding (most correlative) patches from patches_latter.
-
-
-            # CREATE HOLDER
-            shift_masked = torch.zeros(former.size()).type_as(input)
-
-
-            # CREATE MAPPING MATRIX
+            # SET  TRANSITION MATRIX
             mask_indexes = (flag == 1).nonzero()
             non_mask_indexes = (flag == 0).nonzero()[indexes]
-            ctx.ind_lst[idx][tuple((mask_indexes, non_mask_indexes))] = 1 # advanced indexing
+            ctx.ind_lst[idx][tuple((mask_indexes, non_mask_indexes))] = 1
 
-            
-            # It has been checked.
-            # For example, when setting 'center=mask', 252 lines will be one-hot in 1024*1024 matrix.
-            # Try verify the correctness manually...
+            # TRANSITION MATRIX
+            shift_masked = Nonparm._paste(latter_windows, ctx.ind_lst[idx], i_2, i_3, i_1, i_4)
 
-            # torch.set_printoptions(threshold=1024*1024)
-            # print(flag)
-            # print('flag1\n', flag_1)
-            # print('flag0\n', flag_0)
-            # print('indexes', indexes)
-            # print(ctx.ind_lst[idx].sum())
-
-            # print(ctx.ind_lst[idx])
-
-            # PASTE VALUES INTO HOLDER
-            shift_masked = Nonparm._paste(latter.clone().squeeze(), 1, stride, ctx.ind_lst[idx])
-
-
-            # print(shift_masked.size())
-            # print('original pixel index')
-            # ind_mask_0 = mask_indexes[0]
-            # print(ind_mask_0)
-            # print('Replacing by index')
-            # ind_non_mask_0 = non_mask_indexes[0]
-            # print(ind_non_mask_0)
-
-            # print('pixel value 1')
-            # print(latter[:, 0, ind_mask_0//32, ind_mask_0 % 32])
-            # print('pixel value 2')
-            # print(latter[:, 0, ind_non_mask_0//32, ind_non_mask_0 % 32])
-
-            # print('After shift')
-            # print(shift_masked[:, 0, ind_mask_0//32, ind_mask_0 % 32])
-            # print(shift_masked[:, 0, ind_non_mask_0//32, ind_non_mask_0 % 32])
-
-
-
-
-            shift_masked = shift_masked.detach()
 
         return torch.cat((former, latter, shift_masked), 1)
 

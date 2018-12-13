@@ -81,9 +81,9 @@ class InnerShiftTripleFunction(torch.autograd.Function):
 
             result_tmp_mask.masked_fill_(inv_ex_mask, 0)  # mask part
 
-            swapped_latter = result_tmp_mask
+            shift_latter = result_tmp_mask
             # construct final self.output
-            output_lst[idx] = torch.cat((former, latter, swapped_latter), 1)
+            output_lst[idx] = torch.cat((former, latter, shift_latter), 1)
             ind_lst[idx] = ind
 
         # shortcut
@@ -103,7 +103,7 @@ class InnerShiftTripleFunction(torch.autograd.Function):
         # # the former and the latter are keep original. Only the thrid part is shifted.
         grad_former_all = grad_output[:, 0:c//3, :, :]
         grad_latter_all = grad_output[:, c//3: c*2//3, :, :].clone()
-        grad_swapped_all = grad_output[:, c*2//3:c, :, :].clone()
+        grad_shift_all = grad_output[:, c*2//3:c, :, :].clone()
 
         spatial_size = ctx.h * ctx.w
 
@@ -121,11 +121,11 @@ class InnerShiftTripleFunction(torch.autograd.Function):
             W_mat_t = W_mat.t()
 
             # view(c/3,-1):t() makes each line be a gradient of certain position which is c/3 channels.
-            grad_swapped_weighted = torch.mm(W_mat_t, grad_swapped_all[idx].view(c//3, -1).t())
+            grad_shift_weighted = torch.mm(W_mat_t, grad_shift_all[idx].view(c//3, -1).t())
 
             # Then transpose it back
-            grad_swapped_weighted = grad_swapped_weighted.t().contiguous().view(1, c//3, ctx.h, ctx.w)
-            grad_latter_all[idx] = torch.add(grad_latter_all[idx], grad_swapped_weighted.mul(ctx.triple_w))
+            grad_shift_weighted = grad_shift_weighted.t().contiguous().view(1, c//3, ctx.h, ctx.w)
+            grad_latter_all[idx] = torch.add(grad_latter_all[idx], grad_shift_weighted.mul(ctx.triple_w))
 
 
         # note the input channel and the output channel are all c, as no mask input for now.

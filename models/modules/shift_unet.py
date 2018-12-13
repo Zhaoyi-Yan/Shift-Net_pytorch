@@ -231,7 +231,6 @@ class AcceleratedUnetSkipConnectionShiftTriple(nn.Module):
             _, _, h, w = x.size()
             if h != x_latter.size(2) or w != x_latter.size(3):
                 x_latter = F.interpolate(x_latter, (h, w), mode='bilinear')
-                print(x_latter.size())
 
             return torch.cat([x_latter, x], 1)  # cat in the C channel
 

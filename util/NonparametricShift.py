@@ -14,20 +14,25 @@ class Modified_NonparametricShift(object):
 
         return self._norm(input_windows)
 
-    def _paste(self, img, patch_size, stride, transition_matrix):
-        #t0 = time()
-        input_windows, i_2, i_3, i_1, i_4 = self._unfold(img, patch_size, stride, with_indexes=True)
-        
-        #t1 = time()
-        #print('_unfold', t1 - t0)
+    # former: content, to be replaced.
+    # latter: style, source pixels.
+    def cosine_similarity(self, former, latter, patch_size, stride, flag):
+        former = self._unfold(former, patch_size, stride)
+        former = self._filter(former, flag, 1)
 
-        #print(input_windows.shape)
-        #print(transition_matrix.shape)
-        #t0 = time()
-        ## PASTE NEW FEATURES
-        input_windows = torch.mm(transition_matrix, input_windows) #patch * input_windows#[flag == 1] = patch
-        #t1 = time()
-        #print('PASTE', t1 - t0)
+        latter_windows, i_2, i_3, i_1, i_4 = self._unfold(latter, patch_size, stride, with_indexes=True)
+        latter = self._filter(latter_windows, flag, 0)
+
+        num = torch.einsum('ik,jk->ij', [former, latter])
+        norm_latter = torch.einsum("ij,ij->i", [latter, latter])
+        norm_former = torch.einsum("ij,ij->i", [former, former])
+        den = torch.sqrt(torch.einsum('i,j->ij', [norm_former, norm_latter]))
+        return num / den, latter_windows, i_2, i_3, i_1, i_4
+
+
+    def _paste(self, input_windows, transition_matrix, i_2, i_3, i_1, i_4):
+        ## TRANSPOSE FEATURES NEW FEATURES
+        input_windows = torch.mm(transition_matrix, input_windows)
 
         ## RESIZE TO CORRET CONV FEATURES FORMAT
         input_windows = input_windows.view(i_2, i_3, i_1, i_4)
