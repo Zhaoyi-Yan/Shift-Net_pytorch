@@ -28,7 +28,6 @@ class Modified_NonparametricShift(object):
         den = torch.sqrt(torch.einsum('i,j->ij', [norm_former, norm_latter]))
         return num / den, latter_windows, i_2, i_3, i_1, i_4
 
-
     def _paste(self, input_windows, transition_matrix, i_2, i_3, i_1, i_4):
         ## TRANSPOSE FEATURES NEW FEATURES
         input_windows = torch.mm(transition_matrix, input_windows)

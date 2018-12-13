@@ -84,7 +84,7 @@ class BaseOptions():
 
         self.parser = parser
         if options == None:
-            return parser.parse_args('')
+            return parser.parse_args()
         else:
             return parser.parse_args(options)
 
