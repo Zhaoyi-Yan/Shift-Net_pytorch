@@ -70,7 +70,7 @@ class ShiftNetModel(BaseModel):
         # load/define networks
         # self.ng_innerCos_list is the constraint list in netG inner layers.
         # self.ng_mask_list is the mask list constructing shift operation.
-        self.netG, self.ng_innerCos_list, self.ng_shift_list = networks.define_G(opt.input_nc, opt.output_nc, opt.ngf,
+        self.netG, self.ng_innerCos_list, self.ng_shift_list = networks.define_G(opt.input_nc+1, opt.output_nc, opt.ngf,
                                       opt.which_model_netG, opt, self.mask_global, opt.norm, opt.use_dropout, opt.init_type, self.gpu_ids, opt.init_gain) # add opt, we need opt.shift_sz and other stuffs
         if self.isTrain:
             use_sigmoid = False
@@ -137,12 +137,15 @@ class ShiftNetModel(BaseModel):
         real_A.narrow(1,1,1).masked_fill_(self.mask_global, 0.)#2*104.0/255.0 - 1.0
         real_A.narrow(1,2,1).masked_fill_(self.mask_global, 0.)#2*117.0/255.0 - 1.0
 
-        #print(torch.sum(real_A[:, 0, self.mask_global[0, 0]]))
+        # make it 4 dimensions.
+        real_A = torch.cat((real_A, self.mask_global.expand(self.opt.batchSize, 1, \
+                                 self.opt.fineSize, self.opt.fineSize).type_as(real_A)), dim=1)
 
         self.real_A = real_A
         self.real_B = real_B
         self.image_paths = input['A_paths']
 
+    # TODO: it has not been implemented totally.
     def set_input_with_mask(self, input, mask):
         real_A = input['A'].to(self.device)
         real_B = input['B'].to(self.device)
@@ -150,8 +153,6 @@ class ShiftNetModel(BaseModel):
         self.mask_global = mask
 
         self.set_latent_mask(mask, 3, self.opt.threshold)
-
-        #print(torch.max(real_A), torch.min(real_A))
 
         real_A.narrow(1,0,1).masked_fill_(mask, 0.)#2*123.0/255.0 - 1.0
         real_A.narrow(1,1,1).masked_fill_(mask, 0.)#2*104.0/255.0 - 1.0
@@ -166,7 +167,8 @@ class ShiftNetModel(BaseModel):
 
     def set_gt_latent(self):
         if not self.opt.skip:
-            self.netG(self.real_B) # input ground truth
+            self.netG(torch.cat([self.real_B, self.mask_global.expand(self.opt.batchSize, 1, \
+                                 self.opt.fineSize, self.opt.fineSize).type_as(self.real_B)], dim=1)) # input ground truth
 
     def forward(self):
         self.fake_B = self.netG(self.real_A)
@@ -239,11 +241,11 @@ class ShiftNetModel(BaseModel):
 
         self.loss_G_L1 = 0
         self.loss_G_L1 += self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_A
-            # Second, G(A) = B
-        #self.loss_G_L1 = self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_A
 
-
-        self.loss_G = self.loss_G_L1 - self.loss_G_GAN * self.opt.gan_weight
+        if self.wgan_gp:
+            self.loss_G = self.loss_G_L1 - self.loss_G_GAN * self.opt.gan_weight
+        else:
+            self.loss_G = self.loss_G_L1 + self.loss_G_GAN * self.opt.gan_weight
 
 
         # Third add additional netG contraint loss!
