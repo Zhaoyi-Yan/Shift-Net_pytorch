@@ -69,6 +69,8 @@ class BaseOptions():
         parser.add_argument('--gan_weight', type=float, default=0.2, help='the weight of gan loss')
         parser.add_argument('--overlap', type=int, default=4, help='the overlap for center mask')
 
+        parser.add_argument('--only_lastest', type=bool, default=True,
+                            help='If True, it will save only the lastest weights and the one minimizing the L1 loss')
         self.initialized = True
         return parser
 

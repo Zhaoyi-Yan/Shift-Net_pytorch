@@ -164,7 +164,8 @@ class ShiftNetModel(BaseModel):
         self.image_paths = input['A_paths']       
 
     def set_latent_mask(self, mask_global, layer_to_last, threshold):
-        self.ng_shift_list[0].set_mask(mask_global, layer_to_last, threshold)
+        for ng_shift in self.ng_shift_list:
+            ng_shift.set_mask(mask_global, layer_to_last, threshold)
 
     def set_gt_latent(self):
         if not self.opt.skip:
