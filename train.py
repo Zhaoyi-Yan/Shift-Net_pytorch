@@ -53,7 +53,8 @@ for epoch in range(opt.epoch_count, opt.niter + opt.niter_decay + 1):
         print('saving the model at the end of epoch %d, iters %d' %
                 (epoch, total_steps))
         model.save_networks('latest')
-        model.save_networks(epoch)
+        if not opt.only_lastest:
+            model.save_networks(epoch)
 
     print('End of epoch %d / %d \t Time Taken: %d sec' %
             (epoch, opt.niter + opt.niter_decay, time.time() - epoch_start_time))

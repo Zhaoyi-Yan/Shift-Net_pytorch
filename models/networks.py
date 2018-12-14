@@ -78,6 +78,10 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, opt, mask_global, norm=
     innerCos_list = []
     shift_list = []
 
+    print('input_nc {}'.format(input_nc))
+    print('output_nc {}'.format(output_nc))
+    print('which_model_netG {}'.format(which_model_netG))
+
     # Here we need to initlize an artificial mask_global to construct the init model.
     # When training, we need to set mask for special layers(mostly for Shift layers) first.
     # If mask is fixed during training, we only need to set mask for these layers once,

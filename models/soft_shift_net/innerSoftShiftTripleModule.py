@@ -5,7 +5,7 @@ import torch
 
 
 class InnerSoftShiftTripleModule(nn.Module):
-    def forward(ctx, input, mask, shift_sz, stride, triple_w, flag):
+    def forward(ctx, input, mask, stride, triple_w, flag):
         assert input.dim() == 4, "Input Dim has to be 4"
         ctx.triple_w = triple_w
         ctx.flag = flag
@@ -15,51 +15,36 @@ class InnerSoftShiftTripleModule(nn.Module):
 
         ctx.Tensor = torch.cuda.FloatTensor if torch.cuda.is_available else torch.FloatTensor
 
-        #ctx.ind_lst = torch.LongTensor(ctx.bz, ctx.h * ctx.w, ctx.h * ctx.w)
+        ctx.ind_lst = ctx.Tensor(ctx.bz, ctx.h * ctx.w, ctx.h * ctx.w).zero_()
 
         # former and latter are all tensors
-        former_all = input.narrow(1, 0, c//2) ### UPCONV
-        latter_all = input.narrow(1, c//2, c//2) ### UNET ADD
+        former_all = input.narrow(1, 0, c//2) ### decoder feature
+        latter_all = input.narrow(1, c//2, c//2) ### encoder feature
+        shift_masked_all = torch.Tensor(former_all.size()).type_as(former_all) # addition feature
 
         assert mask.dim() == 2, "Mask dimension must be 2"
-        ex_mask = mask.expand(1, c//2, mask.size(0), mask.size(1)) # 1*c*h*w
-        inv_ex_mask = torch.add(torch.neg(ex_mask.float()), 1).byte()
 
         if torch.cuda.is_available:
             flag = flag.cuda()
 
-            inv_ex_mask = inv_ex_mask.cuda()
-
         # None batch version
+        Nonparm = Modified_NonparametricShift()
+
         for idx in range(ctx.bz):
-            latter = latter_all.narrow(0, idx, 1) ### UNET ADD
-            former = former_all.narrow(0, idx, 1) ### UPCONV
+            latter = latter_all.narrow(0, idx, 1) ### encoder feature
+            former = former_all.narrow(0, idx, 1) ### decoder feature
 
-            Nonparm = Modified_NonparametricShift()
-
-            ## EXTRACT MASK PATCHES FROM FORMER
-            patches_former = Nonparm._extract_patches_from_flag(former.clone().squeeze(), 1, stride, flag, 1)
-
-            ## EXTRACT NON-MASK PATCHES FROM FORMER
-            patches_latter = Nonparm._extract_patches_from_flag(latter.clone().squeeze(), 1, stride, flag, 0)
-
-            patches_latter_norm = Nonparm._norm(patches_latter.clone())
-
-            ## CALCULATE ABSOLUTE COSINE SIMILARITY
-            cosine = torch.mm(patches_former, patches_latter_norm.permute(1,0))
+            #GET COSINE, RESHAPED LATTER AND ITS INDEXES
+            cosine, latter_windows, former_windows, i_2, i_3, i_1, i_4 = Nonparm.cosine_similarity(former.clone().squeeze(), latter.clone().squeeze(), 1, stride, flag, with_former=True)
 
             ## GET INDEXES THAT MAXIMIZE COSINE SIMILARITY
-            attention = F.softmax(cosine, dim=1)
+            cosine_softmax = F.softmax(cosine, dim=1)
 
-            ## GET PATCHES CORRESPONDING
-            patches_former = torch.matmul(attention, patches_latter)
+            mask_indexes = (flag == 1).nonzero()
+            non_mask_indexes = (flag == 0).nonzero()
+            ctx.ind_lst[idx][mask_indexes, non_mask_indexes.t()] = cosine_softmax
 
-            # CREATE HOLDER
-            shift_masked_all[idx] = torch.zeros(former.size()).cuda()
-
-            # PASTE VALUES INTO HOLDER
-            shift_masked_all[idx] = Nonparm._paste(shift_masked.squeeze(), 1, stride, flag, patches_former)
-
-            shift_masked_all[idx] = shift_masked_all[idx].detach().clone() # DOESN'T WORK WITHOUT DETACHING THE LAYER
+            # GET FINAL SHIFT FEATURE
+            shift_masked_all[idx] = Nonparm._paste(latter_windows, ctx.ind_lst[idx], i_2, i_3, i_1, i_4)
 
         return torch.cat((former_all, latter_all, shift_masked_all), 1)

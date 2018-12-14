@@ -39,7 +39,7 @@ def densenet121(pretrained=False, **kwargs):
                 new_key = res.group(1) + res.group(2)
                 state_dict[new_key] = state_dict[key]
                 del state_dict[key]
-        model.load_state_dict(state_dict)
+        model.load_state_dict(state_dict, strict=False)
     return model
 
 
@@ -207,7 +207,9 @@ class DenseNet(nn.Module):
         # Final batch norm
         self.features.add_module('norm5', nn.BatchNorm2d(num_features))
 
-        self.features.add_module('sigmoid', nn.Sigmoid())
+        self.conv_1x1 = nn.Conv2d(num_features, 1, kernel_size=3)
+
+        self.sigmoid = nn.Sigmoid()
 
         # Linear layer
         self.classifier = nn.Linear(num_features, num_classes)
@@ -224,6 +226,7 @@ class DenseNet(nn.Module):
 
     def forward(self, x):
         features = self.features(x)
-        #out = F.relu(features, inplace=True)
-        out = F.avg_pool2d(features, kernel_size=7, stride=1).view(features.size(0), -1)
-        return out
+        features = F.avg_pool2d(features, kernel_size=7, stride=1).view(features.size(0), -1)
+        #features = self.conv_1x1(features)
+        features = self.sigmoid(features)
+        return features

@@ -38,7 +38,7 @@ class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
             latter = latter_all.narrow(0, idx, 1) ### encoder feature
             former = former_all.narrow(0, idx, 1) ### decoder feature
 
-            #GET COSINE, RESHAPED FORMER AND ITS INDEXES
+            #GET COSINE, RESHAPED LATTER AND ITS INDEXES
             cosine, latter_windows, i_2, i_3, i_1, i_4 = Nonparm.cosine_similarity(former.clone().squeeze(), latter.clone().squeeze(), 1, stride, flag)
 
             ## GET INDEXES THAT MAXIMIZE COSINE SIMILARITY
@@ -47,7 +47,7 @@ class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
             # SET  TRANSITION MATRIX
             mask_indexes = (flag == 1).nonzero()
             non_mask_indexes = (flag == 0).nonzero()[indexes]
-            ctx.ind_lst[idx][tuple((mask_indexes, non_mask_indexes))] = 1
+            ctx.ind_lst[idx][mask_indexes, non_mask_indexes.t()] = 1
 
             # GET FINAL SHIFT FEATURE
             shift_masked_all[idx] = Nonparm._paste(latter_windows, ctx.ind_lst[idx], i_2, i_3, i_1, i_4)

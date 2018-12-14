@@ -38,7 +38,7 @@ class InnerSoftShiftTriple(nn.Module):
                                                                                                    self.stride, self.mask_thred)
             self.cal_fixed_flag = False
 
-        return self.softShift(input, self.mask, self.shift_sz, self.stride, self.triple_weight, self.flag)
+        return self.softShift(input, self.mask, self.stride, self.triple_weight, self.flag)
 
     def __repr__(self):
         return self.__class__.__name__+ '(' \
