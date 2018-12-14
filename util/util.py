@@ -92,6 +92,17 @@ def tensor2im(input_image, imtype=np.uint8):
     image_numpy = (np.transpose(image_numpy, (1, 2, 0)) + 1) / 2.0 * 255.0
     return image_numpy.astype(imtype)
 
+# Remove dummy dim from a tensor.
+# Useful when input is 4 dims.
+def rm_extra_dim(image):
+    if image.dim() == 3:
+        return image[:3, :, :]
+    elif image.dim() == 4:
+        return image[:, :3, :, :]
+    else:
+        raise NotImplementedError
+
+
 def diagnose_network(net, name='network'):
     mean = 0.0
     count = 0
