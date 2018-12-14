@@ -69,7 +69,7 @@ If you find it a little hard to read the code, you may read [Guides](https://git
 - [x] Guides of our code, we hope it helps you understand our code more easily.
 - [x] Add more GANs, like spectural norm and relativelistic GAN.
 - [x] Boost the efficiency of shift layer.
-- [ ] Directly resize the mask to save computation.
+- [x] Directly resize the global_mask to get the mask in feature space.
 - [ ] Extensions of Shift-Net, which will help the performance a lot.
 - [ ] Add random batch of masks
 - [ ] Add soft transition from centered mask to random ones
