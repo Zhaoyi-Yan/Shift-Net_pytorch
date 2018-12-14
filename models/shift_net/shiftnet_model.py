@@ -75,7 +75,7 @@ class ShiftNetModel(BaseModel):
         # load/define networks
         # self.ng_innerCos_list is the constraint list in netG inner layers.
         # self.ng_mask_list is the mask list constructing shift operation.
-        self.netG, self.ng_innerCos_list, self.ng_shift_list = networks.define_G(opt.input_nc, opt.output_nc, opt.ngf,
+        self.netG, self.ng_innerCos_list, self.ng_shift_list = networks.define_G(opt.input_nc+1, opt.output_nc, opt.ngf,
                                       opt.which_model_netG, opt, self.mask_global, opt.norm, opt.use_dropout, opt.init_type, self.gpu_ids, opt.init_gain) # add opt, we need opt.shift_sz and other stuffs
         if self.isTrain:
             use_sigmoid = False
@@ -136,9 +136,14 @@ class ShiftNetModel(BaseModel):
 
         self.set_latent_mask(self.mask_global, 3, self.opt.threshold)
 
-        real_A.narrow(1,0,1).masked_fill_(self.mask_global, 0)
-        real_A.narrow(1,1,1).masked_fill_(self.mask_global, 0)
-        real_A.narrow(1,2,1).masked_fill_(self.mask_global, 0)
+        real_A.narrow(1,0,1).masked_fill_(self.mask_global, 0.)
+        real_A.narrow(1,1,1).masked_fill_(self.mask_global, 0.)
+        real_A.narrow(1,2,1).masked_fill_(self.mask_global, 0.)
+
+        # make it 4 dimensions.
+        # Mention: the extra dim, the masked part is filled with 0, non-mask part is filled with 1.
+        real_A = torch.cat((real_A, (1 - self.mask_global).expand(self.opt.batchSize, 1, \
+                                 self.opt.fineSize, self.opt.fineSize).type_as(real_A)), dim=1)
 
         self.real_A = real_A
         self.real_B = real_B
@@ -149,7 +154,10 @@ class ShiftNetModel(BaseModel):
 
     def set_gt_latent(self):
         if not self.opt.skip:
-            self.netG(self.real_B) # input ground truth
+            # Here, we also make the input 4 dimensions.
+            # Mention: the extra dim, the masked part is filled with 0, non-mask part is filled with 1.
+            self.netG(torch.cat([self.real_B, (1 - self.mask_global).expand(self.opt.batchSize, 1, \
+                                 self.opt.fineSize, self.opt.fineSize).type_as(self.real_B)], dim=1)) # input ground truth
 
     def forward(self):
         self.fake_B = self.netG(self.real_A)
