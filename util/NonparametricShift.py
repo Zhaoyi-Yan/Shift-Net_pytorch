@@ -27,7 +27,7 @@ class Modified_NonparametricShift(object):
         norm_latter = torch.einsum("ij,ij->i", [latter, latter])
         norm_former = torch.einsum("ij,ij->i", [former, former])
         den = torch.sqrt(torch.einsum('i,j->ij', [norm_former, norm_latter]))
-        if with_former:
+        if not with_former:
             return num / den, latter_windows, i_2, i_3, i_1, i_4
         else:
             return num / den, latter_windows, former_windows, i_2, i_3, i_1, i_4
