@@ -81,7 +81,10 @@ class BaseOptions():
 
 
         self.parser = parser
-        return parser.parse_args()
+        if options == None:
+            return parser.parse_args()
+        else:
+            return parser.parse_args(options)
 
     def print_options(self, opt):
         message = ''
@@ -103,9 +106,9 @@ class BaseOptions():
             opt_file.write(message)
             opt_file.write('\n')
 
-    def parse(self):
+    def parse(self, options=None):
 
-        opt = self.gather_options()
+        opt = self.gather_options(options=options)
         opt.isTrain = self.isTrain   # train or test
 
         # process opt.suffix
