@@ -138,7 +138,8 @@ class ShiftNetModel(BaseModel):
         real_A.narrow(1,2,1).masked_fill_(self.mask_global, 0.)#2*117.0/255.0 - 1.0
 
         # make it 4 dimensions.
-        real_A = torch.cat((real_A, self.mask_global.expand(self.opt.batchSize, 1, \
+        # Mention: the extra dim, the masked part is filled with 0, non-mask part is filled with 1.
+        real_A = torch.cat((real_A, (1 - self.mask_global).expand(self.opt.batchSize, 1, \
                                  self.opt.fineSize, self.opt.fineSize).type_as(real_A)), dim=1)
 
         self.real_A = real_A
@@ -167,7 +168,9 @@ class ShiftNetModel(BaseModel):
 
     def set_gt_latent(self):
         if not self.opt.skip:
-            self.netG(torch.cat([self.real_B, self.mask_global.expand(self.opt.batchSize, 1, \
+            # make it 4 dimensions.
+            # Mention: the extra dim, the masked part is filled with 0, non-mask part is filled with 1.
+            self.netG(torch.cat([self.real_B, (1 - self.mask_global).expand(self.opt.batchSize, 1, \
                                  self.opt.fineSize, self.opt.fineSize).type_as(self.real_B)], dim=1)) # input ground truth
 
     def forward(self):
