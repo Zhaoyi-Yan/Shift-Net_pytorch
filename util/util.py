@@ -115,13 +115,6 @@ def diagnose_network(net, name='network'):
     print(name)
     print(mean)
 
-def binary_mask(in_mask, threshold):
-    assert in_mask.dim() == 2, "mask must be 2 dimensions"
-
-    output = torch.ByteTensor(in_mask.size())
-    output = (output > threshold).float().mul_(1)
-
-    return output
 
 
 def wrapper_gmask(opt):
@@ -211,22 +204,16 @@ def create_mask():
 
 # inMask is tensor should be 1*1*256*256 float
 # Return: ByteTensor
-def cal_feat_mask(inMask, conv_layers, threshold):
+def cal_feat_mask(inMask, nlayers):
     assert inMask.dim() == 4, "mask must be 4 dimensions"
     assert inMask.size(0) == 1, "the first dimension must be 1 for mask"
     inMask = inMask.float()
-    convs = []
-    for id_net in range(conv_layers):
-        conv = nn.Conv2d(1,1,4,2,1, bias=False)
-        conv.weight.data.fill_(1/16.0) # 16.0 not 16
-        convs.append(conv)
-    lnet = nn.Sequential(*convs)
-    if inMask.is_cuda:
-        lnet = lnet.cuda()
-    output = lnet(inMask)
-    output = (output > threshold).float().mul_(1)
+    ntimes = 2**nlayers
+    inMask = F.interpolate(inMask, (inMask.size(2)//ntimes, inMask.size(3)//ntimes), mode='bilinear')
+    inMask = (inMask > 0.5).float()
+    inMask = inMask.detach().byte()
 
-    return output.data.byte()
+    return inMask
 
 def cal_flag_given_mask_thred(img, mask, patch_size, stride, mask_thred):
     assert img.dim() == 3, 'img has to be 3 dimenison!'

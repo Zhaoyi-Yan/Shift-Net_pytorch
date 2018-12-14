@@ -20,8 +20,8 @@ class InnerCos(nn.Module):
 
 
 
-    def set_mask(self, mask_global, opt):
-        mask = util.cal_feat_mask(mask_global, 3, opt.threshold)
+    def set_mask(self, mask_global, layer_to_last):
+        mask = util.cal_feat_mask(mask_global, layer_to_last)
         self.mask = mask.squeeze()
         if torch.cuda.is_available:
             self.mask = self.mask.float().cuda()

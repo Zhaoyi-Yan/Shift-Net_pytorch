@@ -49,7 +49,6 @@ class BaseOptions():
 
         parser.add_argument('--fixed_mask', type=int, default=1, help='1 or 0, whether mask is fixed')
         parser.add_argument('--lambda_A', type=int, default=100, help='weight on L1 term in objective')
-        parser.add_argument('--threshold', type=float, default=5/16.0, help='making binary mask')
         parser.add_argument('--stride', type=int, default=1, help='should be dense, 1 is a good option.')
         parser.add_argument('--shift_sz', type=int, default=1, help='when it is 3, the next opt `mask_thred` should not be 1')
         parser.add_argument('--mask_thred', type=int, default=1, help='number to decide whether a patch is masked')
