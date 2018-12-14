@@ -134,7 +134,7 @@ class ShiftNetModel(BaseModel):
         else:
             self.mask_global = util.create_gMask(self.gMask_opts).type_as(self.mask_global)
 
-        self.set_latent_mask(self.mask_global, 3, self.opt.threshold)
+        self.set_latent_mask(self.mask_global, 3)
 
         real_A.narrow(1,0,1).masked_fill_(self.mask_global, 0.)
         real_A.narrow(1,1,1).masked_fill_(self.mask_global, 0.)
@@ -149,8 +149,8 @@ class ShiftNetModel(BaseModel):
         self.real_B = real_B
         self.image_paths = input['A_paths']
 
-    def set_latent_mask(self, mask_global, layer_to_last, threshold):
-        self.ng_shift_list[0].set_mask(mask_global, layer_to_last, threshold)
+    def set_latent_mask(self, mask_global, layer_to_last):
+        self.ng_shift_list[0].set_mask(mask_global, layer_to_last)
 
     def set_gt_latent(self):
         if not self.opt.skip:

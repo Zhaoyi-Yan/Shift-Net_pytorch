@@ -59,15 +59,15 @@ class UnetSkipConnectionShiftTriple(nn.Module):
 
         # As the downconv layer is outer_nc in and inner_nc out.
         # So the shift define like this:
-        shift = InnerShiftTriple(opt.threshold, opt.fixed_mask, opt.shift_sz, opt.stride, opt.mask_thred, opt.triple_weight)
+        shift = InnerShiftTriple(opt.fixed_mask, opt.shift_sz, opt.stride, opt.mask_thred, opt.triple_weight)
 
-        shift.set_mask(mask_global, 3, opt.threshold)
+        shift.set_mask(mask_global, 3)
         shift_list.append(shift)
 
         # Add latent constraint
         # Then add the constraint to the constrain layer list!
         innerCos = InnerCos(strength=opt.strength, skip=opt.skip)
-        innerCos.set_mask(mask_global, opt)  # Here we need to set mask for innerCos layer too.
+        innerCos.set_mask(mask_global, 3)  # Here we need to set mask for innerCos layer too.
         innerCos_list.append(innerCos)
 
 
@@ -175,16 +175,16 @@ class AcceleratedUnetSkipConnectionShiftTriple(nn.Module):
 
         # As the downconv layer is outer_nc in and inner_nc out.
         # So the shift define like this:
-        shift = AcceleratedInnerShiftTriple(opt.threshold, opt.fixed_mask, opt.shift_sz, opt.stride, opt.mask_thred,
+        shift = AcceleratedInnerShiftTriple(opt.fixed_mask, opt.shift_sz, opt.stride, opt.mask_thred,
                                             opt.triple_weight)
 
-        shift.set_mask(mask_global, 3, opt.threshold)
+        shift.set_mask(mask_global, 3)
         shift_list.append(shift)
 
         # Add latent constraint
         # Then add the constraint to the constrain layer list!
         innerCos = InnerCos(strength=opt.strength, skip=opt.skip)
-        innerCos.set_mask(mask_global, opt)  # Here we need to set mask for innerCos layer too.
+        innerCos.set_mask(mask_global, 3)  # Here we need to set mask for innerCos layer too.
         innerCos_list.append(innerCos)
 
         # Different position only has differences in `upconv`
@@ -285,19 +285,19 @@ class SoftUnetSkipConnectionBlock(nn.Module):
 
         # As the downconv layer is outer_nc in and inner_nc out.
         # So the shift define like this:
-        shift = InnerSoftShiftTriple(opt.threshold, opt.fixed_mask, opt.shift_sz, opt.stride, opt.mask_thred, opt.triple_weight)
+        shift = InnerSoftShiftTriple(opt.fixed_mask, opt.shift_sz, opt.stride, opt.mask_thred, opt.triple_weight)
 
-        shift.set_mask(mask_global, 3, opt.threshold)
+        shift.set_mask(mask_global, 3)
         shift_list.append(shift)
 
         # Add latent constraint
         # Then add the constraint to the constrain layer list!
         innerCosBefore = InnerCos(strength=opt.strength, skip=opt.skip)
-        innerCosBefore.set_mask(mask_global, opt)  # Here we need to set mask for innerCos layer too.
+        innerCosBefore.set_mask(mask_global, 3)  # Here we need to set mask for innerCos layer too.
         innerCos_list.append(innerCosBefore)
 
         innerCosAfter = InnerCos(strength=opt.strength, skip=opt.skip)
-        innerCosAfter.set_mask(mask_global, opt)  # Here we need to set mask for innerCos layer too.
+        innerCosAfter.set_mask(mask_global, 3)  # Here we need to set mask for innerCos layer too.
         innerCos_list.append(innerCosAfter)
 
 
@@ -458,19 +458,19 @@ class InceptionShiftUnetSkipConnectionBlock(nn.Module):
         if shift_layer:
             # As the downconv layer is outer_nc in and inner_nc out.
             # So the shift define like this:
-            shift = AcceleratedInnerShiftTriple(opt.threshold, opt.fixed_mask, opt.shift_sz, opt.stride, opt.mask_thred, opt.triple_weight)
+            shift = AcceleratedInnerShiftTriple(opt.fixed_mask, opt.shift_sz, opt.stride, opt.mask_thred, opt.triple_weight)
 
-            shift.set_mask(mask_global, 3, opt.threshold)
+            shift.set_mask(mask_global, 3)
             shift_list.append(shift)
 
             # Add latent constraint
             # Then add the constraint to the constrain layer list!
             innerCosBefore = InnerCos(strength=opt.strength, skip=opt.skip)
-            innerCosBefore.set_mask(mask_global, opt)  # Here we need to set mask for innerCos layer too.
+            innerCosBefore.set_mask(mask_global, 3)  # Here we need to set mask for innerCos layer too.
             innerCos_list.append(innerCosBefore)
 
             innerCosAfter = InnerCos(strength=opt.strength, skip=opt.skip)
-            innerCosAfter.set_mask(mask_global, opt)  # Here we need to set mask for innerCos layer too.
+            innerCosAfter.set_mask(mask_global, 3)  # Here we need to set mask for innerCos layer too.
             innerCos_list.append(innerCosAfter)
 
         downconv = InceptionDown(input_nc, inner_nc) # nn.Conv2d(input_nc, inner_nc, kernel_size=4,stride=2, padding=1)

@@ -5,9 +5,8 @@ from .innerSoftShiftTripleModule import InnerSoftShiftTripleModule
 
 
 class InnerSoftShiftTriple(nn.Module):
-    def __init__(self, threshold, fixed_mask, shift_sz=1, stride=1, mask_thred=1, triple_weight=1):
+    def __init__(self, fixed_mask, shift_sz=1, stride=1, mask_thred=1, triple_weight=1):
         super(InnerSoftShiftTriple, self).__init__()
-        self.threshold = threshold
         self.fixed_mask = fixed_mask
 
         self.shift_sz = shift_sz
@@ -22,8 +21,8 @@ class InnerSoftShiftTriple(nn.Module):
         self.sp_y = None
         self.softShift = InnerSoftShiftTripleModule()
 
-    def set_mask(self, mask_global, layer_to_last, threshold):
-        mask = util.cal_feat_mask(mask_global, layer_to_last, threshold)
+    def set_mask(self, mask_global, layer_to_last):
+        mask = util.cal_feat_mask(mask_global, layer_to_last)
         self.mask = mask.squeeze()
         return self.mask
 
@@ -42,5 +41,4 @@ class InnerSoftShiftTriple(nn.Module):
 
     def __repr__(self):
         return self.__class__.__name__+ '(' \
-              + 'threshold: ' + str(self.threshold) \
               + ' ,triple_weight ' + str(self.triple_weight) + ')'
