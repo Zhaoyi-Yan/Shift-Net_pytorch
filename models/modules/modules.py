@@ -151,7 +151,7 @@ class PartialConv(nn.Module):
 
 class InceptionDown(nn.Module):
     def __init__(self, in_channels, out_channels, stride=1,
-                 padding=1, dilation=1, groups=1, bias=True, intermediate=None, norm_layer=nn.BatchNorm2d, is_norm=True):
+                 padding=1, dilation=1, groups=1, bias=True, intermediate=None, norm_layer=nn.BatchNorm2d, is_norm=False):
         super(InceptionDown, self).__init__()
 
         self.is_norm = is_norm
@@ -163,7 +163,6 @@ class InceptionDown(nn.Module):
             intermediate = np.max([out_channels // 8, 16])
             if intermediate % 2 != 0:
                 intermediate = out_channels
-            print(in_channels, out_channels, intermediate)
         out_channels = out_channels // 4
 
         # ACTIVATION
@@ -211,7 +210,7 @@ class InceptionDown(nn.Module):
         self.bconv2_3x1 = norm_layer(out_channels, affine=True)
 
     def _forward(self, input, conv, normalization):
-        print(self.in_channels, self.out_channels, input.shape)
+        #print(self.in_channels, self.out_channels, input.shape)
         input = conv(input)
         input = normalization(input)
         return self.act(input)
@@ -281,7 +280,7 @@ class InceptionDown(nn.Module):
 
 class InceptionUp(nn.Module):
     def __init__(self, in_channels, out_channels, stride=1,
-                 padding=1, dilation=1, groups=1, bias=True, intermediate=None, norm_layer=nn.BatchNorm2d, is_norm=True):
+                 padding=1, dilation=1, groups=1, bias=True, intermediate=None, norm_layer=nn.BatchNorm2d, is_norm=False):
         super(InceptionUp, self).__init__()
 
         self.is_norm = is_norm
@@ -291,7 +290,7 @@ class InceptionUp(nn.Module):
 
         if intermediate is None:
             intermediate = np.max([out_channels // 8, 16])
-            print(in_channels, out_channels, intermediate)
+            #print(in_channels, out_channels, intermediate)
         out_channels = out_channels // 4
 
         # ACTIVATION
@@ -332,7 +331,7 @@ class InceptionUp(nn.Module):
         self.bconv1_1x1 = norm_layer(out_channels, affine=True)
 
     def _forward(self, input, conv, normalization):
-        print(self.in_channels, self.out_channels, input.shape)
+        #print(self.in_channels, self.out_channels, input.shape)
         input = conv(input)
         input = normalization(input)
         return self.act(input)
@@ -378,4 +377,43 @@ class InceptionUp(nn.Module):
 
         return torch.cat(holder, 1)
 
+class ResnetBlock(nn.Module):
+    def __init__(self, dim, padding_type, norm_layer, use_dropout, use_bias):
+        super(ResnetBlock, self).__init__()
+        self.conv_block = self.build_conv_block(dim, padding_type, norm_layer, use_dropout, use_bias)
 
+    def build_conv_block(self, dim, padding_type, norm_layer, use_dropout, use_bias):
+        conv_block = []
+        p = 0
+        if padding_type == 'reflect':
+            conv_block += [nn.ReflectionPad2d(1)]
+        elif padding_type == 'replicate':
+            conv_block += [nn.ReplicationPad2d(1)]
+        elif padding_type == 'zero':
+            p = 1
+        else:
+            raise NotImplementedError('padding [%s] is not implemented' % padding_type)
+
+        conv_block += [nn.Conv2d(dim, dim, kernel_size=3, padding=p, bias=use_bias),
+                       norm_layer(dim),
+                       nn.ReLU(True)]
+        if use_dropout:
+            conv_block += [nn.Dropout(0.5)]
+
+        p = 0
+        if padding_type == 'reflect':
+            conv_block += [nn.ReflectionPad2d(1)]
+        elif padding_type == 'replicate':
+            conv_block += [nn.ReplicationPad2d(1)]
+        elif padding_type == 'zero':
+            p = 1
+        else:
+            raise NotImplementedError('padding [%s] is not implemented' % padding_type)
+        conv_block += [nn.Conv2d(dim, dim, kernel_size=3, padding=p, bias=use_bias),
+                       norm_layer(dim)]
+
+        return nn.Sequential(*conv_block)
+
+    def forward(self, x):
+        out = x + self.conv_block(x)
+        return out
