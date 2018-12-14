@@ -5,7 +5,7 @@ import torch
 
 
 class InnerSoftShiftTripleModule(nn.Module):
-    def forward(ctx, input, mask, shift_sz, stride, triple_w, flag):
+    def forward(ctx, input, mask, stride, triple_w, flag):
         assert input.dim() == 4, "Input Dim has to be 4"
         ctx.triple_w = triple_w
         ctx.flag = flag
@@ -35,7 +35,7 @@ class InnerSoftShiftTripleModule(nn.Module):
             former = former_all.narrow(0, idx, 1) ### decoder feature
 
             #GET COSINE, RESHAPED LATTER AND ITS INDEXES
-            cosine, latter_windows, i_2, i_3, i_1, i_4 = Nonparm.cosine_similarity(former.clone().squeeze(), latter.clone().squeeze(), 1, stride, flag)
+            cosine, latter_windows, former_windows, i_2, i_3, i_1, i_4 = Nonparm.cosine_similarity(former.clone().squeeze(), latter.clone().squeeze(), 1, stride, flag, with_former=True)
 
             ## GET INDEXES THAT MAXIMIZE COSINE SIMILARITY
             cosine_softmax = F.softmax(cosine, dim=1)

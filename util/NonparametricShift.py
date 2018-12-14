@@ -16,9 +16,9 @@ class Modified_NonparametricShift(object):
 
     # former: content, to be replaced.
     # latter: style, source pixels.
-    def cosine_similarity(self, former, latter, patch_size, stride, flag):
-        former = self._unfold(former, patch_size, stride)
-        former = self._filter(former, flag, 1)
+    def cosine_similarity(self, former, latter, patch_size, stride, flag, with_former=False):
+        former_windows = self._unfold(former, patch_size, stride)
+        former = self._filter(former_windows, flag, 1)
 
         latter_windows, i_2, i_3, i_1, i_4 = self._unfold(latter, patch_size, stride, with_indexes=True)
         latter = self._filter(latter_windows, flag, 0)
@@ -27,7 +27,10 @@ class Modified_NonparametricShift(object):
         norm_latter = torch.einsum("ij,ij->i", [latter, latter])
         norm_former = torch.einsum("ij,ij->i", [former, former])
         den = torch.sqrt(torch.einsum('i,j->ij', [norm_former, norm_latter]))
-        return num / den, latter_windows, i_2, i_3, i_1, i_4
+        if with_former:
+            return num / den, latter_windows, i_2, i_3, i_1, i_4
+        else:
+            return num / den, latter_windows, former_windows, i_2, i_3, i_1, i_4
 
 
     def _paste(self, input_windows, transition_matrix, i_2, i_3, i_1, i_4):
