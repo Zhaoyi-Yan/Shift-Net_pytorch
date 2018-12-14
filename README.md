@@ -67,11 +67,15 @@ If you find it a little hard to read the code, you may read [Guides](https://git
 - [x] Update the code for pytorch >= 0.4.
 - [x] Clean the code and delete useless comments.
 - [x] Guides of our code, we hope it helps you understand our code more easily.
-- [ ] Directly resize the mask to save computation.
 - [x] Add more GANs, like spectural norm and relativelistic GAN.
 - [x] Boost the efficiency of shift layer.
+- [ ] Directly resize the mask to save computation.
 - [ ] Extensions of Shift-Net, which will help the performance a lot.
-
+- [ ] Add random batch of masks
+- [ ] Add soft transition from centered mask to random ones
+- [ ] Add composit L1 loss between mask loss and non-mask loss
+- [ ] Finish optimizing soft-shift
+- [ ] Evaluate imagenet pre-trained models as discriminator
 
 ## Acknowledgments
 We benefit a lot from [pytorch-CycleGAN-and-pix2pix](https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix)
