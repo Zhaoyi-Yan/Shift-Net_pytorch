@@ -226,7 +226,7 @@ class DenseNet(nn.Module):
 
     def forward(self, x):
         features = self.features(x)
-        #out = F.avg_pool2d(features, kernel_size=7, stride=1).view(features.size(0), -1)
-        features = self.conv_1x1(features)
+        features = F.avg_pool2d(features, kernel_size=7, stride=1).view(features.size(0), -1)
+        #features = self.conv_1x1(features)
         features = self.sigmoid(features)
         return features
