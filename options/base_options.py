@@ -71,6 +71,9 @@ class BaseOptions():
 
         parser.add_argument('--only_lastest', type=bool, default=True,
                             help='If True, it will save only the lastest weights and the one minimizing the L1 loss')
+        parser.add_argument('--add_mask2input', type=bool, default=False,
+                            help='If True, It will add the mask as a fourth dimension over input space')
+
         self.initialized = True
         return parser
 
