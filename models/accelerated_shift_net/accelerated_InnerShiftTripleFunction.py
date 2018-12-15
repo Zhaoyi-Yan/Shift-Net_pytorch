@@ -47,7 +47,7 @@ class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
             # SET  TRANSITION MATRIX
             mask_indexes = (flag == 1).nonzero()
             non_mask_indexes = (flag == 0).nonzero()[indexes]
-            ctx.ind_lst[idx][mask_indexes, non_mask_indexes.t()] = 1
+            ctx.ind_lst[idx][mask_indexes, non_mask_indexes] = 1
 
             # GET FINAL SHIFT FEATURE
             shift_masked_all[idx] = Nonparm._paste(latter_windows, ctx.ind_lst[idx], i_2, i_3, i_1, i_4)
