@@ -7,12 +7,13 @@ from time import time
 class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
 
     @staticmethod
-    def forward(ctx, input, mask, shift_sz, stride, triple_w, flag):
+    def forward(ctx, input, mask, shift_sz, stride, triple_w, flag, flow):
         #print('[INFO] GET INTO FORWARD')
 
         assert input.dim() == 4, "Input Dim has to be 4"
         ctx.triple_w = triple_w
         ctx.flag = flag
+        ctx.flow = flow
 
         ctx.bz, c_real, ctx.h, ctx.w = input.size()
         c = c_real
@@ -33,6 +34,7 @@ class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
 
         # None batch version
         Nonparm = Modified_NonparametricShift()
+        shift_offsets = []
 
         for idx in range(ctx.bz):
             latter = latter_all.narrow(0, idx, 1) ### encoder feature
@@ -52,10 +54,16 @@ class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
             # GET FINAL SHIFT FEATURE
             shift_masked_all[idx] = Nonparm._paste(latter_windows, ctx.ind_lst[idx], i_2, i_3, i_1, i_4)
 
+            shift_offset = torch.stack([non_mask_indexes.squeeze() // ctx.w, non_mask_indexes.squeeze() % ctx.w], dim=-1)
+            shift_offsets.append(shift_offset)
+            
 
+        ctx.flow = torch.cat(shift_offsets, dim=0)
         return torch.cat((former_all, latter_all, shift_masked_all), 1)
 
-
+    @staticmethod
+    def get_flow(ctx):
+        return ctx.flow
 
     @staticmethod
     def backward(ctx, grad_output):
@@ -97,4 +105,4 @@ class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
         # note the input channel and the output channel are all c, as no mask input for now.
         grad_input = torch.cat([grad_former_all, grad_latter_all], 1)
 
-        return grad_input, None, None, None, None, None
+        return grad_input, None, None, None, None, None, None

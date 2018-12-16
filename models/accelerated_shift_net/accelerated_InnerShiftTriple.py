@@ -4,7 +4,7 @@ import util.util as util
 from .accelerated_InnerShiftTripleFunction import AcceleratedInnerShiftTripleFunction
 
 class AcceleratedInnerShiftTriple(nn.Module):
-    def __init__(self, fixed_mask, shift_sz=1, stride=1, mask_thred=1, triple_weight=1):
+    def __init__(self, fixed_mask, shift_sz=1, stride=1, mask_thred=1, triple_weight=1, show_flow=False):
         super(AcceleratedInnerShiftTriple, self).__init__()
         self.fixed_mask = fixed_mask
 
@@ -13,11 +13,8 @@ class AcceleratedInnerShiftTriple(nn.Module):
         self.mask_thred = mask_thred
         self.triple_weight = triple_weight
         self.cal_fixed_flag = True # whether we need to calculate the temp varaiables this time.
+        self.flow = torch.Tensor()
 
-        # these two variables are for accerlating MaxCoord, it is constant tensors,
-        # related with the spatialsize, unrelated with mask.
-        self.sp_x = None
-        self.sp_y = None
 
     def set_mask(self, mask_global, layer_to_last):
         mask = util.cal_feat_mask(mask_global, layer_to_last)
@@ -36,7 +33,12 @@ class AcceleratedInnerShiftTriple(nn.Module):
                                                                                                    self.stride, self.mask_thred)
             self.cal_fixed_flag = False
 
-        return AcceleratedInnerShiftTripleFunction.apply(input, self.mask, self.shift_sz, self.stride, self.triple_weight, self.flag) # input, mask, shift_sz, stride, triple_w, flag
+        tmp = AcceleratedInnerShiftTripleFunction.apply(input, self.mask, self.shift_sz, self.stride, self.triple_weight, self.flag, self.flow)
+        print(AcceleratedInnerShiftTripleFunction.get_flow())
+        return tmp
+
+    def get_flow(self):
+        return self.flow
 
     def __repr__(self):
         return self.__class__.__name__+ '(' \

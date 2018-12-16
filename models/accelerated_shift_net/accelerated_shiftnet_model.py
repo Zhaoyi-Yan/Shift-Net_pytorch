@@ -186,6 +186,8 @@ class ShiftNetModel(BaseModel):
 
     def forward(self):
         self.fake_B = self.netG(self.real_A)
+        print(self.ng_shift_list[0].get_flow().size())
+        assert 1==2
 
     def get_image_paths(self):
         return self.image_paths
