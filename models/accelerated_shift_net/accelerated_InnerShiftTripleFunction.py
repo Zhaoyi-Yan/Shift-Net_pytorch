@@ -5,11 +5,12 @@ from time import time
 
 
 class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
+    ctx = None
 
     @staticmethod
     def forward(ctx, input, mask, shift_sz, stride, triple_w, flag, flow):
         #print('[INFO] GET INTO FORWARD')
-
+        AcceleratedInnerShiftTripleFunction.ctx = ctx
         assert input.dim() == 4, "Input Dim has to be 4"
         ctx.triple_w = triple_w
         ctx.flag = flag
@@ -62,8 +63,8 @@ class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
         return torch.cat((former_all, latter_all, shift_masked_all), 1)
 
     @staticmethod
-    def get_flow(ctx):
-        return ctx.flow
+    def get_flow():
+        return AcceleratedInnerShiftTripleFunction.ctx.flow
 
     @staticmethod
     def backward(ctx, grad_output):
