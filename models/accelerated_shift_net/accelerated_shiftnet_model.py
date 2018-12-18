@@ -1,5 +1,5 @@
 import torch
-
+from torch.nn import functional as F
 import util.util as util
 from models import networks
 from models.shift_net.base_model import BaseModel
@@ -29,7 +29,10 @@ class ShiftNetModel(BaseModel):
         # specify the training losses you want to print out. The program will call base_model.get_current_losses
         self.loss_names = ['G_GAN', 'G_L1', 'D']
         # specify the images you want to save/display. The program will call base_model.get_current_visuals
-        self.visual_names = ['real_A', 'fake_B', 'real_B']
+        if self.opt.show_flow:
+            self.visual_names = ['real_A', 'fake_B', 'real_B', 'flow_src']
+        else:
+            self.visual_names = ['real_A', 'fake_B', 'real_B']
         # specify the models you want to save to the disk. The program will call base_model.save_networks and base_model.load_networks
         if self.isTrain:
             self.model_names = ['G', 'D']
@@ -186,8 +189,19 @@ class ShiftNetModel(BaseModel):
 
     def forward(self):
         self.fake_B = self.netG(self.real_A)
-        print(self.ng_shift_list[0].get_flow().size())
-        assert 1==2
+
+    # Just assume one shift layer.
+    def set_flow_src(self):
+        self.flow_src = self.ng_shift_list[0].flow_src
+        self.flow_src = F.interpolate(self.flow_src, scale_factor=8, mode='nearest')
+        self.set_show_map_false()
+
+    # Just assume one shift layer.
+    def set_show_map_true(self):
+        self.ng_shift_list[0].set_flow_true()
+
+    def set_show_map_false(self):
+        self.ng_shift_list[0].set_flow_false()
 
     def get_image_paths(self):
         return self.image_paths

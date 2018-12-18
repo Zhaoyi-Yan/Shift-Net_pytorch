@@ -67,7 +67,7 @@ class BaseOptions():
                                                                             're_avg_hinGan (Relativistic average HingeGAN),  WARNING: wgan_gp should never be used here.')
         parser.add_argument('--gan_weight', type=float, default=0.2, help='the weight of gan loss')
         parser.add_argument('--overlap', type=int, default=4, help='the overlap for center mask')
-        parser.add_argument('--show_flow', type=bool, default=True, help='show the flow')
+        parser.add_argument('--show_flow', type=int, default=1, help='show the flow')
 
         parser.add_argument('--only_lastest', type=bool, default=False,
                             help='If True, it will save only the lastest weights and the one minimizing the L1 loss')

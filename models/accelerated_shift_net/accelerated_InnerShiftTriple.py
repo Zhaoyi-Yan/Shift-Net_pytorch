@@ -4,7 +4,7 @@ import util.util as util
 from .accelerated_InnerShiftTripleFunction import AcceleratedInnerShiftTripleFunction
 
 class AcceleratedInnerShiftTriple(nn.Module):
-    def __init__(self, fixed_mask, shift_sz=1, stride=1, mask_thred=1, triple_weight=1, show_flow=False):
+    def __init__(self, fixed_mask, shift_sz=1, stride=1, mask_thred=1, triple_weight=1):
         super(AcceleratedInnerShiftTriple, self).__init__()
         self.fixed_mask = fixed_mask
 
@@ -13,7 +13,8 @@ class AcceleratedInnerShiftTriple(nn.Module):
         self.mask_thred = mask_thred
         self.triple_weight = triple_weight
         self.cal_fixed_flag = True # whether we need to calculate the temp varaiables this time.
-        self.flow = torch.Tensor()
+        self.show_flow = False # default false. Do not change it to be true, it is computation-heavy.
+        self.flow_src = None # Indicating the flow src(pixles in non-masked region that will shift into the masked region)
 
 
     def set_mask(self, mask_global, layer_to_last):
@@ -33,13 +34,19 @@ class AcceleratedInnerShiftTriple(nn.Module):
                                                                                                    self.stride, self.mask_thred)
             self.cal_fixed_flag = False
 
-        tmp = AcceleratedInnerShiftTripleFunction.apply(input, self.mask, self.shift_sz, self.stride, self.triple_weight, self.flag, self.flow)
-        self.flow = AcceleratedInnerShiftTripleFunction.get_flow()
-        print(self.flow.size())
+        tmp = AcceleratedInnerShiftTripleFunction.apply(input, self.mask, self.shift_sz, self.stride, self.triple_weight, self.flag, self.show_flow)
+        if self.show_flow:
+            self.flow_src = AcceleratedInnerShiftTripleFunction.get_flow_src()
         return tmp
 
     def get_flow(self):
-        return self.flow
+        return self.flow_src
+
+    def set_flow_true(self):
+        self.show_flow = True
+
+    def set_flow_false(self):
+        self.show_flow = False
 
     def __repr__(self):
         return self.__class__.__name__+ '(' \

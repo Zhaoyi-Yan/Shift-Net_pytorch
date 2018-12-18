@@ -421,20 +421,35 @@ def flow_to_image(flow):
     return np.float32(np.uint8(out))
 
 
-def highlight_flow(flow):
+"""
+   flow: N*h*w*2
+        Indicating which pixel will shift to the location.
+   mask: N*(h*w)
+"""
+def highlight_flow(flow, mask):
     """Convert flow into middlebury color code image.
     """
+    assert flow.dim() == 4 and mask.dim() == 2
+    assert flow.size(0) == mask.size(0)
+    assert flow.size(3) == 2
+
     out = []
-    s = flow.shape
-    for i in range(flow.shape[0]):
-        img = np.ones((s[1], s[2], 3)) * 144.
+    bz, h, w, _ = flow.shape
+    for i in range(bz):
+        mask_index = (mask[i] == 1).nonzero()
+        img = np.ones((h, w, 3)) * 144.
         u = flow[i, :, :, 0]
         v = flow[i, :, :, 1]
-        for h in range(s[1]):
-            for w in range(s[1]):
-                ui = u[h,w]
-                vi = v[h,w]
-                img[ui, vi, :] = 255.
+        for h_i in range(h):
+            for w_j in range(w):
+                idx = h_i*w + w_j
+                #If it is a masked pixel, we get which pixel that will replace it.
+                if idx in mask_index: 
+                    ui = u[h_i,w_j]
+                    vi = v[h_i,w_j]
+                    img[int(ui), int(vi), :] = 255.
+                    img[h_i, w_j,: ] = 200 # Also indicating where the mask is.
+
         out.append(img)
     return np.float32(np.uint8(out))
 

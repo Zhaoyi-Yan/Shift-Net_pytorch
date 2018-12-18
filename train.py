@@ -31,9 +31,20 @@ for epoch in range(opt.epoch_count, opt.niter + opt.niter_decay + 1):
         model.set_input(data) # it not only sets the input data with mask, but also sets the latent mask.
         model.set_gt_latent()
 
+        # Additonal, should set it before 'optimize_parameters()'.
+        if total_steps % opt.display_freq == 0:
+            if opt.show_flow:
+                model.set_show_map_true()
+
         model.optimize_parameters()
+
         if total_steps % opt.display_freq == 0:
             save_result = total_steps % opt.update_html_freq == 0
+            if opt.show_flow:
+                model.set_flow_src()
+                model.set_show_map_false()
+            visuals = model.get_current_visuals()
+            print(visuals['flow_src'])
             visualizer.display_current_results(model.get_current_visuals(), epoch, save_result)
 
         if total_steps % opt.print_freq == 0:
