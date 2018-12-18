@@ -44,7 +44,6 @@ for epoch in range(opt.epoch_count, opt.niter + opt.niter_decay + 1):
                 model.set_flow_src()
                 model.set_show_map_false()
             visuals = model.get_current_visuals()
-            print(visuals['flow_src'])
             visualizer.display_current_results(model.get_current_visuals(), epoch, save_result)
 
         if total_steps % opt.print_freq == 0:
