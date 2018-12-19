@@ -69,12 +69,12 @@ class BaseOptions():
         parser.add_argument('--overlap', type=int, default=4, help='the overlap for center mask')
         parser.add_argument('--show_flow', type=int, default=0, help='show the flow information. WARNING: set display_freq a large number as it is quite slow when showing flow')
 
-        parser.add_argument('--only_lastest', type=bool, default=False,
+        parser.add_argument('--only_lastest', type=int, default=0,
                             help='If True, it will save only the lastest weights and the one minimizing the L1 loss')
-        parser.add_argument('--add_mask2input', type=bool, default=True,
+        parser.add_argument('--add_mask2input', type=int, default=1,
                             help='If True, It will add the mask as a fourth dimension over input space')
-        parser.add_argument('--residual_soft_attention', type=bool, default=False,
-                            help='If True, It will add the mask as a fourth dimension over input space')
+        parser.add_argument('--residual_soft_attention', type=int, default=0,
+                            help='Not implemented yet')
 
         self.initialized = True
         return parser
