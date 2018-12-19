@@ -19,6 +19,7 @@ class GANLoss(nn.Module):
         #######################################################################
         ###  Relativistic GAN - https://github.com/AlexiaJM/RelativisticGAN ###
         #######################################################################
+        # When Using `BCEWithLogitsLoss()`, remove the sigmoid layer in D.
         elif gan_type == 're_s_gan':
             self.loss = nn.BCEWithLogitsLoss()
         elif gan_type == 're_avg_gan':
