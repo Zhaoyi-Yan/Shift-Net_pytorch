@@ -1,18 +1,21 @@
 import numpy as np
 from util.NonparametricShift import Modified_NonparametricShift
 import torch
-from time import time
+import util.util as util
+import time
 
 
 class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
+    ctx = None
 
     @staticmethod
-    def forward(ctx, input, mask, shift_sz, stride, triple_w, flag):
+    def forward(ctx, input, mask, shift_sz, stride, triple_w, flag, show_flow):
         #print('[INFO] GET INTO FORWARD')
-
+        AcceleratedInnerShiftTripleFunction.ctx = ctx
         assert input.dim() == 4, "Input Dim has to be 4"
         ctx.triple_w = triple_w
         ctx.flag = flag
+        ctx.show_flow = show_flow
 
         ctx.bz, c_real, ctx.h, ctx.w = input.size()
         c = c_real
@@ -29,10 +32,11 @@ class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
         assert mask.dim() == 2, "Mask dimension must be 2"
 
         if torch.cuda.is_available:
-            flag = flag.cuda()
+            ctx.flag = ctx.flag.cuda()
 
         # None batch version
         Nonparm = Modified_NonparametricShift()
+        ctx.shift_offsets = []
 
         for idx in range(ctx.bz):
             latter = latter_all.narrow(0, idx, 1) ### encoder feature
@@ -45,17 +49,39 @@ class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
             _, indexes = torch.max(cosine, dim=1)
 
             # SET  TRANSITION MATRIX
-            mask_indexes = (flag == 1).nonzero()
-            non_mask_indexes = (flag == 0).nonzero()[indexes]
+            mask_indexes = (ctx.flag == 1).nonzero()
+            non_mask_indexes = (ctx.flag == 0).nonzero()[indexes]
             ctx.ind_lst[idx][mask_indexes, non_mask_indexes] = 1
 
             # GET FINAL SHIFT FEATURE
             shift_masked_all[idx] = Nonparm._paste(latter_windows, ctx.ind_lst[idx], i_2, i_3, i_1, i_4)
 
+            shift_offset = torch.stack([non_mask_indexes.squeeze() // ctx.w, non_mask_indexes.squeeze() % ctx.w], dim=-1)
+            ctx.shift_offsets.append(shift_offset)
+
+        if ctx.show_flow:
+            # Note: Here we assume that each mask is the same for the same batch image.
+            ctx.shift_offsets = torch.cat(ctx.shift_offsets, dim=0).float() # make it cudaFloatTensor
+            # Assume mask is the same for each image in a batch.
+            mask_nums = ctx.shift_offsets.size(0)//ctx.bz
+            ctx.flow_srcs = torch.zeros(ctx.bz, 3, ctx.h, ctx.w).type_as(input)
+
+            for idx in range(ctx.bz):
+                shift_offset = ctx.shift_offsets.narrow(0, idx*mask_nums, mask_nums)
+                # reconstruct the original shift_map.
+                shift_offsets_map = torch.zeros(1, ctx.h, ctx.w, 2).type_as(input)
+                shift_offsets_map[:, (ctx.flag == 1).nonzero().squeeze() // ctx.w, (ctx.flag == 1).nonzero().squeeze() % ctx.w, :] = \
+                                                                                                shift_offset.unsqueeze(0)
+                # It is indicating the pixels(non-masked) that will shift the the masked region.
+                flow_src = util.highlight_flow(shift_offsets_map, ctx.flag.unsqueeze(0))
+                ctx.flow_srcs[idx] = flow_src
 
         return torch.cat((former_all, latter_all, shift_masked_all), 1)
 
-
+        
+    @staticmethod
+    def get_flow_src():
+        return AcceleratedInnerShiftTripleFunction.ctx.flow_srcs
 
     @staticmethod
     def backward(ctx, grad_output):
@@ -97,4 +123,4 @@ class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
         # note the input channel and the output channel are all c, as no mask input for now.
         grad_input = torch.cat([grad_former_all, grad_latter_all], 1)
 
-        return grad_input, None, None, None, None, None
+        return grad_input, None, None, None, None, None, None

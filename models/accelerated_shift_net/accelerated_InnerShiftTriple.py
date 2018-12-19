@@ -13,11 +13,9 @@ class AcceleratedInnerShiftTriple(nn.Module):
         self.mask_thred = mask_thred
         self.triple_weight = triple_weight
         self.cal_fixed_flag = True # whether we need to calculate the temp varaiables this time.
+        self.show_flow = False # default false. Do not change it to be true, it is computation-heavy.
+        self.flow_srcs = None # Indicating the flow src(pixles in non-masked region that will shift into the masked region)
 
-        # these two variables are for accerlating MaxCoord, it is constant tensors,
-        # related with the spatialsize, unrelated with mask.
-        self.sp_x = None
-        self.sp_y = None
 
     def set_mask(self, mask_global, layer_to_last):
         mask = util.cal_feat_mask(mask_global, layer_to_last)
@@ -36,7 +34,19 @@ class AcceleratedInnerShiftTriple(nn.Module):
                                                                                                    self.stride, self.mask_thred)
             self.cal_fixed_flag = False
 
-        return AcceleratedInnerShiftTripleFunction.apply(input, self.mask, self.shift_sz, self.stride, self.triple_weight, self.flag) # input, mask, shift_sz, stride, triple_w, flag
+        tmp = AcceleratedInnerShiftTripleFunction.apply(input, self.mask, self.shift_sz, self.stride, self.triple_weight, self.flag, self.show_flow)
+        if self.show_flow:
+            self.flow_srcs = AcceleratedInnerShiftTripleFunction.get_flow_src()
+        return tmp
+
+    def get_flow(self):
+        return self.flow_srcs
+
+    def set_flow_true(self):
+        self.show_flow = True
+
+    def set_flow_false(self):
+        self.show_flow = False
 
     def __repr__(self):
         return self.__class__.__name__+ '(' \

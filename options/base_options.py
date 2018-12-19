@@ -16,7 +16,7 @@ class BaseOptions():
         parser.add_argument('--output_nc', type=int, default=3, help='# of output image channels')
         parser.add_argument('--ngf', type=int, default=64, help='# of gen filters in first conv layer')
         parser.add_argument('--ndf', type=int, default=64, help='# of discrim filters in first conv layer')
-        parser.add_argument('--which_model_netD', type=str, default='densenet', help='selects model to use for netD')
+        parser.add_argument('--which_model_netD', type=str, default='densenet', help='selects model to use for netD, [basic|densenet]')
         parser.add_argument('--which_model_netG', type=str, default='acc_unet_shift_triple', help='selects model to use for netG [unet_256| unet_shift_triple|acc_unet_shift_triple|soft_unet_shift_triple]')
         parser.add_argument('--model', type=str, default='accelerated_shiftnet',
                                  help='chooses which model to use. [shiftnet|accelerated_shiftnet|soft_shiftnet|test]')
@@ -42,7 +42,7 @@ class BaseOptions():
         parser.add_argument('--init_type', type=str, default='normal', help='network initialization [normal|xavier|kaiming|orthogonal]')
         parser.add_argument('--verbose', action='store_true', help='if specified, print more debugging information')
         ## new added
-        parser.add_argument('--mask_type', type=str, default='random',
+        parser.add_argument('--mask_type', type=str, default='center',
                             help='the type of mask you want to apply, \'center\' or \'random\'')
         parser.add_argument('--mask_sub_type', type=str, default='island',
                             help='the type of mask you want to apply, \'rect \' or \'fractal \ or \'island \'')
@@ -67,13 +67,14 @@ class BaseOptions():
                                                                             're_avg_hinGan (Relativistic average HingeGAN),  WARNING: wgan_gp should never be used here.')
         parser.add_argument('--gan_weight', type=float, default=0.2, help='the weight of gan loss')
         parser.add_argument('--overlap', type=int, default=4, help='the overlap for center mask')
+        parser.add_argument('--show_flow', type=int, default=0, help='show the flow information. WARNING: set display_freq a large number as it is quite slow when showing flow')
 
-        parser.add_argument('--only_lastest', type=bool, default=True,
+        parser.add_argument('--only_lastest', type=int, default=0,
                             help='If True, it will save only the lastest weights and the one minimizing the L1 loss')
-        parser.add_argument('--add_mask2input', type=bool, default=False,
+        parser.add_argument('--add_mask2input', type=int, default=1,
                             help='If True, It will add the mask as a fourth dimension over input space')
-        parser.add_argument('--residual_soft_attention', type=bool, default=False,
-                            help='If True, It will add the mask as a fourth dimension over input space')
+        parser.add_argument('--residual_soft_attention', type=int, default=0,
+                            help='Not implemented yet')
 
         self.initialized = True
         return parser
