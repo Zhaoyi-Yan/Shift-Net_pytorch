@@ -242,13 +242,17 @@ class ShiftNetModel(BaseModel):
                 self.loss_D = (self.loss_D_fake + self.loss_D_real) * 0.5
 
             elif self.opt.gan_type == 're_s_gan':
-                self.loss_D = self.criterionGAN (self.pred_real - self.pred_fake, True)
+                self.loss_D = self.criterionGAN(self.pred_real - self.pred_fake, True)
 
             elif self.opt.gan_type == 're_avg_gan':
                 self.loss_D =  (self.criterionGAN (self.pred_real - torch.mean(self.pred_fake), True) \
                                + self.criterionGAN (self.pred_fake - torch.mean(self.pred_real), False)) / 2.
+        # for `re_avg_gan`, need to retain graph of D.
+        if self.opt.gan_type == 're_avg_gan':
+            self.loss_D.backward(retain_graph=True)
+        else:
+            self.loss_D.backward()
 
-        self.loss_D.backward()
 
     def backward_G(self):
         # First, G(A) should fake the discriminator
