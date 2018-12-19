@@ -14,7 +14,7 @@ class AcceleratedInnerShiftTriple(nn.Module):
         self.triple_weight = triple_weight
         self.cal_fixed_flag = True # whether we need to calculate the temp varaiables this time.
         self.show_flow = False # default false. Do not change it to be true, it is computation-heavy.
-        self.flow_src = None # Indicating the flow src(pixles in non-masked region that will shift into the masked region)
+        self.flow_srcs = None # Indicating the flow src(pixles in non-masked region that will shift into the masked region)
 
 
     def set_mask(self, mask_global, layer_to_last):
@@ -36,11 +36,11 @@ class AcceleratedInnerShiftTriple(nn.Module):
 
         tmp = AcceleratedInnerShiftTripleFunction.apply(input, self.mask, self.shift_sz, self.stride, self.triple_weight, self.flag, self.show_flow)
         if self.show_flow:
-            self.flow_src = AcceleratedInnerShiftTripleFunction.get_flow_src()
+            self.flow_srcs = AcceleratedInnerShiftTripleFunction.get_flow_src()
         return tmp
 
     def get_flow(self):
-        return self.flow_src
+        return self.flow_srcs
 
     def set_flow_true(self):
         self.show_flow = True

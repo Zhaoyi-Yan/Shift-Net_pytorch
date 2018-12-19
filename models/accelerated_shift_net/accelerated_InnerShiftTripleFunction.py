@@ -2,7 +2,7 @@ import numpy as np
 from util.NonparametricShift import Modified_NonparametricShift
 import torch
 import util.util as util
-from time import time
+import time
 
 
 class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
@@ -62,21 +62,26 @@ class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
         if ctx.show_flow:
             # Note: Here we assume that each mask is the same for the same batch image.
             ctx.shift_offsets = torch.cat(ctx.shift_offsets, dim=0).float() # make it cudaFloatTensor
+            # Assume mask is the same for each image in a batch.
+            mask_nums = ctx.shift_offsets.size(0)//ctx.bz
+            ctx.flow_srcs = torch.zeros(ctx.bz, 3, ctx.h, ctx.w).type_as(input)
 
-            # reconstruct the original shift_map.
-            shift_offsets_map = ctx.flag.clone().view(1, ctx.h, ctx.w, 1).expand(ctx.bz, ctx.h, ctx.w, 2).float()
-            shift_offsets_map[:, (ctx.flag == 1).nonzero().squeeze() // ctx.w, (ctx.flag == 1).nonzero().squeeze() % ctx.w, :] = \
-                                                                            ctx.shift_offsets.unsqueeze(0)
-            # It is indicating the pixels(non-masked) that will shift the the masked region.
-            ctx.flow_src = torch.from_numpy(util.highlight_flow(shift_offsets_map, ctx.flag.unsqueeze(0)))
-            ctx.flow_src = ctx.flow_src.permute(0, 3, 1, 2)
+            for idx in range(ctx.bz):
+                shift_offset = ctx.shift_offsets.narrow(0, idx*mask_nums, mask_nums)
+                # reconstruct the original shift_map.
+                shift_offsets_map = torch.zeros(1, ctx.h, ctx.w, 2).type_as(input)
+                shift_offsets_map[:, (ctx.flag == 1).nonzero().squeeze() // ctx.w, (ctx.flag == 1).nonzero().squeeze() % ctx.w, :] = \
+                                                                                                shift_offset.unsqueeze(0)
+                # It is indicating the pixels(non-masked) that will shift the the masked region.
+                flow_src = util.highlight_flow(shift_offsets_map, ctx.flag.unsqueeze(0))
+                ctx.flow_srcs[idx] = flow_src
 
         return torch.cat((former_all, latter_all, shift_masked_all), 1)
 
         
     @staticmethod
     def get_flow_src():
-        return AcceleratedInnerShiftTripleFunction.ctx.flow_src
+        return AcceleratedInnerShiftTripleFunction.ctx.flow_srcs
 
     @staticmethod
     def backward(ctx, grad_output):

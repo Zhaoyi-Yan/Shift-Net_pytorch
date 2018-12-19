@@ -432,26 +432,26 @@ def highlight_flow(flow, mask):
     assert flow.dim() == 4 and mask.dim() == 2
     assert flow.size(0) == mask.size(0)
     assert flow.size(3) == 2
-
-    out = []
     bz, h, w, _ = flow.shape
-    for i in range(bz):
-        mask_index = (mask[i] == 1).nonzero()
-        img = np.ones((h, w, 3)) * 144.
-        u = flow[i, :, :, 0]
-        v = flow[i, :, :, 1]
+    out = torch.zeros(bz, 3, h, w).type_as(flow)
+
+    for idx in range(bz):
+        mask_index = (mask[idx] == 1).nonzero()
+        img = torch.ones(3, h, w).type_as(flow) * 144.
+        u = flow[idx, :, :, 0]
+        v = flow[idx, :, :, 1]
+        # It is quite slow here.
         for h_i in range(h):
             for w_j in range(w):
-                idx = h_i*w + w_j
+                p = h_i*w + w_j
                 #If it is a masked pixel, we get which pixel that will replace it.
-                if idx in mask_index: 
+                if p in mask_index:
                     ui = u[h_i,w_j]
                     vi = v[h_i,w_j]
-                    img[int(ui), int(vi), :] = 255.
-                    img[h_i, w_j,: ] = 200 # Also indicating where the mask is.
-
-        out.append(img)
-    return np.float32(np.uint8(out))
+                    img[:, int(ui), int(vi)] = 255.
+                    img[:, h_i, w_j] = 200. # Also indicating where the mask is.
+        out[idx] = img
+    return out
 
 
 def compute_color(u,v):

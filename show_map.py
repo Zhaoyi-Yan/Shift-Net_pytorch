@@ -66,7 +66,7 @@ print(flag.size()) # 256, (16*16)
 
 # global and N*C*H*W
 # put shift_offsets_cl back to the global map.
-shift_offsets_map = flag.clone().view(1, h,w, 1).expand(bz,h,w,2).float()
+shift_offsets_map = torch.zeros(bz, h, w, 2).float()
 print(shift_offsets_map.size()) # 1*16*16
 
 # mask_indexes 是对应的mask区域的点的位置。
@@ -78,11 +78,10 @@ print(shift_offsets_map)
 print(shift_offsets_map.size())
 print(shift_offsets_map.type())
 
-flow2 = torch.from_numpy(util.highlight_flow(shift_offsets_map, flag.unsqueeze(0)))
+flow2 = til.highlight_flow(shift_offsets_map, flag.unsqueeze(0))
 print('flow2 size')
 print(flow2.size())
 
-flow2 = flow2.permute(0, 3, 1, 2)
 # upflow = F.interpolate(flow, scale_factor=4, mode='nearest')
 upflow2 = F.interpolate(flow2, scale_factor=1, mode='nearest')
 

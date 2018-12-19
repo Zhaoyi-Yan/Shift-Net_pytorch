@@ -3,6 +3,7 @@ from torch.nn import functional as F
 import util.util as util
 from models import networks
 from models.shift_net.base_model import BaseModel
+import time
 
 
 class ShiftNetModel(BaseModel):
@@ -30,7 +31,7 @@ class ShiftNetModel(BaseModel):
         self.loss_names = ['G_GAN', 'G_L1', 'D']
         # specify the images you want to save/display. The program will call base_model.get_current_visuals
         if self.opt.show_flow:
-            self.visual_names = ['real_A', 'fake_B', 'real_B', 'flow_src']
+            self.visual_names = ['real_A', 'fake_B', 'real_B', 'flow_srcs']
         else:
             self.visual_names = ['real_A', 'fake_B', 'real_B']
         # specify the models you want to save to the disk. The program will call base_model.save_networks and base_model.load_networks
@@ -192,8 +193,9 @@ class ShiftNetModel(BaseModel):
 
     # Just assume one shift layer.
     def set_flow_src(self):
-        self.flow_src = self.ng_shift_list[0].flow_src
-        self.flow_src = F.interpolate(self.flow_src, scale_factor=8, mode='nearest')
+        self.flow_srcs = self.ng_shift_list[0].get_flow()
+        self.flow_srcs = F.interpolate(self.flow_srcs, scale_factor=8, mode='nearest')
+        # Just to avoid forgetting setting show_map_false
         self.set_show_map_false()
 
     # Just assume one shift layer.
