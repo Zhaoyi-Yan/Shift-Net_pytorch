@@ -5,8 +5,8 @@ from .base_options import BaseOptions
 class TrainOptions(BaseOptions):
     def initialize(self, parser):
         parser = BaseOptions.initialize(self, parser)
-        parser.add_argument('--display_freq', type=int, default=1, help='frequency of showing training results on screen')
-        parser.add_argument('--display_ncols', type=int, default=10, help='if positive, display all images in a single visdom web panel with certain number of images per row.')
+        parser.add_argument('--display_freq', type=int, default=100, help='frequency of showing training results on screen')
+        parser.add_argument('--display_ncols', type=int, default=5, help='if positive, display all images in a single visdom web panel with certain number of images per row.')
         parser.add_argument('--print_freq', type=int, default=50, help='frequency of showing training results on console')
         parser.add_argument('--display_single_pane_ncols', type=int, default=0, help='if positive, display all images in a single visdom web panel with certain number of images per row.')
         parser.add_argument('--save_latest_freq', type=int, default=5000, help='frequency of saving the latest results')
