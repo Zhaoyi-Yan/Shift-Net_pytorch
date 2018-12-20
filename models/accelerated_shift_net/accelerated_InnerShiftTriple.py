@@ -34,10 +34,10 @@ class AcceleratedInnerShiftTriple(nn.Module):
                                                                                                    self.stride, self.mask_thred)
             self.cal_fixed_flag = False
 
-        tmp = AcceleratedInnerShiftTripleFunction.apply(input, self.mask, self.shift_sz, self.stride, self.triple_weight, self.flag, self.show_flow)
+        final_out = AcceleratedInnerShiftTripleFunction.apply(input, self.mask, self.shift_sz, self.stride, self.triple_weight, self.flag, self.show_flow)
         if self.show_flow:
             self.flow_srcs = AcceleratedInnerShiftTripleFunction.get_flow_src()
-        return tmp
+        return final_out
 
     def get_flow(self):
         return self.flow_srcs
