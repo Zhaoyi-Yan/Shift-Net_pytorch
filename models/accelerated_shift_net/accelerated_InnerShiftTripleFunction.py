@@ -56,8 +56,9 @@ class AcceleratedInnerShiftTripleFunction(torch.autograd.Function):
             # GET FINAL SHIFT FEATURE
             shift_masked_all[idx] = Nonparm._paste(latter_windows, ctx.ind_lst[idx], i_2, i_3, i_1, i_4)
 
-            shift_offset = torch.stack([non_mask_indexes.squeeze() // ctx.w, non_mask_indexes.squeeze() % ctx.w], dim=-1)
-            ctx.shift_offsets.append(shift_offset)
+            if ctx.show_flow:
+                shift_offset = torch.stack([non_mask_indexes.squeeze() // ctx.w, non_mask_indexes.squeeze() % ctx.w], dim=-1)
+                ctx.shift_offsets.append(shift_offset)
 
         if ctx.show_flow:
             # Note: Here we assume that each mask is the same for the same batch image.

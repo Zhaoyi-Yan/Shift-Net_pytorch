@@ -14,11 +14,8 @@ class InnerSoftShiftTriple(nn.Module):
         self.mask_thred = mask_thred
         self.triple_weight = triple_weight
         self.cal_fixed_flag = True # whether we need to calculate the temp varaiables this time.
-
-        # these two variables are for accerlating MaxCoord, it is constant tensors,
-        # related with the spatialsize, unrelated with mask.
-        self.sp_x = None
-        self.sp_y = None
+        self.show_flow = False # default false. Do not change it to be true, it is computation-heavy.
+        self.flow_srcs = None # Indicating the flow src(pixles in non-masked region that will shift into the masked region)
         self.softShift = InnerSoftShiftTripleModule()
 
     def set_mask(self, mask_global, layer_to_last):
@@ -34,10 +31,21 @@ class InnerSoftShiftTriple(nn.Module):
         else:
             latter = input.narrow(1, self.c//2, self.c//2).narrow(0,0,1).detach()
             self.flag = util.cal_flag_given_mask_thred(latter.squeeze(), self.mask, self.shift_sz, \
-                                                                                                   self.stride, self.mask_thred)
+                                                                                  self.stride, self.mask_thred)
             self.cal_fixed_flag = False
+        final_out = self.softShift(input, self.mask, self.stride, self.triple_weight, self.flag, self.show_flow)
+        if self.show_flow:
+            self.flow_srcs = self.softShift.get_flow_src()
+        return final_out
 
-        return self.softShift(input, self.mask, self.stride, self.triple_weight, self.flag)
+    def get_flow(self):
+        return self.flow_srcs
+
+    def set_flow_true(self):
+        self.show_flow = True
+
+    def set_flow_false(self):
+        self.show_flow = False
 
     def __repr__(self):
         return self.__class__.__name__+ '(' \
