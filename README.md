@@ -70,6 +70,8 @@ If you find it a little hard to read the code, you may read [Guides](https://git
 - [x] Add more GANs, like spectural norm and relativelistic GAN.
 - [x] Boost the efficiency of shift layer.
 - [x] Directly resize the global_mask to get the mask in feature space.
+- [x] Visualization of flow. It is still experimental now.
+- [ ] Fix bug in guidance loss when adopting it in multi-gpu.
 - [ ] Extensions of Shift-Net, which will help the performance a lot.
 - [ ] Add random batch of masks
 - [ ] Add soft transition from centered mask to random ones

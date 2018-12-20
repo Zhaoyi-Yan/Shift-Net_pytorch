@@ -434,7 +434,6 @@ def highlight_flow(flow, mask):
     assert flow.size(3) == 2
     bz, h, w, _ = flow.shape
     out = torch.zeros(bz, 3, h, w).type_as(flow)
-
     for idx in range(bz):
         mask_index = (mask[idx] == 1).nonzero()
         img = torch.ones(3, h, w).type_as(flow) * 144.
@@ -445,7 +444,8 @@ def highlight_flow(flow, mask):
             for w_j in range(w):
                 p = h_i*w + w_j
                 #If it is a masked pixel, we get which pixel that will replace it.
-                if p in mask_index:
+                # DO NOT USE `if p in mask_index:`, it is slow.
+                if torch.sum(mask_index == p).item() != 0:
                     ui = u[h_i,w_j]
                     vi = v[h_i,w_j]
                     img[:, int(ui), int(vi)] = 255.
