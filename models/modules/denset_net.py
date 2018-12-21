@@ -207,12 +207,10 @@ class DenseNet(nn.Module):
         # Final batch norm
         self.features.add_module('norm5', nn.BatchNorm2d(num_features))
 
-        self.conv_1x1 = nn.Conv2d(num_features, 1, kernel_size=3)
-
-        self.sigmoid = nn.Sigmoid()
+        # self.conv_1x1 = nn.Conv2d(num_features, 1, kernel_size=3)
 
         # Linear layer
-        self.classifier = nn.Linear(num_features, num_classes)
+        # self.classifier = nn.Linear(num_features, num_classes)
 
         # Official init from torch repo.
         for m in self.modules():
@@ -226,7 +224,7 @@ class DenseNet(nn.Module):
 
     def forward(self, x):
         features = self.features(x)
-        features = F.avg_pool2d(features, kernel_size=7, stride=1).view(features.size(0), -1)
+        features = F.relu(features, inplace=True)
+        #features = F.avg_pool2d(features, kernel_size=7, stride=1).view(features.size(0), -1)
         #features = self.conv_1x1(features)
-        features = self.sigmoid(features)
         return features
