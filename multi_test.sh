@@ -1,9 +1,9 @@
 #!/bin/bash
 name='re_gan_0.2'
 dataroot='./datasets/Paris/test' # to be
-which_model_netG='acc_unet_shift_triple'
+which_model_netG='unet_shift_triple'
 which_model_netD='basic'
-model='accelerated_shiftnet'
+model='shiftnet'
 gan_weight=0.5
 skip=0
 mask_type='center'

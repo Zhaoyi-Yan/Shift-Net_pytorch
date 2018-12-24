@@ -92,14 +92,10 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, opt, mask_global, norm=
         netG = UnetGenerator(input_nc, output_nc, 8, ngf, norm_layer=norm_layer, use_dropout=use_dropout)
 
     elif which_model_netG == 'unet_shift_triple':
+        print('[CREATING] MODEL')
         netG = UnetGeneratorShiftTriple(input_nc, output_nc, 8, opt, innerCos_list, shift_list, mask_global, \
                                                          ngf, norm_layer=norm_layer, use_dropout=use_dropout)
-
-    elif which_model_netG == 'acc_unet_shift_triple':
-        print('[CREATING] MODEL')
-        netG = AcceleratedUnetGeneratorShiftTriple(input_nc, output_nc, 8, opt, innerCos_list, shift_list, mask_global, \
-                                                         ngf, norm_layer=norm_layer, use_dropout=use_dropout)
-        print('[CREATED] MODEL')
+        print('[CREATED] MODEL')     
 
     elif which_model_netG == 'inception_unet_shift_triple':
         netG = InceptionUnetGeneratorShiftTriple(input_nc, output_nc, 8, opt, innerCos_list, shift_list, mask_global, \
