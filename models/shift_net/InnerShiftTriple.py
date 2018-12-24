@@ -13,11 +13,9 @@ class InnerShiftTriple(nn.Module):
         self.mask_thred = mask_thred
         self.triple_weight = triple_weight
         self.cal_fixed_flag = True # whether we need to calculate the temp varaiables this time.
+        self.show_flow = False # default false. Do not change it to be true, it is computation-heavy.
+        self.flow_srcs = None # Indicating the flow src(pixles in non-masked region that will shift into the masked region)
 
-        # these two variables are for accerlating MaxCoord, it is constant tensors,
-        # related with the spatialsize, unrelated with mask.
-        self.sp_x = None
-        self.sp_y = None
 
     def set_mask(self, mask_global, layer_to_last):
         mask = util.cal_feat_mask(mask_global, layer_to_last)
@@ -26,23 +24,29 @@ class InnerShiftTriple(nn.Module):
 
     # If mask changes, then need to set cal_fix_flag true each iteration.
     def forward(self, input):
+        #print(input.shape)
         _, self.c, self.h, self.w = input.size()
         if self.fixed_mask and self.cal_fixed_flag == False:
             assert torch.is_tensor(self.flag), 'flag must have been figured out and has to be a tensor!'
         else:
             latter = input.narrow(1, self.c//2, self.c//2).narrow(0,0,1).detach()
-            self.flag, self.nonmask_point_idx, self.flatten_offsets = util.cal_mask_given_mask_thred(latter.squeeze(), self.mask, self.shift_sz, \
+            self.flag = util.cal_flag_given_mask_thred(latter.squeeze(), self.mask, self.shift_sz, \
                                                                                                    self.stride, self.mask_thred)
             self.cal_fixed_flag = False
 
-        if not (torch.is_tensor(self.sp_x) or torch.is_tensor(self.sp_y)):
- #           print('Pre-calculate constant assistant \'sp_x\' and \'sp_y\' for the layer, which channel is:', self.c, ', h is: ', self.h, ', w is ', self.w)
-            self.sp_x, self.sp_y = util.cal_sps_for_Advanced_Indexing(self.h, self.w)
+        final_out = InnerShiftTripleFunction.apply(input, self.mask, self.shift_sz, self.stride, self.triple_weight, self.flag, self.show_flow)
+        if self.show_flow:
+            self.flow_srcs = InnerShiftTripleFunction.get_flow_src()
+        return final_out
 
+    def get_flow(self):
+        return self.flow_srcs
 
-        return InnerShiftTripleFunction.apply(input, self.mask, self.shift_sz, self.stride, \
-                                                         self.triple_weight, self.flag, self.nonmask_point_idx, self.flatten_offsets,\
-                                                        self.sp_x, self.sp_y)
+    def set_flow_true(self):
+        self.show_flow = True
+
+    def set_flow_false(self):
+        self.show_flow = False
 
     def __repr__(self):
         return self.__class__.__name__+ '(' \

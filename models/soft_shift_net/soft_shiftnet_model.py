@@ -1,4 +1,4 @@
-from models.accelerated_shift_net.accelerated_shiftnet_model import ShiftNetModel
+from models.shift_net.shiftnet_model import ShiftNetModel
 
 
 class SoftShiftNetModel(ShiftNetModel):
