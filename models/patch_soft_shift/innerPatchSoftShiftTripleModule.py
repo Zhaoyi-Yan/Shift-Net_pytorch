@@ -84,7 +84,7 @@ class InnerPatchSoftShiftTripleModule(nn.Module):
             cosine = cosine * mm
 
             # paste
-            shift_i = F.conv_transpose2d(cosine, latter_win, stride=1, padding=1)
+            shift_i = F.conv_transpose2d(cosine, latter_win, stride=1, padding=1)/9.
             shift_masked_all[idx] = shift_i
 
         return torch.cat((former_all, latter_all, shift_masked_all), 1)
