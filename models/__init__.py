@@ -11,6 +11,11 @@ def create_model(opt):
         from models.soft_shift_net.soft_shiftnet_model import SoftShiftNetModel
         model = SoftShiftNetModel()
 
+    elif opt.model == 'patch_soft_shiftnet':
+        assert (opt.dataset_mode == 'aligned' or opt.dataset_mode == 'aligned_resized')
+        from models.patch_soft_shift.patch_soft_shiftnet_model import PatchSoftShiftNetModel
+        model = PatchSoftShiftNetModel()
+
     elif opt.model == 'test':
         assert(opt.dataset_mode == 'single')
         from .test_model import TestModel

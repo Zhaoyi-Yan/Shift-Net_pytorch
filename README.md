@@ -8,11 +8,10 @@
 This repositity is our Pytorch implementation for Shift-Net, it is just for those who are interesting in our work and want to get a skeleton Pytorch implemention. The original code is https://github.com/Zhaoyi-Yan/Shift-Net.
 
 ## Prerequisites
-- Linux or OSX.
+- Linux or Windows.
 - Python 2 or Python 3.
 - CPU or NVIDIA GPU + CUDA CuDNN.
-- Tested on pytorch 0.4.1
-If you are working on pytorch0.1-0.3, you may check branch pytorch0.3.1.
+- Tested on pytorch >= 0.4.0
 
 ## Getting Started
 ### Installation
