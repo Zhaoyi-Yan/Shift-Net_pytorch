@@ -303,7 +303,7 @@ class PatchSoftUnetSkipConnectionShiftTriple(nn.Module):
         # As the downconv layer is outer_nc in and inner_nc out.
         # So the shift define like this:
         shift = InnerPatchSoftShiftTriple(opt.shift_sz, opt.stride, opt.mask_thred,
-                                            opt.triple_weight)
+                                            opt.triple_weight, opt.fuse)
 
         shift.set_mask(mask_global, 3)
         shift_list.append(shift)
