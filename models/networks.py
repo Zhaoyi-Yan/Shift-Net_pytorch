@@ -87,28 +87,24 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, opt, mask_global, norm=
     # If mask is fixed during training, we only need to set mask for these layers once,
     # else we need to set the masks each iteration, generating new random masks and mask the input
     # as well as setting masks for these special layers.
-
+    print('[CREATED] MODEL')
     if which_model_netG == 'unet_256':
         netG = UnetGenerator(input_nc, output_nc, 8, ngf, norm_layer=norm_layer, use_dropout=use_dropout)
-
     elif which_model_netG == 'unet_shift_triple':
-        print('[CREATING] MODEL')
         netG = UnetGeneratorShiftTriple(input_nc, output_nc, 8, opt, innerCos_list, shift_list, mask_global, \
                                                          ngf, norm_layer=norm_layer, use_dropout=use_dropout)
-        print('[CREATED] MODEL')     
-
     elif which_model_netG == 'inception_unet_shift_triple':
         netG = InceptionUnetGeneratorShiftTriple(input_nc, output_nc, 8, opt, innerCos_list, shift_list, mask_global, \
                                                          ngf, norm_layer=norm_layer, use_dropout=use_dropout)
-
     elif which_model_netG == 'soft_unet_shift_triple':
-        print('[CREATING] MODEL')
         netG = SoftUnetGeneratorShiftTriple(input_nc, output_nc, 8, opt, innerCos_list, shift_list, mask_global, \
                                                          ngf, norm_layer=norm_layer, use_dropout=use_dropout)
-        print('[CREATED] MODEL')
+    elif which_model_netG == 'patch_soft_unet_shift_triple':
+        netG = PatchSoftUnetGeneratorShiftTriple(input_nc, output_nc, 8, opt, innerCos_list, shift_list, mask_global, \
+                                                         ngf, norm_layer=norm_layer, use_dropout=use_dropout)
     else:
         raise NotImplementedError('Generator model name [%s] is not recognized' % which_model_netG)
-
+    print('[CREATED] MODEL')
     print('Constraint in netG:')
     print(innerCos_list)
 

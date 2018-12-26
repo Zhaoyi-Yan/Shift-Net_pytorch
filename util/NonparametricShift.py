@@ -24,7 +24,10 @@ class Modified_NonparametricShift(object):
         latter = self._filter(latter_windows, flag, 0)
 
         num = torch.einsum('ik,jk->ij', [former, latter])
+        print(latter.size()) # 828*256
         norm_latter = torch.einsum("ij,ij->i", [latter, latter])
+        print(norm_latter.size()) # 828
+        assert 1==2
         norm_former = torch.einsum("ij,ij->i", [former, former])
         den = torch.sqrt(torch.einsum('i,j->ij', [norm_former, norm_latter]))
         if not with_former:
