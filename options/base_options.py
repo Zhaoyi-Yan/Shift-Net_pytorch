@@ -17,7 +17,8 @@ class BaseOptions():
         parser.add_argument('--ngf', type=int, default=64, help='# of gen filters in first conv layer')
         parser.add_argument('--ndf', type=int, default=64, help='# of discrim filters in first conv layer')
         parser.add_argument('--which_model_netD', type=str, default='densenet', help='selects model to use for netD, [basic|densenet]')
-        parser.add_argument('--which_model_netG', type=str, default='unet_shift_triple', help='selects model to use for netG [unet_256| unet_shift_triple|soft_unet_shift_triple]')
+        parser.add_argument('--which_model_netG', type=str, default='unet_shift_triple', help='selects model to use for netG [unet_256| unet_shift_triple| \
+                                                                            soft_unet_shift_triple|patch_soft_unet_shift_triple]')
         parser.add_argument('--model', type=str, default='shiftnet',
                                  help='chooses which model to use. [shiftnet|soft_shiftnet|patch_soft_shiftnet|test]')
         parser.add_argument('--triple_weight', type=float, default=1, help='The weight on the gradient of skip connections from the gradient of swapped')
@@ -50,8 +51,8 @@ class BaseOptions():
         parser.add_argument('--fixed_mask', type=int, default=1, help='1 or 0, whether mask is fixed')
         parser.add_argument('--lambda_A', type=int, default=100, help='weight on L1 term in objective')
         parser.add_argument('--stride', type=int, default=1, help='should be dense, 1 is a good option.')
-        parser.add_argument('--shift_sz', type=int, default=3, help='shift_sz>1 only for \'soft_shift_patch\'.')
-        parser.add_argument('--mask_thred', type=int, default=4, help='number to decide whether a patch is masked')
+        parser.add_argument('--shift_sz', type=int, default=1, help='shift_sz>1 only for \'soft_shift_patch\'.')
+        parser.add_argument('--mask_thred', type=int, default=1, help='number to decide whether a patch is masked')
         parser.add_argument('--bottleneck', type=int, default=512, help='neurals of fc')
         parser.add_argument('--gp_lambda', type=float, default=10.0, help='gradient penalty coefficient')
         parser.add_argument('--ncritic', type=int, default=5, help='critic iterations')

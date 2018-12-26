@@ -32,11 +32,27 @@ cd Shift-Net_pytorch
 - Download your own inpainting datasets.
 
 - Train a model:
+
+For navie shift-net:
 ```bash
-python train.py
+python train.py --which_model_netG='unet_shift_triple' --model='shiftnet'
 ```
-- To view training results and loss plots, run `python -m visdom.server` and click the URL http://localhost:8097.
+
+For pixel soft shift-net:
+```bash
+python train.py --which_model_netG='soft_unet_shift_triple' --model='soft_shiftnet'
+```
+
+For patch soft shift-net:
+```bash
+python train.py --which_model_netG='patch_soft_unet_shift_triple' --model='patch_soft_shiftnet' --shift_sz=3 --mask_thred=4
+```
+
+- To view training results and loss plots, run `python -m visdom.server` and click the URL http://localhost:8097. The checkpoints will be saved in `./log` by default.
+
 - Test the model
+
+Keep the same settings as those when training to avoid errors.
 ```bash
 python test.py
 ```
