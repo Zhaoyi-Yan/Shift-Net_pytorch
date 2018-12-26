@@ -198,11 +198,6 @@ class SoftUnetSkipConnectionBlock(nn.Module):
         innerCosBefore.set_mask(mask_global, 3)  # Here we need to set mask for innerCos layer too.
         innerCos_list.append(innerCosBefore)
 
-        innerCosAfter = InnerCos(strength=opt.strength, skip=opt.skip)
-        innerCosAfter.set_mask(mask_global, 3)  # Here we need to set mask for innerCos layer too.
-        innerCos_list.append(innerCosAfter)
-
-
         # Different position only has differences in `upconv`
             # for the outermost, the special is `tanh`
         if outermost:
@@ -230,7 +225,7 @@ class SoftUnetSkipConnectionBlock(nn.Module):
             # shift should be placed after uprelu
             # NB: innerCos are placed before shift. So need to add the latent gredient to
             # to former part.
-            up = [uprelu, innerCosBefore, shift, innerCosAfter, upconv, upnorm]
+            up = [uprelu, innerCosBefore, shift, upconv, upnorm]
 
             if use_dropout:
                 model = down + [submodule] + up + [nn.Dropout(0.5)]
@@ -489,10 +484,6 @@ class InceptionShiftUnetSkipConnectionBlock(nn.Module):
             innerCosBefore.set_mask(mask_global, 3)  # Here we need to set mask for innerCos layer too.
             innerCos_list.append(innerCosBefore)
 
-            innerCosAfter = InnerCos(strength=opt.strength, skip=opt.skip)
-            innerCosAfter.set_mask(mask_global, 3)  # Here we need to set mask for innerCos layer too.
-            innerCos_list.append(innerCosAfter)
-
         downconv = InceptionDown(input_nc, inner_nc) # nn.Conv2d(input_nc, inner_nc, kernel_size=4,stride=2, padding=1)
 
         downrelu = nn.LeakyReLU(0.2, True)
@@ -522,7 +513,7 @@ class InceptionShiftUnetSkipConnectionBlock(nn.Module):
             upconv = InceptionUp(inner_nc * 3, outer_nc) #nn.ConvTranspose2d(inner_nc * 2, outer_nc,kernel_size=4, stride=2,padding=1)
 
             down = [downrelu, downconv, downnorm]
-            up = [uprelu, innerCosBefore, shift, innerCosAfter, upconv, upnorm]
+            up = [uprelu, innerCosBefore, shift, upconv, upnorm]
 
             if use_dropout:
                 model = down + [submodule] + up + [nn.Dropout(0.5)]
