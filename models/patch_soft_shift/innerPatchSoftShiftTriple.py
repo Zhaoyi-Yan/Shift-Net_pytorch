@@ -7,9 +7,8 @@ from .innerPatchSoftShiftTripleModule import InnerPatchSoftShiftTripleModule
 # TODO: Make it compatible for show_flow.
 #
 class InnerPatchSoftShiftTriple(nn.Module):
-    def __init__(self, fixed_mask, shift_sz=1, stride=1, mask_thred=1, triple_weight=1):
+    def __init__(self, shift_sz=1, stride=1, mask_thred=1, triple_weight=1):
         super(InnerPatchSoftShiftTriple, self).__init__()
-        self.fixed_mask = fixed_mask
 
         self.shift_sz = shift_sz
         self.stride = stride
