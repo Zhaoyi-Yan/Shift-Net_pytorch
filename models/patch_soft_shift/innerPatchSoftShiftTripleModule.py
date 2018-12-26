@@ -30,7 +30,7 @@ class InnerPatchSoftShiftTripleModule(nn.Module):
             self.mask = self.mask.float().cuda()
 
         # extract patches from latter.
-        latter_all_pad = F.pad(latter_all, [shift_sz//2, shift_sz//2, shift_sz//2, shift_sz//2], mode='constant')
+        latter_all_pad = F.pad(latter_all, [shift_sz//2, shift_sz//2, shift_sz//2, shift_sz//2], 'constant', 0)
         latter_all_windows = latter_all_pad.unfold(2, shift_sz, stride).unfold(3, shift_sz, stride)
         latter_all_windows = latter_all_windows.contiguous().view(self.bz, -1, self.c//2, shift_sz, shift_sz)
 
@@ -47,6 +47,7 @@ class InnerPatchSoftShiftTripleModule(nn.Module):
 
         fuse_weight = torch.eye(shift_sz).view(1, 1, shift_sz, shift_sz).type_as(input)
 
+        self.shift_offsets = []
         for idx in range(self.bz):
             # latter_win = latter_all_windows.narrow(0, idx, 1)[0]
             latter_win = latter_all_windows.narrow(0, idx, 1)[0].detach()
@@ -86,6 +87,37 @@ class InnerPatchSoftShiftTripleModule(nn.Module):
             # paste
             shift_i = F.conv_transpose2d(cosine, latter_win, stride=1, padding=1)/9.
             shift_masked_all[idx] = shift_i
+
+            # Addition: show shift map
+            if self.show_flow:
+                _, indexes = torch.max(cosine, dim=1)
+                # calculate self.flag from self.m
+                self.flag = (1 - mm).view(-1)
+                non_mask_indexes = (self.flag == 0).nonzero()
+                non_mask_indexes = non_mask_indexes[indexes]
+                shift_offset = torch.stack([non_mask_indexes.squeeze() // self.w, non_mask_indexes.squeeze() % self.w], dim=-1)
+                self.shift_offsets.append(shift_offset)
+
+        if self.show_flow:
+            # Note: Here we assume that each mask is the same for the same batch image.
+            self.shift_offsets = torch.cat(self.shift_offsets, dim=0).float() # make it cudaFloatTensor
+            # Assume mask is the same for each image in a batch.
+            mask_nums = self.shift_offsets.size(0)//self.bz
+            self.flow_srcs = torch.zeros(self.bz, 3, self.h, self.w).type_as(input)
+
+            for idx in range(self.bz):
+                shift_offset = self.shift_offsets.narrow(0, idx*mask_nums, mask_nums)
+                # reconstruct the original shift_map.
+                shift_offsets_map = torch.zeros(1, self.h, self.w, 2).type_as(input)
+                print(shift_offsets_map.size())
+                print(shift_offset.unsqueeze(0).size())
+
+                print(shift_offsets_map[:, (self.flag == 1).nonzero().squeeze() // self.w, (self.flag == 1).nonzero().squeeze() % self.w, :].size())
+                shift_offsets_map[:, (self.flag == 1).nonzero().squeeze() // self.w, (self.flag == 1).nonzero().squeeze() % self.w, :] = \
+                                                                                                shift_offset.unsqueeze(0)
+                # It is indicating the pixels(non-masked) that will shift the the masked region.
+                flow_src = util.highlight_flow(shift_offsets_map, self.flag.unsqueeze(0))
+                self.flow_srcs[idx] = flow_src           
 
         return torch.cat((former_all, latter_all, shift_masked_all), 1)
 
