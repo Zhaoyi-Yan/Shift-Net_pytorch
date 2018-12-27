@@ -225,7 +225,7 @@ class SoftUnetSkipConnectionBlock(nn.Module):
             # shift should be placed after uprelu
             # NB: innerCos are placed before shift. So need to add the latent gredient to
             # to former part.
-            up = [uprelu, innerCosBefore, shift, innerCosAfter, upconv, upnorm]
+            up = [uprelu, innerCosBefore, shift, upconv, upnorm]
 
             if use_dropout:
                 model = down + [submodule] + up + [nn.Dropout(0.5)]
