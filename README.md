@@ -32,27 +32,34 @@ cd Shift-Net_pytorch
 - Download your own inpainting datasets.
 
 - Train a model:
-
-For navie shift-net:
+(Read this paragraph carefully please. Then start training.)
+For `navie shift-net`:
 ```bash
 python train.py --which_model_netG='unet_shift_triple' --model='shiftnet' --shift_sz=1 --maskA_thred=1
 ```
 
-For res navie shift-net:
+For `res navie shift-net`:
 ```bash
 python train.py --which_model_netG='res_unet_shift_triple' --model='res_shiftnet' --shift_sz=1 --maskA_thred=1
 ```
 
-For pixel soft shift-net:
+For `pixel soft shift-net`:
 ```bash
 python train.py --which_model_netG='soft_unet_shift_triple' --model='soft_shiftnet' --shift_sz=1 --maskA_thred=1
 ```
 
-For patch soft shift-net:
+For `patch soft shift-net`:
 ```bash
 python train.py --which_model_netG='patch_soft_unet_shift_triple' --model='patch_soft_shiftnet' --shift_sz=3 --mask_thred=4
 ```
+
+For `res patch soft shift-net`:
+```bash
+python train.py --which_model_netG='res_patch_soft_unet_shift_triple' --model='res_patch_soft_shiftnet' --shift_sz=3 --mask_thred=4
+```
 DO NOT change the shift_sz and mask_thred. Otherwise, it errors with a high probability.
+
+For `patch soft shift-net` or `res patch soft shift-net`. You may set `fuse=1` to see whether it delivers better results.
 
 - To view training results and loss plots, run `python -m visdom.server` and click the URL http://localhost:8097. The checkpoints will be saved in `./log` by default.
 
@@ -62,7 +69,7 @@ DO NOT change the shift_sz and mask_thred. Otherwise, it errors with a high prob
 
 For example, if you train `patch soft shift-net`, then the following testing command is appropriate.
 ```bash
-python test.py --which_model_netG='patch_soft_unet_shift_triple' --model='patch_soft_shiftnet' --shift_sz=3 --mask_thred=4
+python test.py --fuse=1/0 --which_model_netG='patch_soft_unet_shift_triple' --model='patch_soft_shiftnet' --shift_sz=3 --mask_thred=4 
 ```
 The test results will be saved to a html file here: `./results/`.
 
