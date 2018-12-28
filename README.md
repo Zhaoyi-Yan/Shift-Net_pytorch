@@ -38,6 +38,11 @@ For navie shift-net:
 python train.py --which_model_netG='unet_shift_triple' --model='shiftnet' --shift_sz=1 --maskA_thred=1
 ```
 
+For res navie shift-net:
+```bash
+python train.py --which_model_netG='res_unet_shift_triple' --model='res_shiftnet' --shift_sz=1 --maskA_thred=1
+```
+
 For pixel soft shift-net:
 ```bash
 python train.py --which_model_netG='soft_unet_shift_triple' --model='soft_shiftnet' --shift_sz=1 --maskA_thred=1
@@ -53,9 +58,11 @@ DO NOT change the shift_sz and mask_thred. Otherwise, it errors with a high prob
 
 - Test the model
 
-Keep the same settings as those when training to avoid errors.
+**Keep the same settings as those during training phase to avoid errors or bad performance**
+
+For example, if you train `patch soft shift-net`, then the following testing command is appropriate.
 ```bash
-python test.py
+python test.py --which_model_netG='patch_soft_unet_shift_triple' --model='patch_soft_shiftnet' --shift_sz=3 --mask_thred=4
 ```
 The test results will be saved to a html file here: `./results/`.
 
@@ -87,8 +94,8 @@ If you find it a little hard to read the code, you may read [Guides](https://git
 - [x] Boost the efficiency of shift layer.
 - [x] Directly resize the global_mask to get the mask in feature space.
 - [x] Visualization of flow. It is still experimental now.
+- [x] Extensions of Shift-Net. Still active in absorbing new features.
 - [ ] Fix bug in guidance loss when adopting it in multi-gpu.
-- [ ] Extensions of Shift-Net, which will help the performance a lot.
 - [ ] Add random batch of masks
 - [ ] Add soft transition from centered mask to random ones
 - [ ] Add composit L1 loss between mask loss and non-mask loss
