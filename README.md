@@ -32,7 +32,11 @@ cd Shift-Net_pytorch
 - Download your own inpainting datasets.
 
 - Train a model:
-(Read this paragraph carefully please. Then start training.)
+Please read this paragraph carefully before running the code.
+
+By now, 5 kinds of shift-nets are proposed, presented to you by \"advanced-descending\" order.
+Usually, we train and test a model with `center` mask.
+
 For `navie shift-net`:
 ```bash
 python train.py --which_model_netG='unet_shift_triple' --model='shiftnet' --shift_sz=1 --maskA_thred=1
@@ -60,6 +64,9 @@ python train.py --which_model_netG='res_patch_soft_unet_shift_triple' --model='r
 DO NOT change the shift_sz and mask_thred. Otherwise, it errors with a high probability.
 
 For `patch soft shift-net` or `res patch soft shift-net`. You may set `fuse=1` to see whether it delivers better results.
+
+**If you want to train model with `random` masks, you need to set `fixed_mask=0` and `mask_type='random'.`**.
+Yes, it is a little bit troublesome, I will delete `fixed_masked` option later when I rebase the code next week.
 
 - To view training results and loss plots, run `python -m visdom.server` and click the URL http://localhost:8097. The checkpoints will be saved in `./log` by default.
 
