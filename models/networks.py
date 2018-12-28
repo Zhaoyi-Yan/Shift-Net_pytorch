@@ -105,6 +105,9 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, opt, mask_global, norm=
     elif which_model_netG == 'patch_soft_unet_shift_triple':
         netG = PatchSoftUnetGeneratorShiftTriple(input_nc, output_nc, 8, opt, innerCos_list, shift_list, mask_global, \
                                                          ngf, norm_layer=norm_layer, use_dropout=use_dropout)
+    elif which_model_netG == 'res_patch_soft_unet_shift_triple':
+        netG = ResPatchSoftUnetGeneratorShiftTriple(input_nc, output_nc, 8, opt, innerCos_list, shift_list, mask_global, \
+                                                         ngf, norm_layer=norm_layer, use_dropout=use_dropout)
     else:
         raise NotImplementedError('Generator model name [%s] is not recognized' % which_model_netG)
     print('[CREATED] MODEL')
