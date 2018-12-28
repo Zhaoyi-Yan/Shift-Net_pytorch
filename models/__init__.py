@@ -6,6 +6,11 @@ def create_model(opt):
         from models.shift_net.shiftnet_model import ShiftNetModel
         model = ShiftNetModel()
 
+    elif opt.model == 'res_shiftnet':
+        assert (opt.dataset_mode == 'aligned' or opt.dataset_mode == 'aligned_resized')
+        from models.res_shift_net.shiftnet_model import ResShiftNetModel
+        model = ResShiftNetModel()
+
     elif opt.model == 'soft_shiftnet':
         assert (opt.dataset_mode == 'aligned' or opt.dataset_mode == 'aligned_resized')
         from models.soft_shift_net.soft_shiftnet_model import SoftShiftNetModel
