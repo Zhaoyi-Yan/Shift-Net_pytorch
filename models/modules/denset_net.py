@@ -224,6 +224,5 @@ class DenseNet(nn.Module):
 
     def forward(self, x):
         features = self.features(x)
-        features = F.relu(features, inplace=True)
         features = self.conv_last(features)
         return features
