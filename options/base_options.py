@@ -31,9 +31,6 @@ class BaseOptions():
         parser.add_argument('--norm', type=str, default='instance', help='instance normalization or batch normalization')
         parser.add_argument('--serial_batches', action='store_true', help='if true, takes images in order to make batches, otherwise takes them randomly')
         parser.add_argument('--display_winsize', type=int, default=256,  help='display window size')
-        parser.add_argument('--display_id', type=int, default=1, help='window id of the web display')
-        parser.add_argument('--display_port', type=int, default=8097, help='visdom port of the web display')
-        parser.add_argument('--display_server', type=str, default="http://localhost", help='visdom server of the web display')
         parser.add_argument('--suffix', default='', type=str, help='customized suffix: opt.name = opt.name + suffix: e.g., {model}_{which_model_netG}_size{loadSize}')
 
         parser.add_argument('--use_dropout', action='store_true', help='use dropout for the generator') #it means if using '--use_dropout then this option is true.
@@ -69,6 +66,7 @@ class BaseOptions():
                                                                             're_avg_hinGan (Relativistic average HingeGAN),  WARNING: wgan_gp should never be used here.')
         parser.add_argument('--gan_weight', type=float, default=0.2, help='the weight of gan loss')
         parser.add_argument('--mask_weight', type=float, default=1.0, help='the weight of mask part')
+        parser.add_argument('--use_spectral_norm', type=int, default=1, help='whether to add spectral norm in basic D')
         parser.add_argument('--overlap', type=int, default=4, help='the overlap for center mask')
         parser.add_argument('--show_flow', type=int, default=0, help='show the flow information. WARNING: set display_freq a large number as it is quite slow when showing flow')
 

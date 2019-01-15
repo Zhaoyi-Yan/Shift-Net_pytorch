@@ -2,6 +2,8 @@ import numpy as np
 import os
 import ntpath
 import time
+import sys
+from subprocess import Popen, PIPE
 from . import util
 from . import html
 from scipy.misc import imresize
@@ -13,12 +15,15 @@ class Visualizer():
         self.use_html = opt.isTrain and not opt.no_html
         self.win_size = opt.display_winsize
         self.name = opt.name
+        self.port = opt.display_port
         self.opt = opt
         self.saved = False
         if self.display_id > 0:
             import visdom
             self.ncols = opt.display_ncols
-            self.vis = visdom.Visdom(server=opt.display_server, port=opt.display_port, use_incoming_socket=False)
+            self.vis = visdom.Visdom(server=opt.display_server, port=opt.display_port, env=opt.display_env)
+            if not self.vis.check_connection():
+                self.create_visdom_connections()
 
         if self.use_html:
             self.web_dir = os.path.join(opt.checkpoints_dir, opt.name, 'web')
@@ -32,6 +37,13 @@ class Visualizer():
 
     def reset(self):
         self.saved = False
+
+    def create_visdom_connections(self):
+        """If the program could not connect to Visdom server, this function will start a new server at port < self.port > """
+        cmd = sys.executable + ' -m visdom.server -p %d &>/dev/null &' % self.port
+        print('\n\nCould not connect to Visdom server. \n Trying to start a server....')
+        print('Command: %s' % cmd)
+        Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
 
     # |visuals|: dictionary of images to display or save
     def display_current_results(self, visuals, epoch, save_result):
@@ -65,12 +77,14 @@ class Visualizer():
                     idx += 1
                 if label_html_row != '':
                     label_html += '<tr>%s</tr>' % label_html_row
-                # pane col = image row
-                self.vis.images(images, nrow=ncols, win=self.display_id + 1,
-                                padding=2, opts=dict(title=title + ' images'))
-                label_html = '<table>%s</table>' % label_html
-                self.vis.text(table_css + label_html, win=self.display_id + 2,
-                              opts=dict(title=title + ' labels'))
+                try:
+                    self.vis.images(images, nrow=ncols, win=self.display_id + 1,
+                                    padding=2, opts=dict(title=title + ' images'))
+                    label_html = '<table>%s</table>' % label_html
+                    self.vis.text(table_css + label_html, win=self.display_id + 2,
+                                opts=dict(title=title + ' labels'))
+                except VisdomExceptionBase:
+                    self.create_visdom_connections()
             else:
                 idx = 1
                 for label, image in visuals.items():
