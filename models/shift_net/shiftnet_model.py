@@ -275,7 +275,7 @@ class ShiftNetModel(BaseModel):
 
         self.loss_G_L1, self.loss_G_L1_m = 0, 0
         self.loss_G_L1 += self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_A
-        self.loss_G_L1_m += self.criterionL1(self.fake_B*self.mask_global, self.real_B*self.mask_global)*self.opt.mask_weight
+        self.loss_G_L1_m += self.criterionL1(self.fake_B*self.mask_global.float(), self.real_B*self.mask_global.float())*self.opt.mask_weight
 
         if self.wgan_gp:
             self.loss_G = self.loss_G_L1 + self.loss_G_L1_m - self.loss_G_GAN * self.opt.gan_weight
