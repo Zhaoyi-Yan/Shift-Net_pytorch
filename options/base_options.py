@@ -68,7 +68,7 @@ class BaseOptions():
                                                                             're_avg_gan (Relativistic average Standard GAN), '
                                                                             're_avg_hinGan (Relativistic average HingeGAN),  WARNING: wgan_gp should never be used here.')
         parser.add_argument('--gan_weight', type=float, default=0.2, help='the weight of gan loss')
-        parser.add_argument('--mask_weight', type=float, default=1, help='the weight of mask part')
+        parser.add_argument('--mask_weight', type=float, default=1.0, help='the weight of mask part')
         parser.add_argument('--overlap', type=int, default=4, help='the overlap for center mask')
         parser.add_argument('--show_flow', type=int, default=0, help='show the flow information. WARNING: set display_freq a large number as it is quite slow when showing flow')
 

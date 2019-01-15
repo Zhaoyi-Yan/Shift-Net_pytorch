@@ -1,4 +1,5 @@
 import functools
+import torch.nn as nn
 from .denset_net import *
 
 from .modules import *
@@ -64,7 +65,7 @@ class SpecNLayerDiscriminator(nn.Module):
         kw = 4
         padw = 1
         sequence = [
-            SpectralNorm(nn.Conv2d(input_nc, ndf, kernel_size=kw, stride=2, padding=padw)),
+            nn.utils.spectral_norm(nn.Conv2d(input_nc, ndf, kernel_size=kw, stride=2, padding=padw)),
             nn.LeakyReLU(0.2)
         ]
 
@@ -74,7 +75,7 @@ class SpecNLayerDiscriminator(nn.Module):
             nf_mult_prev = nf_mult
             nf_mult = min(2**n, 8)
             sequence += [
-                SpectralNorm(nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult,
+                nn.utils.spectral_norm(nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult,
                           kernel_size=kw, stride=2, padding=padw, bias=use_bias)),
                 norm_layer(ndf * nf_mult),
                 nn.LeakyReLU(0.2)
@@ -83,13 +84,12 @@ class SpecNLayerDiscriminator(nn.Module):
         nf_mult_prev = nf_mult
         nf_mult = min(2**n_layers, 8)
         sequence += [
-            SpectralNorm(nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult,
+            nn.utils.spectral_norm(nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult,
                       kernel_size=kw, stride=1, padding=padw, bias=use_bias)),
             norm_layer(ndf * nf_mult),
             nn.LeakyReLU(0.2)
         ]
-
-        sequence += [SpectralNorm(nn.Conv2d(ndf * nf_mult, 1, kernel_size=kw, stride=1, padding=padw))]
+        sequence += [nn.utils.spectral_norm(nn.Conv2d(ndf * nf_mult, 1, kernel_size=kw, stride=1, padding=padw))]
 
         if use_sigmoid:
             sequence += [nn.Sigmoid()]
