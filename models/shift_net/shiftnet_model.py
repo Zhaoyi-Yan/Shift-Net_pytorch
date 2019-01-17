@@ -88,7 +88,7 @@ class ShiftNetModel(BaseModel):
             # don't use cGAN
             self.netD = networks.define_D(opt.input_nc, opt.ndf,
                                           opt.which_model_netD,
-                                          opt.n_layers_D, opt.norm, use_sigmoid, opt.init_type, self.gpu_ids, opt.init_gain)
+                                          opt.n_layers_D, opt.norm, use_sigmoid, opt.use_spectral_norm, opt.init_type, self.gpu_ids, opt.init_gain)
 
         if self.isTrain:
             self.old_lr = opt.lr
@@ -273,13 +273,15 @@ class ShiftNetModel(BaseModel):
                                + self.criterionGAN (self.pred_fake - torch.mean(self.pred_real), True)) / 2.
 
 
-        self.loss_G_L1 = 0
+        # If we change the mask as 'center with random position', then we can replacing loss_G_L1_m with 'Discounted L1'.
+        self.loss_G_L1, self.loss_G_L1_m = 0, 0
         self.loss_G_L1 += self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_A
+        self.loss_G_L1_m += self.criterionL1(self.fake_B*self.mask_global.float(), self.real_B*self.mask_global.float())*self.opt.mask_weight
 
         if self.wgan_gp:
-            self.loss_G = self.loss_G_L1 - self.loss_G_GAN * self.opt.gan_weight
+            self.loss_G = self.loss_G_L1 + self.loss_G_L1_m - self.loss_G_GAN * self.opt.gan_weight
         else:
-            self.loss_G = self.loss_G_L1 + self.loss_G_GAN * self.opt.gan_weight
+            self.loss_G = self.loss_G_L1 + self.loss_G_L1_m + self.loss_G_GAN * self.opt.gan_weight
 
 
         # Third add additional netG contraint loss!
