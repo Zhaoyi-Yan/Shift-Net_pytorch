@@ -121,43 +121,43 @@ class InceptionDown(nn.Module):
         ## LEVEL 0
         self.conv0_1x1_0 = nn.Conv2d(in_channels, intermediate, 1,
                                     stride, 0, dilation, groups, bias)
-        self.bconv0_1x1_0 = norm_layer(intermediate, affine=True)
+        self.bconv0_1x1_0 = norm_layer(intermediate)
 
         self.conv0_1x1_1 = nn.Conv2d(in_channels, intermediate, 1,
                                     stride, 0, dilation, groups, bias)
-        self.bconv0_1x1_1 = norm_layer(intermediate, affine=True)
+        self.bconv0_1x1_1 = norm_layer(intermediate)
 
         self.max_pool0 = nn.MaxPool2d(2, 2)
 
         self.conv0_1x1_2 = nn.Conv2d(in_channels, out_channels, 1,
                                     stride, 0, dilation, groups, bias)
-        self.bconv0_1x1_2 = norm_layer(out_channels, affine=True)
+        self.bconv0_1x1_2 = norm_layer(out_channels)
 
         ## LEVEL 2
         self.conv1_3x3 = nn.Conv2d(intermediate, intermediate, 3,
                                     stride, 1, dilation, groups, bias)
-        self.bconv1_3x3 = norm_layer(intermediate, affine=True)
+        self.bconv1_3x3 = norm_layer(intermediate)
 
         self.conv1_1x3 = nn.Conv2d(intermediate, out_channels, (1, 3),
                                     stride, (0, 1), dilation, groups, bias)
-        self.bconv1_1x3 = norm_layer(out_channels, affine=True)
+        self.bconv1_1x3 = norm_layer(out_channels)
 
         self.conv1_3x1 = nn.Conv2d(intermediate, out_channels, (3, 1),
                                     stride, (1, 0), dilation, groups, bias)
-        self.bconv1_3x1 = norm_layer(out_channels, affine=True)
+        self.bconv1_3x1 = norm_layer(out_channels)
 
         self.conv1_1x1 = nn.Conv2d(in_channels, out_channels, 1,
                                     stride, 0, dilation, groups, bias)
-        self.bconv1_1x1 = norm_layer(out_channels, affine=True)
+        self.bconv1_1x1 = norm_layer(out_channels)
 
         ## LEVEL 3
         self.conv2_1x3 = nn.Conv2d(intermediate, out_channels, (1, 3),
                                    stride, (0, 1), dilation, groups, bias)
-        self.bconv2_1x3 = norm_layer(out_channels, affine=True)
+        self.bconv2_1x3 = norm_layer(out_channels)
 
         self.conv2_3x1 = nn.Conv2d(intermediate, out_channels, (3, 1),
                                    stride, (1, 0), dilation, groups, bias)
-        self.bconv2_3x1 = norm_layer(out_channels, affine=True)
+        self.bconv2_3x1 = norm_layer(out_channels)
 
     def _forward(self, input, conv, normalization):
         #print(self.in_channels, self.out_channels, input.shape)
@@ -250,35 +250,35 @@ class InceptionUp(nn.Module):
         self.conv0_1x1_0 = nn.ConvTranspose2d(in_channels, out_channels, 1,
                                               stride=2, padding=0, output_padding=1,
                                               groups=1, bias=True, dilation=1)
-        self.bconv0_1x1_0 = norm_layer(out_channels, affine=True)
+        self.bconv0_1x1_0 = norm_layer(out_channels)
 
         self.conv0_1x1_1 = nn.ConvTranspose2d(in_channels, intermediate, 1,
                                               stride=2, padding=0, output_padding=1,
                                               groups=1, bias=True, dilation=1)
-        self.bconv0_1x1_1 = norm_layer(intermediate, affine=True)
+        self.bconv0_1x1_1 = norm_layer(intermediate)
 
         self.upsample0 = nn.Upsample(scale_factor=2, mode='bilinear')
 
         self.conv0_1x1_2 = nn.ConvTranspose2d(in_channels, intermediate, 1,
                                               stride=2, padding=0, output_padding=1,
                                               groups=1, bias=True, dilation=1)
-        self.bconv0_1x1_2 = norm_layer(intermediate, affine=True)
+        self.bconv0_1x1_2 = norm_layer(intermediate)
 
         ## LEVEL 2
         self.conv1_3x3 = nn.ConvTranspose2d(intermediate, out_channels, 3,
                                               stride=1, padding=1, output_padding=0,
                                               groups=1, bias=True, dilation=1)
-        self.bconv1_3x3 = norm_layer(out_channels, affine=True)
+        self.bconv1_3x3 = norm_layer(out_channels)
 
         self.conv1_5x5 = nn.ConvTranspose2d(intermediate, out_channels, 5,
                                               stride=1, padding=2, output_padding=0,
                                               groups=1, bias=True, dilation=1)
-        self.bconv1_5x5 = norm_layer(out_channels, affine=True)
+        self.bconv1_5x5 = norm_layer(out_channels)
 
         self.conv1_1x1 = nn.ConvTranspose2d(in_channels, out_channels, 1,
                                               stride=1, padding=0, output_padding=0,
                                               groups=1, bias=True, dilation=1)
-        self.bconv1_1x1 = norm_layer(out_channels, affine=True)
+        self.bconv1_1x1 = norm_layer(out_channels)
 
     def _forward(self, input, conv, normalization):
         #print(self.in_channels, self.out_channels, input.shape)

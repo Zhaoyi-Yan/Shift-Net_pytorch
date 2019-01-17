@@ -73,9 +73,9 @@ class UnetSkipConnectionShiftBlock(nn.Module):
         downconv = nn.Conv2d(input_nc, inner_nc, kernel_size=4,
                              stride=2, padding=1)
         downrelu = nn.LeakyReLU(0.2, True)
-        downnorm = norm_layer(inner_nc, affine=True)
+        downnorm = norm_layer(inner_nc)
         uprelu = nn.ReLU(True)
-        upnorm = norm_layer(outer_nc, affine=True)
+        upnorm = norm_layer(outer_nc)
 
         # As the downconv layer is outer_nc in and inner_nc out.
         # So the shift define like this:
@@ -188,9 +188,9 @@ class ResUnetSkipConnectionBlock(nn.Module):
         downconv = nn.Conv2d(input_nc, inner_nc, kernel_size=4,
                              stride=2, padding=1)
         downrelu = nn.LeakyReLU(0.2, True)
-        downnorm = norm_layer(inner_nc, affine=True)
+        downnorm = norm_layer(inner_nc)
         uprelu = nn.ReLU(True)
-        upnorm = norm_layer(outer_nc, affine=True)
+        upnorm = norm_layer(outer_nc)
 
         # As the downconv layer is outer_nc in and inner_nc out.
         # So the shift define like this:
@@ -300,9 +300,9 @@ class SoftUnetSkipConnectionBlock(nn.Module):
         downconv = nn.Conv2d(input_nc, inner_nc, kernel_size=4,
                              stride=2, padding=1)
         downrelu = nn.LeakyReLU(0.2, True)
-        downnorm = norm_layer(inner_nc, affine=True)
+        downnorm = norm_layer(inner_nc)
         uprelu = nn.ReLU(True)
-        upnorm = norm_layer(outer_nc, affine=True)
+        upnorm = norm_layer(outer_nc)
 
         # As the downconv layer is outer_nc in and inner_nc out.
         # So the shift define like this:
@@ -415,9 +415,9 @@ class PatchSoftUnetSkipConnectionShiftTriple(nn.Module):
         downconv = nn.Conv2d(input_nc, inner_nc, kernel_size=4,
                              stride=2, padding=1)
         downrelu = nn.LeakyReLU(0.2, True)
-        downnorm = norm_layer(inner_nc, affine=True)
+        downnorm = norm_layer(inner_nc)
         uprelu = nn.ReLU(True)
-        upnorm = norm_layer(outer_nc, affine=True)
+        upnorm = norm_layer(outer_nc)
 
         # As the downconv layer is outer_nc in and inner_nc out.
         # So the shift define like this:
@@ -531,9 +531,9 @@ class ResPatchSoftUnetSkipConnectionShiftTriple(nn.Module):
         downconv = nn.Conv2d(input_nc, inner_nc, kernel_size=4,
                              stride=2, padding=1)
         downrelu = nn.LeakyReLU(0.2, True)
-        downnorm = norm_layer(inner_nc, affine=True)
+        downnorm = norm_layer(inner_nc)
         uprelu = nn.ReLU(True)
-        upnorm = norm_layer(outer_nc, affine=True)
+        upnorm = norm_layer(outer_nc)
 
         # As the downconv layer is outer_nc in and inner_nc out.
         # So the shift define like this:
@@ -646,9 +646,9 @@ class InceptionUnetSkipConnectionBlock(nn.Module):
 
 
         downrelu = nn.LeakyReLU(0.2, True)
-        downnorm = norm_layer(inner_nc, affine=True)
+        downnorm = norm_layer(inner_nc)
         uprelu = nn.ReLU(True)
-        upnorm = norm_layer(outer_nc, affine=True)
+        upnorm = norm_layer(outer_nc)
 
         # Different position only has differences in `upconv`
         # for the outermost, the special is `tanh`
@@ -722,9 +722,9 @@ class InceptionShiftUnetSkipConnectionBlock(nn.Module):
         downconv = InceptionDown(input_nc, inner_nc) # nn.Conv2d(input_nc, inner_nc, kernel_size=4,stride=2, padding=1)
 
         downrelu = nn.LeakyReLU(0.2, True)
-        downnorm = norm_layer(inner_nc, affine=True)
+        downnorm = norm_layer(inner_nc)
         uprelu = nn.ReLU(True)
-        upnorm = norm_layer(outer_nc, affine=True)
+        upnorm = norm_layer(outer_nc)
 
         # Different position only has differences in `upconv`
         # for the outermost, the special is `tanh`
