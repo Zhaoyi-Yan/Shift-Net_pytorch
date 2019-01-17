@@ -273,6 +273,7 @@ class ShiftNetModel(BaseModel):
                                + self.criterionGAN (self.pred_fake - torch.mean(self.pred_real), True)) / 2.
 
 
+        # If we change the mask as 'center with random position', then we can replacing loss_G_L1_m with 'Discounted L1'.
         self.loss_G_L1, self.loss_G_L1_m = 0, 0
         self.loss_G_L1 += self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_A
         self.loss_G_L1_m += self.criterionL1(self.fake_B*self.mask_global.float(), self.real_B*self.mask_global.float())*self.opt.mask_weight
