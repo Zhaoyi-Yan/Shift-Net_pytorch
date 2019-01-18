@@ -215,26 +215,40 @@ def cal_feat_mask(inMask, nlayers):
 
     return inMask
 
+# It is only for patch_size=1 for now.
 def cal_flag_given_mask_thred(img, mask, patch_size, stride, mask_thred):
     assert img.dim() == 3, 'img has to be 3 dimenison!'
     assert mask.dim() == 2, 'mask has to be 2 dimenison!'
-    dim = img.dim()
-    _, H, W = img.size(dim - 3), img.size(dim - 2), img.size(dim - 1)
-    nH = int(math.floor((H - patch_size) / stride + 1))
-    nW = int(math.floor((W - patch_size) / stride + 1))
-    N = nH * nW
 
-    flag = torch.zeros(N).long()
-    for i in range(N):
-        h = int(math.floor(i / nW))
-        w = int(math.floor(i % nW))
-        mask_tmp = mask[h * stride:h * stride + patch_size,
-                   w * stride:w * stride + patch_size]
+    mask = mask.float()
+    # This line of code is for further development of supporting patch_size > 1.
+    # mask = F.pad(mask, (patch_size//2, patch_size//2, patch_size//2, patch_size//2), 'constant', 0)
+    m = mask.unfold(0, patch_size, stride).unfold(1, patch_size, stride)
+    m = m.contiguous().view(1, -1, patch_size, patch_size)
+    m = torch.mean(torch.mean(m, dim=2, keepdim=True), dim=3, keepdim=True)
+    # Adding eps=1e-4 is important here.
+    mm = m.gt(mask_thred/(1.*patch_size**2 + 1e-4)).long()
+    flag = mm.view(-1)
 
-        if torch.sum(mask_tmp) < mask_thred:
-            pass
-        else:
-            flag[i] = 1
+    # Obsolete Method
+    # dim = img.dim()
+    # _, H, W = img.size(dim - 3), img.size(dim - 2), img.size(dim - 1)
+    # nH = int(math.floor((H - patch_size) / stride + 1))
+    # nW = int(math.floor((W - patch_size) / stride + 1))
+    # N = nH * nW
+
+    # flag = torch.zeros(N).long()
+    # for i in range(N):
+    #     h = int(math.floor(i / nW))
+    #     w = int(math.floor(i % nW))
+    #     mask_tmp = mask[h * stride:h * stride + patch_size,
+    #                w * stride:w * stride + patch_size]
+
+    #     if torch.sum(mask_tmp) < mask_thred:
+    #         pass
+    #     else:
+    #         flag[i] = 1
+
     return flag
 
 
