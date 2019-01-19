@@ -79,7 +79,7 @@ class UnetSkipConnectionShiftBlock(nn.Module):
 
         # As the downconv layer is outer_nc in and inner_nc out.
         # So the shift define like this:
-        shift = InnerShiftTriple(opt.fixed_mask, opt.shift_sz, opt.stride, opt.mask_thred,
+        shift = InnerShiftTriple(opt.shift_sz, opt.stride, opt.mask_thred,
                                             opt.triple_weight)
 
         shift.set_mask(mask_global, 3)
@@ -194,7 +194,7 @@ class ResUnetSkipConnectionBlock(nn.Module):
 
         # As the downconv layer is outer_nc in and inner_nc out.
         # So the shift define like this:
-        shift = InnerResShiftTriple(opt.fixed_mask, inner_nc, opt.shift_sz, opt.stride, opt.mask_thred,
+        shift = InnerResShiftTriple(inner_nc, opt.shift_sz, opt.stride, opt.mask_thred,
                                             opt.triple_weight)
 
         shift.set_mask(mask_global, 3)
@@ -306,7 +306,7 @@ class SoftUnetSkipConnectionBlock(nn.Module):
 
         # As the downconv layer is outer_nc in and inner_nc out.
         # So the shift define like this:
-        shift = InnerSoftShiftTriple(opt.fixed_mask, opt.shift_sz, opt.stride, opt.mask_thred, opt.triple_weight)
+        shift = InnerSoftShiftTriple(opt.shift_sz, opt.stride, opt.mask_thred, opt.triple_weight)
 
         shift.set_mask(mask_global, 3)
         shift_list.append(shift)
@@ -708,7 +708,7 @@ class InceptionShiftUnetSkipConnectionBlock(nn.Module):
         if shift_layer:
             # As the downconv layer is outer_nc in and inner_nc out.
             # So the shift define like this:
-            shift = InnerShiftTriple(opt.fixed_mask, opt.shift_sz, opt.stride, opt.mask_thred, opt.triple_weight)
+            shift = InnerShiftTriple(opt.shift_sz, opt.stride, opt.mask_thred, opt.triple_weight)
 
             shift.set_mask(mask_global, 3)
             shift_list.append(shift)
