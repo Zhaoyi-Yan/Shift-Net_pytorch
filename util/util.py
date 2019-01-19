@@ -215,8 +215,7 @@ def cal_feat_mask(inMask, nlayers):
     return inMask
 
 # It is only for patch_size=1 for now.
-def cal_flag_given_mask_thred(img, mask, patch_size, stride, mask_thred):
-    assert img.dim() == 3, 'img has to be 3 dimenison!'
+def cal_flag_given_mask_thred(mask, patch_size, stride, mask_thred):
     assert mask.dim() == 2, 'mask has to be 2 dimenison!'
 
     mask = mask.float()

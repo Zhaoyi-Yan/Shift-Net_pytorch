@@ -24,9 +24,7 @@ class InnerSoftShiftTriple(nn.Module):
     # If mask changes, then need to set cal_fix_flag true each iteration.
     def forward(self, input):
         _, self.c, self.h, self.w = input.size()
-        latter = input.narrow(1, self.c//2, self.c//2).narrow(0,0,1).detach()
-        self.flag = util.cal_flag_given_mask_thred(latter.squeeze(), self.mask, self.shift_sz, \
-                                                                                self.stride, self.mask_thred)
+        self.flag = util.cal_flag_given_mask_thred(self.mask, self.shift_sz, self.stride, self.mask_thred)
 
         final_out = self.softShift(input, self.mask, self.stride, self.triple_weight, self.flag, self.show_flow)
         if self.show_flow:
