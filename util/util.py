@@ -209,7 +209,7 @@ def cal_feat_mask(inMask, nlayers):
     assert inMask.size(0) == 1, "the first dimension must be 1 for mask"
     inMask = inMask.float()
     ntimes = 2**nlayers
-    inMask = F.interpolate(inMask, (inMask.size(2)//ntimes, inMask.size(3)//ntimes), mode='bilinear')
+    inMask = F.interpolate(inMask, (inMask.size(2)//ntimes, inMask.size(3)//ntimes), mode='nearest')
     inMask = (inMask > 0.5).float()
     inMask = inMask.detach().byte()
 
