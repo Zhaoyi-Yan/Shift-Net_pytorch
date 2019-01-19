@@ -53,8 +53,6 @@ class ShiftNetModel(BaseModel):
         self.mask_type = opt.mask_type
         self.gMask_opts = {}
 
-        if self.mask_type == 'random':
-            self.create_random_mask()
 
         self.wgan_gp = False
         # added for wgan-gp
@@ -147,23 +145,7 @@ class ShiftNetModel(BaseModel):
         self.real_A = real_A
         self.real_B = real_B
         self.image_paths = input['A_paths']
-
-    # TODO: it has not been implemented totally.
-    def set_input_with_mask(self, input, mask):
-        real_A = input['A'].to(self.device)
-        real_B = input['B'].to(self.device)
-
-        self.mask_global = mask
-
-        self.set_latent_mask(mask, 3)
-
-        real_A.narrow(1,0,1).masked_fill_(mask, 0.)#2*123.0/255.0 - 1.0
-        real_A.narrow(1,1,1).masked_fill_(mask, 0.)#2*104.0/255.0 - 1.0
-        real_A.narrow(1,2,1).masked_fill_(mask, 0.)#2*117.0/255.0 - 1.0
-
-        self.real_A = real_A
-        self.real_B = real_B
-        self.image_paths = input['A_paths']       
+    
 
     def set_latent_mask(self, mask_global, layer_to_last):
         for ng_shift in self.ng_shift_list: # ITERATE OVER THE LIST OF ng_shift_list
