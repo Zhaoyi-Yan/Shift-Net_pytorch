@@ -65,9 +65,6 @@ DO NOT change the shift_sz and mask_thred. Otherwise, it errors with a high prob
 
 For `patch soft shift-net` or `res patch soft shift-net`. You may set `fuse=1` to see whether it delivers better results.
 
-**If you want to train model with `random` masks, you need to set `fixed_mask=0` and `mask_type='random'.`**.
-Yes, it is a little bit troublesome, I will delete `fixed_masked` option later when I rebase the code next week.
-
 - To view training results and loss plots, run `python -m visdom.server` and click the URL http://localhost:8097. The checkpoints will be saved in `./log` by default.
 
 - Test the model

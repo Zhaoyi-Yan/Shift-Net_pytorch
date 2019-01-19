@@ -52,12 +52,7 @@ class ShiftNetModel(BaseModel):
 
         self.mask_type = opt.mask_type
         self.gMask_opts = {}
-        self.fixed_mask = opt.fixed_mask if opt.mask_type == 'center' else 0
-        if opt.mask_type == 'center':
-            assert opt.fixed_mask == 1, "Center mask must be fixed mask!"
 
-        if self.mask_type == 'random':
-            self.create_random_mask()
 
         self.wgan_gp = False
         # added for wgan-gp
@@ -125,18 +120,14 @@ class ShiftNetModel(BaseModel):
         real_B = input['B'].to(self.device)
 
         # Add mask to real_A
-        # When the mask is random, or the mask is not fixed, we all need to create_gMask
-        if self.fixed_mask:
-            if self.opt.mask_type == 'center':
-                self.mask_global.zero_()
-                self.mask_global[:, :, int(self.opt.fineSize/4) + self.opt.overlap : int(self.opt.fineSize/2) + int(self.opt.fineSize/4) - self.opt.overlap,\
-                                    int(self.opt.fineSize/4) + self.opt.overlap: int(self.opt.fineSize/2) + int(self.opt.fineSize/4) - self.opt.overlap] = 1
-            elif self.opt.mask_type == 'random':
-                self.mask_global = self.create_random_mask().type_as(self.mask_global)
-            else:
-                raise ValueError("Mask_type [%s] not recognized." % self.opt.mask_type)
-        else:
+        if self.opt.mask_type == 'center':
+            self.mask_global.zero_()
+            self.mask_global[:, :, int(self.opt.fineSize/4) + self.opt.overlap : int(self.opt.fineSize/2) + int(self.opt.fineSize/4) - self.opt.overlap,\
+                                int(self.opt.fineSize/4) + self.opt.overlap: int(self.opt.fineSize/2) + int(self.opt.fineSize/4) - self.opt.overlap] = 1
+        elif self.opt.mask_type == 'random':
             self.mask_global = self.create_random_mask().type_as(self.mask_global)
+        else:
+            raise ValueError("Mask_type [%s] not recognized." % self.opt.mask_type)
 
         self.set_latent_mask(self.mask_global, 3)
 
@@ -154,23 +145,7 @@ class ShiftNetModel(BaseModel):
         self.real_A = real_A
         self.real_B = real_B
         self.image_paths = input['A_paths']
-
-    # TODO: it has not been implemented totally.
-    def set_input_with_mask(self, input, mask):
-        real_A = input['A'].to(self.device)
-        real_B = input['B'].to(self.device)
-
-        self.mask_global = mask
-
-        self.set_latent_mask(mask, 3)
-
-        real_A.narrow(1,0,1).masked_fill_(mask, 0.)#2*123.0/255.0 - 1.0
-        real_A.narrow(1,1,1).masked_fill_(mask, 0.)#2*104.0/255.0 - 1.0
-        real_A.narrow(1,2,1).masked_fill_(mask, 0.)#2*117.0/255.0 - 1.0
-
-        self.real_A = real_A
-        self.real_B = real_B
-        self.image_paths = input['A_paths']       
+    
 
     def set_latent_mask(self, mask_global, layer_to_last):
         for ng_shift in self.ng_shift_list: # ITERATE OVER THE LIST OF ng_shift_list
