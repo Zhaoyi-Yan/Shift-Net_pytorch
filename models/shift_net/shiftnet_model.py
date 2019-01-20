@@ -273,11 +273,15 @@ class ShiftNetModel(BaseModel):
         # for other type of GAN, ncritic = 1.
         if not self.wgan_gp:
             self.ncritic = 1
+        # update D
+        self.set_requires_grad(self.netD, True)
         for i in range(self.ncritic):
             self.optimizer_D.zero_grad()
             self.backward_D()
             self.optimizer_D.step()
 
+        # update G
+        self.set_requires_grad(self.netD, False)
         self.optimizer_G.zero_grad()
         self.backward_G()
         self.optimizer_G.step()
