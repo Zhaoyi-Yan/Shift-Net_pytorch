@@ -14,13 +14,16 @@ class ShiftNetModel(BaseModel):
     def create_random_mask(self):
         if self.mask_type == 'random':
             if self.opt.mask_sub_type == 'fractal':
-                mask = util.create_walking_mask ()  # create an initial random mask.
+                mask = util.create_walking_mask()  # create an initial random mask.
 
             elif self.opt.mask_sub_type == 'rect':
-                mask = util.create_rand_mask ()
+                mask, rand_t, rand_l = util.create_rand_mask(self.opt)
+                self.rand_t = rand_t
+                self.rand_l = rand_l
+                return mask
 
             elif self.opt.mask_sub_type == 'island':
-                mask = util.wrapper_gmask (self.opt)
+                mask = util.wrapper_gmask(self.opt)
         return mask
 
     def initialize(self, opt):
@@ -124,8 +127,9 @@ class ShiftNetModel(BaseModel):
             self.mask_global.zero_()
             self.mask_global[:, :, int(self.opt.fineSize/4) + self.opt.overlap : int(self.opt.fineSize/2) + int(self.opt.fineSize/4) - self.opt.overlap,\
                                 int(self.opt.fineSize/4) + self.opt.overlap: int(self.opt.fineSize/2) + int(self.opt.fineSize/4) - self.opt.overlap] = 1
+            self.rand_t, self.rand_l = int(self.opt.fineSize/4) + self.opt.overlap, int(self.opt.fineSize/4) + self.opt.overlap
         elif self.opt.mask_type == 'random':
-            self.mask_global = self.create_random_mask().type_as(self.mask_global)
+            self.mask_global = self.create_random_mask().type_as(self.mask_global).view_as(self.mask_global)
         else:
             raise ValueError("Mask_type [%s] not recognized." % self.opt.mask_type)
 
