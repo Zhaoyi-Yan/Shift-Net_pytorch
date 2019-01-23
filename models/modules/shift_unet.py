@@ -31,27 +31,27 @@ from .modules import *
 # at the bottleneck
 class UnetGeneratorShiftTriple(nn.Module):
     def __init__(self, input_nc, output_nc, num_downs, opt, innerCos_list, shift_list, mask_global, ngf=64,
-                 norm_layer=nn.BatchNorm2d, use_dropout=False):
+                 norm_layer=nn.BatchNorm2d, use_dropout=False, use_spectral_norm=False):
         super(UnetGeneratorShiftTriple, self).__init__()
 
         # construct unet structure
         unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=None, norm_layer=norm_layer,
-                                             innermost=True)
+                                             innermost=True, use_spectral_norm=use_spectral_norm)
         print(unet_block)
         for i in range(num_downs - 5):  # The innner layers number is 3 (sptial size:512*512), if unet_256.
             unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=unet_block,
-                                                 norm_layer=norm_layer, use_dropout=use_dropout)
+                                                 norm_layer=norm_layer, use_dropout=use_dropout, use_spectral_norm=use_spectral_norm)
         unet_block = UnetSkipConnectionBlock(ngf * 4, ngf * 8, input_nc=None, submodule=unet_block,
-                                             norm_layer=norm_layer)
+                                             norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
 
         unet_shift_block = UnetSkipConnectionShiftBlock(ngf * 2, ngf * 4, opt, innerCos_list, shift_list,
                                                                     mask_global, input_nc=None, \
                                                                     submodule=unet_block,
-                                                                    norm_layer=norm_layer)  # passing in unet_shift_block
+                                                                    norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)  # passing in unet_shift_block
         unet_block = UnetSkipConnectionBlock(ngf, ngf * 2, input_nc=None, submodule=unet_shift_block,
-                                             norm_layer=norm_layer)
+                                             norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
         unet_block = UnetSkipConnectionBlock(output_nc, ngf, input_nc=input_nc, submodule=unet_block, outermost=True,
-                                             norm_layer=norm_layer)
+                                             norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
 
         self.model = unet_block
 
@@ -64,14 +64,14 @@ class UnetGeneratorShiftTriple(nn.Module):
 class UnetSkipConnectionShiftBlock(nn.Module):
     def __init__(self, outer_nc, inner_nc, opt, innerCos_list, shift_list, mask_global, input_nc, \
                  submodule=None, shift_layer=None, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d,
-                 use_dropout=False):
+                 use_dropout=False, use_spectral_norm=False):
         super(UnetSkipConnectionShiftBlock, self).__init__()
         self.outermost = outermost
         if input_nc is None:
             input_nc = outer_nc
 
-        downconv = nn.Conv2d(input_nc, inner_nc, kernel_size=4,
-                             stride=2, padding=1)
+        downconv = spectral_norm(nn.Conv2d(input_nc, inner_nc, kernel_size=4,
+                             stride=2, padding=1), use_spectral_norm)
         downrelu = nn.LeakyReLU(0.2, True)
         downnorm = norm_layer(inner_nc)
         uprelu = nn.ReLU(True)
@@ -94,26 +94,26 @@ class UnetSkipConnectionShiftBlock(nn.Module):
         # Different position only has differences in `upconv`
         # for the outermost, the special is `tanh`
         if outermost:
-            upconv = nn.ConvTranspose2d(inner_nc * 2, outer_nc,
+            upconv = use_spectral_norm(nn.ConvTranspose2d(inner_nc * 2, outer_nc,
                                         kernel_size=4, stride=2,
-                                        padding=1)
+                                        padding=1), use_spectral_norm)
             down = [downconv]
             up = [uprelu, upconv, nn.Tanh()]
             model = down + [submodule] + up
             # for the innermost, the special is `inner_nc` instead of `inner_nc*2`
         elif innermost:
-            upconv = nn.ConvTranspose2d(inner_nc, outer_nc,
+            upconv = use_spectral_norm(nn.ConvTranspose2d(inner_nc, outer_nc,
                                         kernel_size=4, stride=2,
-                                        padding=1)
+                                        padding=1), use_spectral_norm)
             down = [downrelu, downconv]  # for the innermost, no submodule, and delete the bn
             up = [uprelu, upconv, upnorm]
             model = down + up
             # else, the normal
         else:
             # shift triple differs in here. It is `*3` not `*2`.
-            upconv = nn.ConvTranspose2d(inner_nc * 3, outer_nc,
+            upconv = use_spectral_norm(nn.ConvTranspose2d(inner_nc * 3, outer_nc,
                                         kernel_size=4, stride=2,
-                                        padding=1)
+                                        padding=1), use_spectral_norm)
             down = [downrelu, downconv, downnorm]
             # shift should be placed after uprelu
             # NB: innerCos are placed before shift. So need to add the latent gredient to
@@ -146,27 +146,27 @@ class UnetSkipConnectionShiftBlock(nn.Module):
 # at the bottleneck
 class ResUnetGeneratorShiftTriple(nn.Module):
     def __init__(self, input_nc, output_nc, num_downs, opt, innerCos_list, shift_list, mask_global, ngf=64,
-                 norm_layer=nn.BatchNorm2d, use_dropout=False):
+                 norm_layer=nn.BatchNorm2d, use_dropout=False, use_spectral_norm=False):
         super(ResUnetGeneratorShiftTriple, self).__init__()
 
         # construct unet structure
         unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=None, norm_layer=norm_layer,
-                                             innermost=True)
+                                             innermost=True, use_spectral_norm=use_spectral_norm)
         print(unet_block)
         for i in range(num_downs - 5):  # The innner layers number is 3 (sptial size:512*512), if unet_256.
             unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=unet_block,
-                                                 norm_layer=norm_layer, use_dropout=use_dropout)
+                                                 norm_layer=norm_layer, use_dropout=use_dropout, use_spectral_norm=use_spectral_norm)
         unet_block = UnetSkipConnectionBlock(ngf * 4, ngf * 8, input_nc=None, submodule=unet_block,
-                                             norm_layer=norm_layer)
+                                             norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
 
         unet_shift_block = ResUnetSkipConnectionBlock(ngf * 2, ngf * 4, opt, innerCos_list, shift_list,
                                                                     mask_global, input_nc=None, \
                                                                     submodule=unet_block,
-                                                                    norm_layer=norm_layer)  # passing in unet_shift_block
+                                                                    norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)  # passing in unet_shift_block
         unet_block = UnetSkipConnectionBlock(ngf, ngf * 2, input_nc=None, submodule=unet_shift_block,
-                                             norm_layer=norm_layer)
+                                             norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
         unet_block = UnetSkipConnectionBlock(output_nc, ngf, input_nc=input_nc, submodule=unet_block, outermost=True,
-                                             norm_layer=norm_layer)
+                                             norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
 
         self.model = unet_block
 
@@ -179,14 +179,14 @@ class ResUnetGeneratorShiftTriple(nn.Module):
 class ResUnetSkipConnectionBlock(nn.Module):
     def __init__(self, outer_nc, inner_nc, opt, innerCos_list, shift_list, mask_global, input_nc, \
                  submodule=None, shift_layer=None, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d,
-                 use_dropout=False):
+                 use_dropout=False, use_spectral_norm=False):
         super(ResUnetSkipConnectionBlock, self).__init__()
         self.outermost = outermost
         if input_nc is None:
             input_nc = outer_nc
 
-        downconv = nn.Conv2d(input_nc, inner_nc, kernel_size=4,
-                             stride=2, padding=1)
+        downconv = spectral_norm(nn.Conv2d(input_nc, inner_nc, kernel_size=4,
+                             stride=2, padding=1), use_spectral_norm)
         downrelu = nn.LeakyReLU(0.2, True)
         downnorm = norm_layer(inner_nc)
         uprelu = nn.ReLU(True)
@@ -209,26 +209,26 @@ class ResUnetSkipConnectionBlock(nn.Module):
         # Different position only has differences in `upconv`
         # for the outermost, the special is `tanh`
         if outermost:
-            upconv = nn.ConvTranspose2d(inner_nc * 2, outer_nc,
+            upconv = use_spectral_norm(nn.ConvTranspose2d(inner_nc * 2, outer_nc,
                                         kernel_size=4, stride=2,
-                                        padding=1)
+                                        padding=1), use_spectral_norm)
             down = [downconv]
             up = [uprelu, upconv, nn.Tanh()]
             model = down + [submodule] + up
             # for the innermost, the special is `inner_nc` instead of `inner_nc*2`
         elif innermost:
-            upconv = nn.ConvTranspose2d(inner_nc, outer_nc,
+            upconv = use_spectral_norm(nn.ConvTranspose2d(inner_nc, outer_nc,
                                         kernel_size=4, stride=2,
-                                        padding=1)
+                                        padding=1), use_spectral_norm)
             down = [downrelu, downconv]  # for the innermost, no submodule, and delete the bn
             up = [uprelu, upconv, upnorm]
             model = down + up
             # else, the normal
         else:
             # Res shift differs with other shift here. It is `*2` not `*3`.
-            upconv = nn.ConvTranspose2d(inner_nc * 2, outer_nc,
+            upconv = spectral_norm(nn.ConvTranspose2d(inner_nc * 2, outer_nc,
                                         kernel_size=4, stride=2,
-                                        padding=1)
+                                        padding=1), use_spectral_norm)
             down = [downrelu, downconv, downnorm]
             # shift should be placed after uprelu
             # NB: innerCos are placed before shift. So need to add the latent gredient to
@@ -257,27 +257,27 @@ class ResUnetSkipConnectionBlock(nn.Module):
 ################################### ***************************  #####################################
 class SoftUnetGeneratorShiftTriple(nn.Module):
     def __init__(self, input_nc, output_nc, num_downs, opt, innerCos_list, shift_list, mask_global, ngf=64,
-                 norm_layer=nn.BatchNorm2d, use_dropout=False):
+                 norm_layer=nn.BatchNorm2d, use_dropout=False, use_spectral_norm=False):
         super(SoftUnetGeneratorShiftTriple, self).__init__()
 
         # construct unet structure
         unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=None, norm_layer=norm_layer,
-                                             innermost=True)
+                                             innermost=True, use_spectral_norm=use_spectral_norm)
         print(unet_block)
         for i in range(num_downs - 5):  # The innner layers number is 3 (sptial size:512*512), if unet_256.
             unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=unet_block,
-                                                 norm_layer=norm_layer, use_dropout=use_dropout)
+                                                 norm_layer=norm_layer, use_dropout=use_dropout, use_spectral_norm=use_spectral_norm)
         unet_block = UnetSkipConnectionBlock(ngf * 4, ngf * 8, input_nc=None, submodule=unet_block,
-                                             norm_layer=norm_layer)
+                                             norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
 
         unet_shift_block = SoftUnetSkipConnectionBlock(ngf * 2, ngf * 4, opt, innerCos_list, shift_list,
                                                                  mask_global, input_nc=None, \
                                                                  submodule=unet_block,
-                                                                 norm_layer=norm_layer, shift_layer=True)  # passing in unet_shift_block
+                                                                 norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)  # passing in unet_shift_block
         unet_block = UnetSkipConnectionBlock(ngf, ngf * 2, input_nc=None, submodule=unet_shift_block,
-                                             norm_layer=norm_layer)
+                                             norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
         unet_block = UnetSkipConnectionBlock(output_nc, ngf, input_nc=input_nc, submodule=unet_block, outermost=True,
-                                             norm_layer=norm_layer)
+                                             norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
 
         self.model = unet_block
 
@@ -291,14 +291,14 @@ class SoftUnetGeneratorShiftTriple(nn.Module):
 #   |-- downsampling -- |submodule| -- upsampling --|
 class SoftUnetSkipConnectionBlock(nn.Module):
     def __init__(self, outer_nc, inner_nc, opt, innerCos_list, shift_list, mask_global, input_nc, \
-                 submodule=None, shift_layer=None, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d, use_dropout=False):
+                 submodule=None, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d, use_dropout=False, use_spectral_norm=False):
         super(SoftUnetSkipConnectionBlock, self).__init__()
         self.outermost = outermost
         if input_nc is None:
             input_nc = outer_nc
 
-        downconv = nn.Conv2d(input_nc, inner_nc, kernel_size=4,
-                             stride=2, padding=1)
+        downconv = spectral_norm(nn.Conv2d(input_nc, inner_nc, kernel_size=4,
+                             stride=2, padding=1), use_spectral_norm)
         downrelu = nn.LeakyReLU(0.2, True)
         downnorm = norm_layer(inner_nc)
         uprelu = nn.ReLU(True)
@@ -313,38 +313,38 @@ class SoftUnetSkipConnectionBlock(nn.Module):
 
         # Add latent constraint
         # Then add the constraint to the constrain layer list!
-        innerCosBefore = InnerCos(strength=opt.strength, skip=opt.skip)
-        innerCosBefore.set_mask(mask_global, 3)  # Here we need to set mask for innerCos layer too.
-        innerCos_list.append(innerCosBefore)
+        innerCos = InnerCos(strength=opt.strength, skip=opt.skip)
+        innerCos.set_mask(mask_global, 3)  # Here we need to set mask for innerCos layer too.
+        innerCos_list.append(innerCos)
 
         # Different position only has differences in `upconv`
-            # for the outermost, the special is `tanh`
+        # for the outermost, the special is `tanh`
         if outermost:
-            upconv = nn.ConvTranspose2d(inner_nc * 2, outer_nc,
+            upconv = use_spectral_norm(nn.ConvTranspose2d(inner_nc * 2, outer_nc,
                                         kernel_size=4, stride=2,
-                                        padding=1)
+                                        padding=1), use_spectral_norm)
             down = [downconv]
             up = [uprelu, upconv, nn.Tanh()]
             model = down + [submodule] + up
             # for the innermost, the special is `inner_nc` instead of `inner_nc*2`
         elif innermost:
-            upconv = nn.ConvTranspose2d(inner_nc, outer_nc,
+            upconv = use_spectral_norm(nn.ConvTranspose2d(inner_nc, outer_nc,
                                         kernel_size=4, stride=2,
-                                        padding=1)
+                                        padding=1), use_spectral_norm)
             down = [downrelu, downconv]  # for the innermost, no submodule, and delete the bn
             up = [uprelu, upconv, upnorm]
             model = down + up
             # else, the normal
         else:
             # shift triple differs in here. It is `*3` not `*2`.
-            upconv = nn.ConvTranspose2d(inner_nc * 3, outer_nc,
+            upconv = use_spectral_norm(nn.ConvTranspose2d(inner_nc * 3, outer_nc,
                                         kernel_size=4, stride=2,
-                                        padding=1)
+                                        padding=1), use_spectral_norm)
             down = [downrelu, downconv, downnorm]
             # shift should be placed after uprelu
             # NB: innerCos are placed before shift. So need to add the latent gredient to
             # to former part.
-            up = [uprelu, innerCosBefore, shift, upconv, upnorm]
+            up = [uprelu, innerCos, shift, upconv, upnorm]
 
             if use_dropout:
                 model = down + [submodule] + up + [nn.Dropout(0.5)]
@@ -373,27 +373,27 @@ class SoftUnetSkipConnectionBlock(nn.Module):
 # at the bottleneck
 class PatchSoftUnetGeneratorShiftTriple(nn.Module):
     def __init__(self, input_nc, output_nc, num_downs, opt, innerCos_list, shift_list, mask_global, ngf=64,
-                 norm_layer=nn.BatchNorm2d, use_dropout=False):
+                 norm_layer=nn.BatchNorm2d, use_dropout=False, use_spectral_norm=False):
         super(PatchSoftUnetGeneratorShiftTriple, self).__init__()
 
         # construct unet structure
         unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=None, norm_layer=norm_layer,
-                                             innermost=True)
+                                             innermost=True, use_spectral_norm=use_spectral_norm)
         print(unet_block)
         for i in range(num_downs - 5):  # The innner layers number is 3 (sptial size:512*512), if unet_256.
             unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=unet_block,
-                                                 norm_layer=norm_layer, use_dropout=use_dropout)
+                                                 norm_layer=norm_layer, use_dropout=use_dropout, use_spectral_norm=use_spectral_norm)
         unet_block = UnetSkipConnectionBlock(ngf * 4, ngf * 8, input_nc=None, submodule=unet_block,
-                                             norm_layer=norm_layer)
+                                             norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
 
         unet_shift_block = PatchSoftUnetSkipConnectionShiftTriple(ngf * 2, ngf * 4, opt, innerCos_list, shift_list,
                                                                     mask_global, input_nc=None, \
                                                                     submodule=unet_block,
-                                                                    norm_layer=norm_layer)  # passing in unet_shift_block
+                                                                    norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)  # passing in unet_shift_block
         unet_block = UnetSkipConnectionBlock(ngf, ngf * 2, input_nc=None, submodule=unet_shift_block,
-                                             norm_layer=norm_layer)
+                                             norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
         unet_block = UnetSkipConnectionBlock(output_nc, ngf, input_nc=input_nc, submodule=unet_block, outermost=True,
-                                             norm_layer=norm_layer)
+                                             norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
 
         self.model = unet_block
 
@@ -406,14 +406,14 @@ class PatchSoftUnetGeneratorShiftTriple(nn.Module):
 class PatchSoftUnetSkipConnectionShiftTriple(nn.Module):
     def __init__(self, outer_nc, inner_nc, opt, innerCos_list, shift_list, mask_global, input_nc, \
                  submodule=None, shift_layer=None, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d,
-                 use_dropout=False):
+                 use_dropout=False, use_spectral_norm=False):
         super(PatchSoftUnetSkipConnectionShiftTriple, self).__init__()
         self.outermost = outermost
         if input_nc is None:
             input_nc = outer_nc
 
-        downconv = nn.Conv2d(input_nc, inner_nc, kernel_size=4,
-                             stride=2, padding=1)
+        downconv = spectral_norm(nn.Conv2d(input_nc, inner_nc, kernel_size=4,
+                             stride=2, padding=1), use_spectral_norm)
         downrelu = nn.LeakyReLU(0.2, True)
         downnorm = norm_layer(inner_nc)
         uprelu = nn.ReLU(True)
@@ -436,26 +436,26 @@ class PatchSoftUnetSkipConnectionShiftTriple(nn.Module):
         # Different position only has differences in `upconv`
         # for the outermost, the special is `tanh`
         if outermost:
-            upconv = nn.ConvTranspose2d(inner_nc * 2, outer_nc,
+            upconv = use_spectral_norm(nn.ConvTranspose2d(inner_nc * 2, outer_nc,
                                         kernel_size=4, stride=2,
-                                        padding=1)
+                                        padding=1), use_spectral_norm)
             down = [downconv]
             up = [uprelu, upconv, nn.Tanh()]
             model = down + [submodule] + up
             # for the innermost, the special is `inner_nc` instead of `inner_nc*2`
         elif innermost:
-            upconv = nn.ConvTranspose2d(inner_nc, outer_nc,
+            upconv = use_spectral_norm(nn.ConvTranspose2d(inner_nc, outer_nc,
                                         kernel_size=4, stride=2,
-                                        padding=1)
+                                        padding=1), use_spectral_norm)
             down = [downrelu, downconv]  # for the innermost, no submodule, and delete the bn
             up = [uprelu, upconv, upnorm]
             model = down + up
             # else, the normal
         else:
             # shift triple differs in here. It is `*3` not `*2`.
-            upconv = nn.ConvTranspose2d(inner_nc * 3, outer_nc,
+            upconv = use_spectral_norm(nn.ConvTranspose2d(inner_nc * 3, outer_nc,
                                         kernel_size=4, stride=2,
-                                        padding=1)
+                                        padding=1), use_spectral_norm)
             down = [downrelu, downconv, downnorm]
             # shift should be placed after uprelu
             # NB: innerCos are placed before shift. So need to add the latent gredient to
@@ -489,27 +489,27 @@ class PatchSoftUnetSkipConnectionShiftTriple(nn.Module):
 # at the bottleneck
 class ResPatchSoftUnetGeneratorShiftTriple(nn.Module):
     def __init__(self, input_nc, output_nc, num_downs, opt, innerCos_list, shift_list, mask_global, ngf=64,
-                 norm_layer=nn.BatchNorm2d, use_dropout=False):
+                 norm_layer=nn.BatchNorm2d, use_dropout=False, use_spectral_norm=False):
         super(ResPatchSoftUnetGeneratorShiftTriple, self).__init__()
 
         # construct unet structure
         unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=None, norm_layer=norm_layer,
-                                             innermost=True)
+                                             innermost=True, use_spectral_norm=use_spectral_norm)
         print(unet_block)
         for i in range(num_downs - 5):  # The innner layers number is 3 (sptial size:512*512), if unet_256.
             unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=unet_block,
-                                                 norm_layer=norm_layer, use_dropout=use_dropout)
+                                                 norm_layer=norm_layer, use_dropout=use_dropout, use_spectral_norm=use_spectral_norm)
         unet_block = UnetSkipConnectionBlock(ngf * 4, ngf * 8, input_nc=None, submodule=unet_block,
-                                             norm_layer=norm_layer)
+                                             norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
 
         unet_shift_block = ResPatchSoftUnetSkipConnectionShiftTriple(ngf * 2, ngf * 4, opt, innerCos_list, shift_list,
                                                                     mask_global, input_nc=None, \
                                                                     submodule=unet_block,
-                                                                    norm_layer=norm_layer)  # passing in unet_shift_block
+                                                                    norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)  # passing in unet_shift_block
         unet_block = UnetSkipConnectionBlock(ngf, ngf * 2, input_nc=None, submodule=unet_shift_block,
-                                             norm_layer=norm_layer)
+                                             norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
         unet_block = UnetSkipConnectionBlock(output_nc, ngf, input_nc=input_nc, submodule=unet_block, outermost=True,
-                                             norm_layer=norm_layer)
+                                             norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
 
         self.model = unet_block
 
@@ -522,14 +522,14 @@ class ResPatchSoftUnetGeneratorShiftTriple(nn.Module):
 class ResPatchSoftUnetSkipConnectionShiftTriple(nn.Module):
     def __init__(self, outer_nc, inner_nc, opt, innerCos_list, shift_list, mask_global, input_nc, \
                  submodule=None, shift_layer=None, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d,
-                 use_dropout=False):
+                 use_dropout=False, use_spectral_norm=False):
         super(ResPatchSoftUnetSkipConnectionShiftTriple, self).__init__()
         self.outermost = outermost
         if input_nc is None:
             input_nc = outer_nc
 
-        downconv = nn.Conv2d(input_nc, inner_nc, kernel_size=4,
-                             stride=2, padding=1)
+        downconv = spectral_norm(nn.Conv2d(input_nc, inner_nc, kernel_size=4,
+                             stride=2, padding=1), use_spectral_norm)
         downrelu = nn.LeakyReLU(0.2, True)
         downnorm = norm_layer(inner_nc)
         uprelu = nn.ReLU(True)
@@ -552,26 +552,26 @@ class ResPatchSoftUnetSkipConnectionShiftTriple(nn.Module):
         # Different position only has differences in `upconv`
         # for the outermost, the special is `tanh`
         if outermost:
-            upconv = nn.ConvTranspose2d(inner_nc * 2, outer_nc,
+            upconv = use_spectral_norm(nn.ConvTranspose2d(inner_nc * 2, outer_nc,
                                         kernel_size=4, stride=2,
-                                        padding=1)
+                                        padding=1), use_spectral_norm)
             down = [downconv]
             up = [uprelu, upconv, nn.Tanh()]
             model = down + [submodule] + up
             # for the innermost, the special is `inner_nc` instead of `inner_nc*2`
         elif innermost:
-            upconv = nn.ConvTranspose2d(inner_nc, outer_nc,
+            upconv = use_spectral_norm(nn.ConvTranspose2d(inner_nc, outer_nc,
                                         kernel_size=4, stride=2,
-                                        padding=1)
+                                        padding=1), use_spectral_norm)
             down = [downrelu, downconv]  # for the innermost, no submodule, and delete the bn
             up = [uprelu, upconv, upnorm]
             model = down + up
             # else, the normal
         else:
             # Res shift differs with other shift here. It is `*2` not `*3`.
-            upconv = nn.ConvTranspose2d(inner_nc * 2, outer_nc,
+            upconv = use_spectral_norm(nn.ConvTranspose2d(inner_nc * 2, outer_nc,
                                         kernel_size=4, stride=2,
-                                        padding=1)
+                                        padding=1). use_spectral_norm)
             down = [downrelu, downconv, downnorm]
             # shift should be placed after uprelu
             # NB: innerCos are placed before shift. So need to add the latent gredient to
