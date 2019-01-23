@@ -164,20 +164,18 @@ def create_gMask(gMask_opts, limit_cnt=1):
         mask_global = mask.expand(1, 1, mask.size(0), mask.size(1))
     return mask_global
 
-def create_rand_mask(h=256, w=256, mask_size=64, overlap=0.25):
+# Create a square mask with random position.
+def create_rand_mask(opt):
+    h, w = opt.fineSize, opt.fineSize
     mask = np.zeros((h, w))
-    positions = []
-    step = int(overlap * mask_size)
-    for y in range(0, h-mask_size+1, step):
-        for x in range(0, w-mask_size+1, step):
-            positions.append([y, x])
-    arr = np.array(range(len(positions)))
-    idx = np.random.choice(arr)
-    pos = positions[idx]
-    y, x = pos
-    mask[y:y + mask_size, x:x + mask_size] = 1
-    mask = mask[np.newaxis, ...][np.newaxis, ...]
-    return torch.ByteTensor(mask).cuda()
+    maxt = h - opt.overlap - h // 2
+    maxl = w - opt.overlap - w // 2
+    rand_t = np.random.randint(opt.overlap, maxt)
+    rand_l = np.random.randint(opt.overlap, maxl)
+
+    mask[rand_t:rand_t+opt.fineSize//2-2*opt.overlap, rand_l:rand_l+opt.fineSize//2-2*opt.overlap] = 1
+
+    return torch.ByteTensor(mask), rand_t, rand_l
 
 action_list = [[0, 1], [0, -1], [1, 0], [-1, 0]]
 def random_walk(canvas, ini_x, ini_y, length):
@@ -457,3 +455,48 @@ def make_color_wheel():
     colorwheel[col:col+MR, 2] = 255 - np.transpose(np.floor(255 * np.arange(0, MR) / MR))
     colorwheel[col:col+MR, 0] = 255
     return colorwheel
+
+class Discounted_L1(nn.Module):
+    def __init__(self, opt):
+        super(Discounted_L1, self).__init__()
+        # Register discounting template as a buffer
+        self.register_buffer('discounting_mask', torch.tensor(spatial_discounting_mask(opt.fineSize//2 - opt.overlap * 2, opt.fineSize//2 - opt.overlap * 2, 0.9, opt.discounting)))
+        self.L1 = nn.L1Loss()
+
+    def forward(self, input, target):
+        self._assert_no_grad(target)
+        input_tmp = input * self.discounting_mask
+        target_tmp = target * self.discounting_mask
+        return self.L1(input_tmp, target_tmp)
+
+
+    def _assert_no_grad(self, variable):
+        assert not variable.requires_grad, \
+        "nn criterions don't compute the gradient w.r.t. targets - please " \
+        "mark these variables as volatile or not requiring gradients"
+
+
+def spatial_discounting_mask(mask_width, mask_height, discounting_gamma, discounting=1):
+    """Generate spatial discounting mask constant.
+    Spatial discounting mask is first introduced in publication:
+        Generative Image Inpainting with Contextual Attention, Yu et al.
+    Returns:
+        tf.Tensor: spatial discounting mask
+    """
+    gamma = discounting_gamma
+    shape = [1, 1, mask_width, mask_height]
+    if discounting:
+        print('Use spatial discounting l1 loss.')
+        mask_values = np.ones((mask_width, mask_height), dtype='float32')
+        for i in range(mask_width):
+            for j in range(mask_height):
+                mask_values[i, j] = max(
+                    gamma**min(i, mask_width-i),
+                    gamma**min(j, mask_height-j))
+        mask_values = np.expand_dims(mask_values, 0)
+        mask_values = np.expand_dims(mask_values, 1)
+        mask_values = mask_values
+    else:
+        mask_values = np.ones(shape, dtype='float32')
+
+    return mask_values 
