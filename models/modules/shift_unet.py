@@ -94,7 +94,7 @@ class UnetSkipConnectionShiftBlock(nn.Module):
         # Different position only has differences in `upconv`
         # for the outermost, the special is `tanh`
         if outermost:
-            upconv = use_spectral_norm(nn.ConvTranspose2d(inner_nc * 2, outer_nc,
+            upconv = spectral_norm(nn.ConvTranspose2d(inner_nc * 2, outer_nc,
                                         kernel_size=4, stride=2,
                                         padding=1), use_spectral_norm)
             down = [downconv]
@@ -102,7 +102,7 @@ class UnetSkipConnectionShiftBlock(nn.Module):
             model = down + [submodule] + up
             # for the innermost, the special is `inner_nc` instead of `inner_nc*2`
         elif innermost:
-            upconv = use_spectral_norm(nn.ConvTranspose2d(inner_nc, outer_nc,
+            upconv = spectral_norm(nn.ConvTranspose2d(inner_nc, outer_nc,
                                         kernel_size=4, stride=2,
                                         padding=1), use_spectral_norm)
             down = [downrelu, downconv]  # for the innermost, no submodule, and delete the bn
@@ -111,7 +111,7 @@ class UnetSkipConnectionShiftBlock(nn.Module):
             # else, the normal
         else:
             # shift triple differs in here. It is `*3` not `*2`.
-            upconv = use_spectral_norm(nn.ConvTranspose2d(inner_nc * 3, outer_nc,
+            upconv = spectral_norm(nn.ConvTranspose2d(inner_nc * 3, outer_nc,
                                         kernel_size=4, stride=2,
                                         padding=1), use_spectral_norm)
             down = [downrelu, downconv, downnorm]
@@ -209,7 +209,7 @@ class ResUnetSkipConnectionBlock(nn.Module):
         # Different position only has differences in `upconv`
         # for the outermost, the special is `tanh`
         if outermost:
-            upconv = use_spectral_norm(nn.ConvTranspose2d(inner_nc * 2, outer_nc,
+            upconv = spectral_norm(nn.ConvTranspose2d(inner_nc * 2, outer_nc,
                                         kernel_size=4, stride=2,
                                         padding=1), use_spectral_norm)
             down = [downconv]
@@ -217,7 +217,7 @@ class ResUnetSkipConnectionBlock(nn.Module):
             model = down + [submodule] + up
             # for the innermost, the special is `inner_nc` instead of `inner_nc*2`
         elif innermost:
-            upconv = use_spectral_norm(nn.ConvTranspose2d(inner_nc, outer_nc,
+            upconv = spectral_norm(nn.ConvTranspose2d(inner_nc, outer_nc,
                                         kernel_size=4, stride=2,
                                         padding=1), use_spectral_norm)
             down = [downrelu, downconv]  # for the innermost, no submodule, and delete the bn
@@ -320,7 +320,7 @@ class SoftUnetSkipConnectionBlock(nn.Module):
         # Different position only has differences in `upconv`
         # for the outermost, the special is `tanh`
         if outermost:
-            upconv = use_spectral_norm(nn.ConvTranspose2d(inner_nc * 2, outer_nc,
+            upconv = spectral_norm(nn.ConvTranspose2d(inner_nc * 2, outer_nc,
                                         kernel_size=4, stride=2,
                                         padding=1), use_spectral_norm)
             down = [downconv]
@@ -328,7 +328,7 @@ class SoftUnetSkipConnectionBlock(nn.Module):
             model = down + [submodule] + up
             # for the innermost, the special is `inner_nc` instead of `inner_nc*2`
         elif innermost:
-            upconv = use_spectral_norm(nn.ConvTranspose2d(inner_nc, outer_nc,
+            upconv = spectral_norm(nn.ConvTranspose2d(inner_nc, outer_nc,
                                         kernel_size=4, stride=2,
                                         padding=1), use_spectral_norm)
             down = [downrelu, downconv]  # for the innermost, no submodule, and delete the bn
@@ -337,7 +337,7 @@ class SoftUnetSkipConnectionBlock(nn.Module):
             # else, the normal
         else:
             # shift triple differs in here. It is `*3` not `*2`.
-            upconv = use_spectral_norm(nn.ConvTranspose2d(inner_nc * 3, outer_nc,
+            upconv = spectral_norm(nn.ConvTranspose2d(inner_nc * 3, outer_nc,
                                         kernel_size=4, stride=2,
                                         padding=1), use_spectral_norm)
             down = [downrelu, downconv, downnorm]
@@ -436,7 +436,7 @@ class PatchSoftUnetSkipConnectionShiftTriple(nn.Module):
         # Different position only has differences in `upconv`
         # for the outermost, the special is `tanh`
         if outermost:
-            upconv = use_spectral_norm(nn.ConvTranspose2d(inner_nc * 2, outer_nc,
+            upconv = spectral_norm(nn.ConvTranspose2d(inner_nc * 2, outer_nc,
                                         kernel_size=4, stride=2,
                                         padding=1), use_spectral_norm)
             down = [downconv]
@@ -444,7 +444,7 @@ class PatchSoftUnetSkipConnectionShiftTriple(nn.Module):
             model = down + [submodule] + up
             # for the innermost, the special is `inner_nc` instead of `inner_nc*2`
         elif innermost:
-            upconv = use_spectral_norm(nn.ConvTranspose2d(inner_nc, outer_nc,
+            upconv = spectral_norm(nn.ConvTranspose2d(inner_nc, outer_nc,
                                         kernel_size=4, stride=2,
                                         padding=1), use_spectral_norm)
             down = [downrelu, downconv]  # for the innermost, no submodule, and delete the bn
@@ -453,7 +453,7 @@ class PatchSoftUnetSkipConnectionShiftTriple(nn.Module):
             # else, the normal
         else:
             # shift triple differs in here. It is `*3` not `*2`.
-            upconv = use_spectral_norm(nn.ConvTranspose2d(inner_nc * 3, outer_nc,
+            upconv = spectral_norm(nn.ConvTranspose2d(inner_nc * 3, outer_nc,
                                         kernel_size=4, stride=2,
                                         padding=1), use_spectral_norm)
             down = [downrelu, downconv, downnorm]
@@ -552,7 +552,7 @@ class ResPatchSoftUnetSkipConnectionShiftTriple(nn.Module):
         # Different position only has differences in `upconv`
         # for the outermost, the special is `tanh`
         if outermost:
-            upconv = use_spectral_norm(nn.ConvTranspose2d(inner_nc * 2, outer_nc,
+            upconv = spectral_norm(nn.ConvTranspose2d(inner_nc * 2, outer_nc,
                                         kernel_size=4, stride=2,
                                         padding=1), use_spectral_norm)
             down = [downconv]
@@ -560,7 +560,7 @@ class ResPatchSoftUnetSkipConnectionShiftTriple(nn.Module):
             model = down + [submodule] + up
             # for the innermost, the special is `inner_nc` instead of `inner_nc*2`
         elif innermost:
-            upconv = use_spectral_norm(nn.ConvTranspose2d(inner_nc, outer_nc,
+            upconv = spectral_norm(nn.ConvTranspose2d(inner_nc, outer_nc,
                                         kernel_size=4, stride=2,
                                         padding=1), use_spectral_norm)
             down = [downrelu, downconv]  # for the innermost, no submodule, and delete the bn
@@ -569,7 +569,7 @@ class ResPatchSoftUnetSkipConnectionShiftTriple(nn.Module):
             # else, the normal
         else:
             # Res shift differs with other shift here. It is `*2` not `*3`.
-            upconv = use_spectral_norm(nn.ConvTranspose2d(inner_nc * 2, outer_nc,
+            upconv = spectral_norm(nn.ConvTranspose2d(inner_nc * 2, outer_nc,
                                         kernel_size=4, stride=2,
                                         padding=1). use_spectral_norm)
             down = [downrelu, downconv, downnorm]
