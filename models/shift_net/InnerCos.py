@@ -11,14 +11,13 @@ class InnerCos(nn.Module):
         self.strength = strength
         # To define whether this layer is skipped.
         self.skip = skip
-        self.target = None
+        # Init a dummy value is fine.
+        self.target = torch.tensor(1.0)
         def identity(self):
             return self
         self.loss = torch.cuda.FloatTensor(1)
         self.loss.float = types.MethodType(identity, self.loss)
         self.register_buffer('cos_loss', self.loss)
-
-
 
     def set_mask(self, mask_global, layer_to_last):
         mask = util.cal_feat_mask(mask_global, layer_to_last)
@@ -28,13 +27,17 @@ class InnerCos(nn.Module):
 
     def forward(self, in_data):
         self.bs, self.c, _, _ = in_data.size()
-        self.mask = self.mask.cuda()
+        if torch.cuda.is_available:
+            self.mask = self.mask.cuda()
         if not self.skip:
             self.former = in_data.narrow(1, 0, self.c//2)
             self.former_in_mask = torch.mul(self.former, self.mask)
-            self.target = in_data.narrow(1, self.c // 2, self.c // 2).detach().cuda() # the latter part
+            # self.loss shuold put before self.target.
+            # For each iteration, we input GT, then I. That means we get the self.target in the first forward. And in this forward, self.loss is dummy!
+            # In the second forward, we input the corresponding I, then self.loss is working as expected. The self.target is the corresponding GT.
+            self.loss = self.criterion(self.former_in_mask * self.strength, self.target.expand_as(self.former_in_mask).type_as(self.former_in_mask))
+            self.target = in_data.narrow(1, self.c // 2, self.c // 2).detach() # the latter part
             self.target = self.target * self.strength
-            self.loss = self.criterion(self.former_in_mask * self.strength, self.target)
         else:
             self.loss = 0
         self.output = in_data
