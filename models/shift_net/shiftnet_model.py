@@ -78,7 +78,7 @@ class ShiftNetModel(BaseModel):
             input_nc = opt.input_nc
 
         self.netG, self.ng_innerCos_list, self.ng_shift_list = networks.define_G(input_nc, opt.output_nc, opt.ngf,
-                                      opt.which_model_netG, opt, self.mask_global, opt.norm, opt.use_dropout, opt.init_type, self.gpu_ids, opt.init_gain) # add opt, we need opt.shift_sz and other stuffs
+                                      opt.which_model_netG, opt, self.mask_global, opt.norm, opt.use_dropout, opt.use_spectral_norm_G, opt.init_type, self.gpu_ids, opt.init_gain) # add opt, we need opt.shift_sz and other stuffs
         if self.isTrain:
             use_sigmoid = False
             if opt.gan_type == 'vanilla':
@@ -86,7 +86,7 @@ class ShiftNetModel(BaseModel):
             # don't use cGAN
             self.netD = networks.define_D(opt.input_nc, opt.ndf,
                                           opt.which_model_netD,
-                                          opt.n_layers_D, opt.norm, use_sigmoid, opt.use_spectral_norm, opt.init_type, self.gpu_ids, opt.init_gain)
+                                          opt.n_layers_D, opt.norm, use_sigmoid, opt.use_spectral_norm_D, opt.init_type, self.gpu_ids, opt.init_gain)
 
         if self.isTrain:
             self.old_lr = opt.lr

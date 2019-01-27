@@ -70,11 +70,10 @@ def init_net(net, init_type='normal', init_gain=0.02, gpu_ids=[]):
     return net
 
 
-
-def define_G(input_nc, output_nc, ngf, which_model_netG, opt, mask_global, norm='batch', use_dropout=False, init_type='normal', gpu_ids=[], init_gain=0.02):
+# Note: Adding SN to G tends to give inferior results. Need more checking.
+def define_G(input_nc, output_nc, ngf, which_model_netG, opt, mask_global, norm='batch', use_dropout=False, use_spectral_norm=False, init_type='normal', gpu_ids=[], init_gain=0.02):
     netG = None
     norm_layer = get_norm_layer(norm_type=norm)
-    use_spectral_norm = opt.use_spectral_norm
 
     innerCos_list = []
     shift_list = []
@@ -98,7 +97,7 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, opt, mask_global, norm=
         netG = ResUnetGeneratorShiftTriple(input_nc, output_nc, 8, opt, innerCos_list, shift_list, mask_global, \
                                                          ngf, norm_layer=norm_layer, use_dropout=use_dropout, use_spectral_norm=use_spectral_norm)
     elif which_model_netG == 'inception_unet_shift_triple':
-        assert opt.use_spectral_norm != 1, "Spectral norm on inception_unet is not support yet!"
+        assert opt.use_spectral_norm_G != 1, "Spectral norm on inception_unet is not support yet!"
         netG = InceptionUnetGeneratorShiftTriple(input_nc, output_nc, 8, opt, innerCos_list, shift_list, mask_global, \
                                                          ngf, norm_layer=norm_layer, use_dropout=use_dropout)
     elif which_model_netG == 'soft_unet_shift_triple':
