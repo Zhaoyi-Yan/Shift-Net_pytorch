@@ -7,7 +7,7 @@ from .innerPatchSoftShiftTripleModule import InnerPatchSoftShiftTripleModule
 # TODO: Make it compatible for show_flow.
 #
 class InnerPatchSoftShiftTriple(nn.Module):
-    def __init__(self, shift_sz=1, stride=1, mask_thred=1, triple_weight=1, fuse=True):
+    def __init__(self, shift_sz=1, stride=1, mask_thred=1, triple_weight=1, fuse=True, layer_to_last=3):
         super(InnerPatchSoftShiftTriple, self).__init__()
 
         self.shift_sz = shift_sz
@@ -17,10 +17,11 @@ class InnerPatchSoftShiftTriple(nn.Module):
         self.show_flow = False # default false. Do not change it to be true, it is computation-heavy.
         self.flow_srcs = None # Indicating the flow src(pixles in non-masked region that will shift into the masked region)
         self.fuse = fuse
+        self.layer_to_last = layer_to_last
         self.softShift = InnerPatchSoftShiftTripleModule()
 
-    def set_mask(self, mask_global, layer_to_last):
-        mask = util.cal_feat_mask(mask_global, layer_to_last)
+    def set_mask(self, mask_global):
+        mask = util.cal_feat_mask(mask_global, self.layer_to_last)
         self.mask = mask # 1*1*H*W (DO NOT Squeeze here!)
         return self.mask
 

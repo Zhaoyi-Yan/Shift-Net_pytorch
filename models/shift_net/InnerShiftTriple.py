@@ -4,19 +4,20 @@ import util.util as util
 from .InnerShiftTripleFunction import InnerShiftTripleFunction
 
 class InnerShiftTriple(nn.Module):
-    def __init__(self, shift_sz=1, stride=1, mask_thred=1, triple_weight=1):
+    def __init__(self, shift_sz=1, stride=1, mask_thred=1, triple_weight=1, layer_to_last=3):
         super(InnerShiftTriple, self).__init__()
 
         self.shift_sz = shift_sz
         self.stride = stride
         self.mask_thred = mask_thred
         self.triple_weight = triple_weight
+        self.layer_to_last = layer_to_last
         self.show_flow = False # default false. Do not change it to be true, it is computation-heavy.
         self.flow_srcs = None # Indicating the flow src(pixles in non-masked region that will shift into the masked region)
 
 
     def set_mask(self, mask_global, layer_to_last):
-        mask = util.cal_feat_mask(mask_global, layer_to_last)
+        mask = util.cal_feat_mask(mask_global, self.layer_to_last)
         self.mask = mask.squeeze()
         return self.mask
 

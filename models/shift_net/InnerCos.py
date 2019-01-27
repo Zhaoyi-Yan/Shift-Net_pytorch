@@ -4,13 +4,14 @@ import torch.nn.functional as F
 import util.util as util
 import types
 class InnerCos(nn.Module):
-    def __init__(self, crit='MSE', strength=1, skip=0):
+    def __init__(self, crit='MSE', strength=1, skip=0, layer_to_last=3):
         super(InnerCos, self).__init__()
         self.crit = crit
         self.criterion = torch.nn.MSELoss() if self.crit == 'MSE' else torch.nn.L1Loss()
         self.strength = strength
         # To define whether this layer is skipped.
         self.skip = skip
+        self.layer_to_last = layer_to_last
         # Init a dummy value is fine.
         self.target = torch.tensor(1.0)
         def identity(self):
@@ -19,8 +20,8 @@ class InnerCos(nn.Module):
         self.loss.float = types.MethodType(identity, self.loss)
         self.register_buffer('cos_loss', self.loss)
 
-    def set_mask(self, mask_global, layer_to_last):
-        mask = util.cal_feat_mask(mask_global, layer_to_last)
+    def set_mask(self, mask_global):
+        mask = util.cal_feat_mask(mask_global, self.layer_to_last)
         self.mask = mask.squeeze()
         if torch.cuda.is_available:
             self.mask = self.mask.float().cuda()
@@ -43,16 +44,9 @@ class InnerCos(nn.Module):
         self.output = in_data
         return self.output
 
-
-    #def backward(self, retain_graph=True):
-    #    print 'InnerCos backward'
-    #    print self.loss
-    #    if not self.skip:
-    #        self.loss.backward(retain_graph=retain_graph)
-    #    return self.loss
-
     def __repr__(self):
         skip_str = 'True' if not self.skip else 'False'
         return self.__class__.__name__+ '(' \
               + 'skip: ' + skip_str \
+              + 'layer ' + str(self.layer_to_last) + ' to last' \
               + ' ,strength: ' + str(self.strength) + ')'

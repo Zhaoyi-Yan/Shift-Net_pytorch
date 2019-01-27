@@ -134,7 +134,7 @@ class ShiftNetModel(BaseModel):
         else:
             raise ValueError("Mask_type [%s] not recognized." % self.opt.mask_type)
 
-        self.set_latent_mask(self.mask_global, 3)
+        self.set_latent_mask(self.mask_global)
 
         #print(torch.max(real_A), torch.min(real_A))
 
@@ -152,9 +152,9 @@ class ShiftNetModel(BaseModel):
         self.image_paths = input['A_paths']
     
 
-    def set_latent_mask(self, mask_global, layer_to_last):
+    def set_latent_mask(self, mask_global):
         for ng_shift in self.ng_shift_list: # ITERATE OVER THE LIST OF ng_shift_list
-            ng_shift.set_mask(mask_global, layer_to_last)
+            ng_shift.set_mask(mask_global)
 
     def set_gt_latent(self):
         if not self.opt.skip:
