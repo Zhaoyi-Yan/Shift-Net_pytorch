@@ -191,6 +191,15 @@ class ShiftNetModel(BaseModel):
         # Real
         real_AB = self.real_B # GroundTruth
 
+        # Has been verfied, for square mask, let D discrinate masked patch, improves the results.
+        if self.opt.mask_type == 'center' or self.opt.mask_sub_type == 'rect': 
+            # Using the cropped fake_B as the input of D.
+            fake_AB = self.fake_B[:, :, self.rand_t:self.rand_t+self.opt.fineSize//2-2*self.opt.overlap, \
+                                            self.rand_l:self.rand_l+self.opt.fineSize//2-2*self.opt.overlap]
+
+            real_AB = real_AB[:, :, self.rand_t:self.rand_t+self.opt.fineSize//2-2*self.opt.overlap, \
+                                            self.rand_l:self.rand_l+self.opt.fineSize//2-2*self.opt.overlap]  
+
         self.pred_fake = self.netD(fake_AB.detach())
         self.pred_real = self.netD(real_AB)
 
@@ -235,7 +244,13 @@ class ShiftNetModel(BaseModel):
     def backward_G(self):
         # First, G(A) should fake the discriminator
         fake_AB = self.fake_B
+        # Has been verfied, for square mask, let D discrinate masked patch, improves the results.
+        if self.opt.mask_type == 'center' or self.opt.mask_sub_type == 'rect': 
+        # Using the cropped fake_B as the input of D.
+            fake_AB = self.fake_B[:, :, self.rand_t:self.rand_t+self.opt.fineSize//2-2*self.opt.overlap, \
+                                            self.rand_l:self.rand_l+self.opt.fineSize//2-2*self.opt.overlap]
         pred_fake = self.netD(fake_AB)
+
 
         if self.wgan_gp:
             self.loss_G_GAN = torch.mean(pred_fake)
