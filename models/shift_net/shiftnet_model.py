@@ -187,29 +187,29 @@ class ShiftNetModel(BaseModel):
         return self.image_paths
 
     def backward_D(self):
-        fake_AB = self.fake_B
+        fake_B = self.fake_B
         # Real
-        real_AB = self.real_B # GroundTruth
+        real_B = self.real_B # GroundTruth
 
         # Has been verfied, for square mask, let D discrinate masked patch, improves the results.
         if self.opt.mask_type == 'center' or self.opt.mask_sub_type == 'rect': 
             # Using the cropped fake_B as the input of D.
-            fake_AB = self.fake_B[:, :, self.rand_t:self.rand_t+self.opt.fineSize//2-2*self.opt.overlap, \
+            fake_B = self.fake_B[:, :, self.rand_t:self.rand_t+self.opt.fineSize//2-2*self.opt.overlap, \
                                             self.rand_l:self.rand_l+self.opt.fineSize//2-2*self.opt.overlap]
 
-            real_AB = real_AB[:, :, self.rand_t:self.rand_t+self.opt.fineSize//2-2*self.opt.overlap, \
+            real_B = self.real_B[:, :, self.rand_t:self.rand_t+self.opt.fineSize//2-2*self.opt.overlap, \
                                             self.rand_l:self.rand_l+self.opt.fineSize//2-2*self.opt.overlap]  
 
-        self.pred_fake = self.netD(fake_AB.detach())
-        self.pred_real = self.netD(real_AB)
+        self.pred_fake = self.netD(fake_B.detach())
+        self.pred_real = self.netD(real_B)
 
         if self.wgan_gp:
             self.loss_D_fake = torch.mean(self.pred_fake)
             self.loss_D_real = torch.mean(self.pred_real)
 
             # calculate gradient penalty
-            alpha = torch.rand(real_AB.size()).to(self.device)
-            x_hat = alpha * real_AB.detach() + (1 - alpha) * fake_AB.detach()
+            alpha = torch.rand(real_B.size()).to(self.device)
+            x_hat = alpha * real_B.detach() + (1 - alpha) * fake_B.detach()
             x_hat.requires_grad_(True)
             pred_hat = self.netD(x_hat)
 
@@ -220,7 +220,7 @@ class ShiftNetModel(BaseModel):
 
             self.loss_D = self.loss_D_fake - self.loss_D_real + gradient_penalty
         else:
-            self.pred_fake = self.netD(fake_AB.detach())
+            self.pred_fake = self.netD(fake_B.detach())
 
             if self.opt.gan_type in ['vanilla', 'lsgan']:
                 self.loss_D_fake = self.criterionGAN(self.pred_fake, False)
@@ -243,13 +243,13 @@ class ShiftNetModel(BaseModel):
 
     def backward_G(self):
         # First, G(A) should fake the discriminator
-        fake_AB = self.fake_B
+        fake_B = self.fake_B
         # Has been verfied, for square mask, let D discrinate masked patch, improves the results.
         if self.opt.mask_type == 'center' or self.opt.mask_sub_type == 'rect': 
         # Using the cropped fake_B as the input of D.
-            fake_AB = self.fake_B[:, :, self.rand_t:self.rand_t+self.opt.fineSize//2-2*self.opt.overlap, \
+            fake_B = self.fake_B[:, :, self.rand_t:self.rand_t+self.opt.fineSize//2-2*self.opt.overlap, \
                                             self.rand_l:self.rand_l+self.opt.fineSize//2-2*self.opt.overlap]
-        pred_fake = self.netD(fake_AB)
+        pred_fake = self.netD(fake_B)
 
 
         if self.wgan_gp:
