@@ -93,6 +93,7 @@ class ShiftNetModel(BaseModel):
             # define loss functions
             self.criterionGAN = networks.GANLoss(gan_type=opt.gan_type).to(self.device)
             self.criterionL1 = torch.nn.L1Loss()
+            self.criterionL1_mask = util.Discounted_L1(opt).to(self.device) # make weights/buffers transfer to the correct device
 
             # initialize optimizers
             self.schedulers = []
@@ -255,7 +256,16 @@ class ShiftNetModel(BaseModel):
         # If we change the mask as 'center with random position', then we can replacing loss_G_L1_m with 'Discounted L1'.
         self.loss_G_L1, self.loss_G_L1_m = 0, 0
         self.loss_G_L1 += self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_A
-        self.loss_G_L1_m += self.criterionL1(self.fake_B*self.mask_global.float(), self.real_B*self.mask_global.float())*self.opt.mask_weight
+        # calcuate mask construction loss
+        # When mask_type is 'center' or 'random_with_rect', we can add additonal mask region construction loss (traditional L1).
+        # Only when 'discounting_loss' is 1, then the mask region construction loss changes to 'discounting L1' instead of normal L1.
+        if self.opt.mask_type == 'center' or self.opt.mask_sub_type == 'rect': 
+            mask_patch_fake = self.fake_B[:, :, self.rand_t:self.rand_t+self.opt.fineSize//2-2*self.opt.overlap, \
+                                                self.rand_l:self.rand_l+self.opt.fineSize//2-2*self.opt.overlap]
+            mask_patch_real = self.real_B[:, :, self.rand_t:self.rand_t+self.opt.fineSize//2-2*self.opt.overlap, \
+                                        self.rand_l:self.rand_l+self.opt.fineSize//2-2*self.opt.overlap]
+            # Using Discounting L1 loss
+            self.loss_G_L1_m += self.criterionL1_mask(mask_patch_fake, mask_patch_real)*self.opt.mask_weight
 
         if self.wgan_gp:
             self.loss_G = self.loss_G_L1 + self.loss_G_L1_m - self.loss_G_GAN * self.opt.gan_weight
