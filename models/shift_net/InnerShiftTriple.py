@@ -16,7 +16,7 @@ class InnerShiftTriple(nn.Module):
         self.flow_srcs = None # Indicating the flow src(pixles in non-masked region that will shift into the masked region)
 
 
-    def set_mask(self, mask_global, layer_to_last):
+    def set_mask(self, mask_global):
         mask = util.cal_feat_mask(mask_global, self.layer_to_last)
         self.mask = mask.squeeze()
         return self.mask

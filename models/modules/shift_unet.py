@@ -82,7 +82,7 @@ class UnetSkipConnectionShiftBlock(nn.Module):
         shift = InnerShiftTriple(opt.shift_sz, opt.stride, opt.mask_thred,
                                             opt.triple_weight, layer_to_last=layer_to_last)
 
-        shift.set_mask(mask_global, 3)
+        shift.set_mask(mask_global)
         shift_list.append(shift)
 
         # Add latent constraint
@@ -197,7 +197,7 @@ class ResUnetSkipConnectionBlock(nn.Module):
         shift = InnerResShiftTriple(inner_nc, opt.shift_sz, opt.stride, opt.mask_thred,
                                             opt.triple_weight, layer_to_last=layer_to_last)
 
-        shift.set_mask(mask_global, 3)
+        shift.set_mask(mask_global)
         shift_list.append(shift)
 
         # Add latent constraint
@@ -424,7 +424,7 @@ class PatchSoftUnetSkipConnectionShiftTriple(nn.Module):
         shift = InnerPatchSoftShiftTriple(opt.shift_sz, opt.stride, opt.mask_thred,
                                             opt.triple_weight, opt.fuse, layer_to_last=layer_to_last)
 
-        shift.set_mask(mask_global, 3)
+        shift.set_mask(mask_global)
         shift_list.append(shift)
 
         # Add latent constraint
@@ -540,7 +540,7 @@ class ResPatchSoftUnetSkipConnectionShiftTriple(nn.Module):
         shift = InnerResPatchSoftShiftTriple(inner_nc, opt.shift_sz, opt.stride, opt.mask_thred,
                                             opt.triple_weight, opt.fuse, layer_to_last=layer_to_last)
 
-        shift.set_mask(mask_global, 3)
+        shift.set_mask(mask_global)
         shift_list.append(shift)
 
         # Add latent constraint
@@ -710,7 +710,7 @@ class InceptionShiftUnetSkipConnectionBlock(nn.Module):
             # So the shift define like this:
             shift = InnerShiftTriple(opt.shift_sz, opt.stride, opt.mask_thred, opt.triple_weight, layer_to_last=layer_to_last)
 
-            shift.set_mask(mask_global, 3)
+            shift.set_mask(mask_global)
             shift_list.append(shift)
 
             # Add latent constraint
