@@ -155,6 +155,8 @@ class ShiftNetModel(BaseModel):
     def set_latent_mask(self, mask_global):
         for ng_shift in self.ng_shift_list: # ITERATE OVER THE LIST OF ng_shift_list
             ng_shift.set_mask(mask_global)
+        for ng_innerCos in self.ng_innerCos_list: # ITERATE OVER THE LIST OF ng_innerCos_list:
+            ng_innerCos.set_mask(mask_global)
 
     def set_gt_latent(self):
         if not self.opt.skip:
@@ -165,6 +167,7 @@ class ShiftNetModel(BaseModel):
             else:
                 real_B = self.real_B
             self.netG(real_B) # input ground truth
+
 
     def forward(self):
         self.fake_B = self.netG(self.real_A)
