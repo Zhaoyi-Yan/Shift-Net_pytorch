@@ -33,12 +33,6 @@ class InnerCos(nn.Module):
         if not self.skip:
             self.former = in_data.narrow(1, 0, self.c//2)
             self.former_in_mask = torch.mul(self.former, self.mask)
-            if len(self.target.size()) == 0: # For the first iteration.
-                self.target = self.target.expand_as(self.former_in_mask).type_as(self.former_in_mask)
-            
-            if self.former_in_mask.size() != self.target.size():  # For the last iteration of one epoch
-                self.target = self.target.narrow(0, 0, 1).expand_as(self.former_in_mask).type_as(self.former_in_mask)
-            
             # self.loss shuold put before self.target.
             # For each iteration, we input GT, then I. That means we get the self.target in the first forward. And in this forward, self.loss is dummy!
             # In the second forward, we input the corresponding I, then self.loss is working as expected. The self.target is the corresponding GT.
