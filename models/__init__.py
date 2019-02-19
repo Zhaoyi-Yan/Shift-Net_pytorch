@@ -26,6 +26,11 @@ def create_model(opt):
         from models.res_patch_soft_shift.res_patch_soft_shiftnet_model import ResPatchSoftShiftNetModel
         model = ResPatchSoftShiftNetModel()
 
+    elif opt.model == 'random_multi_shiftnet':
+        assert (opt.dataset_mode == 'aligned' or opt.dataset_mode == 'aligned_resized')
+        from models.random_multi_shift.random_multi_shiftnet_model import RandomMultiShiftNetModel
+        model = RandomMultiShiftNetModel()
+
     elif opt.model == 'test':
         assert(opt.dataset_mode == 'single')
         from .test_model import TestModel
