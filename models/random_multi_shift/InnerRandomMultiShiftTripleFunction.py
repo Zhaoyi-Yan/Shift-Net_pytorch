@@ -1,6 +1,7 @@
 import numpy as np
 from util.NonparametricShift import Modified_NonparametricShift
 import torch
+import torch.nn.functional as F
 import util.util as util
 import time
 
@@ -40,33 +41,73 @@ class InnerRandomMultiShiftTripleFunction(torch.autograd.Function):
         ctx.shift_offsets = []
 
         # We only assume that two shift layers
-        # TODO: implement me.
+        # Prepare neighbors for the next layer.
+        neighbor_size = 3
+        # For multi-shift, we also need to get index_neighbor_ref_unfold.
+        # It shuold be recalculated whenever mask changes.
         if ctx.previous_neighbor is None:
-            pass
-
+            # constructiing index map
+            neighbor_size = 3
+            index_neighbor_ref = torch.arange(ctx.h*ctx.w).type_as(input).resize_(1, 1, ctx.h, ctx.w)
+            # adding boarder with value of '-1', indicating invalid regions.
+            index_neighbor_ref_tmp = F.pad(index_neighbor_ref, (neighbor_size//2, neighbor_size//2, neighbor_size//2, neighbor_size//2), 'constant', -1)
+            # Also, we need to assigin '-1' to masked region.
+            index_neighbor_ref_tmp.view(-1)[(ctx.flag == 1).nonzero()] = -1
+            index_neighbor_ref_tmp = index_neighbor_ref_tmp.view(1, 1, ctx.h + 2*(neighbor_size//2), ctx.w + 2*(neighbor_size//2))
+            # It is static for each image in a batch.
+            # Eg.(16*16)*(3*3)
+            ctx.index_neighbor_ref_unfold = index_neighbor_ref_tmp.unfold(2, neighbor_size, 1).unfold(3, neighbor_size, 1).contiguous().view(ctx.h*ctx.w, -1)
+        
+        # For each position, we need to assign proper nerighbors to it.
+        ctx.current_neighbor = torch.zeros(ctx.bz, ctx.h*ctx.w, neighbor_size**2).type_as(input)
         
         for idx in range(ctx.bz):
             latter = latter_all.narrow(0, idx, 1) ### encoder feature
             former = former_all.narrow(0, idx, 1) ### decoder feature
-
-            #GET COSINE, RESHAPED LATTER AND ITS INDEXES
-            cosine, latter_windows, i_2, i_3, i_1, i_4 = Nonparm.cosine_similarity(former.clone().squeeze(), latter.clone().squeeze(), 1, stride, flag)
-
-            ## GET INDEXES THAT MAXIMIZE COSINE SIMILARITY
-            _, indexes = torch.max(cosine, dim=1)
-
-            # SET  TRANSITION MATRIX
             mask_indexes = (ctx.flag == 1).nonzero()
-            non_mask_indexes = (ctx.flag == 0).nonzero()[indexes]
-            ctx.ind_lst[idx][mask_indexes, non_mask_indexes] = 1
 
-            # GET FINAL SHIFT FEATURE
-            shift_masked_all[idx] = Nonparm._paste(latter_windows, ctx.ind_lst[idx], i_2, i_3, i_1, i_4)
+            # For the first shift layer.
+            if ctx.previous_neighbor is None:
+                #GET COSINE, RESHAPED LATTER AND ITS INDEXES
+                cosine, latter_windows, i_2, i_3, i_1, i_4 = Nonparm.cosine_similarity(former.clone().squeeze(), latter.clone().squeeze(), 1, stride, flag)
+
+                ## GET INDEXES THAT MAXIMIZE COSINE SIMILARITY
+                _, indexes = torch.max(cosine, dim=1)
+
+                # SET  TRANSITION MATRIX
+                non_mask_indexes = (ctx.flag == 0).nonzero()[indexes]
+                ctx.ind_lst[idx][mask_indexes, non_mask_indexes] = 1
+
+                # GET FINAL SHIFT FEATURE
+                shift_masked_all[idx] = Nonparm._paste(latter_windows, ctx.ind_lst[idx], i_2, i_3, i_1, i_4)
+
+                # Construct neighbors for the next shift layer.
+                # torch.set_printoptions(threshold=10e7)
+                ctx.current_neighbor[idx][mask_indexes] = ctx.index_neighbor_ref_unfold[non_mask_indexes]
+            # For the second shift layer.
+            else:
+                # Direct get shift matrix from previous_neighbor
+                # TODO: How to map mask_index in this layer to correspoinding point in the previous layer?
+                mask_indexes_p = mask_indexes // ctx.w // 2
+                mask_indexes_q = mask_indexes % ctx.w // 2
+                print('mask_p,q', mask_indexes_p, mask_indexes_q)
+                print('cc')
+                # print(mask_indexes_p * (ctx.w//2) + mask_indexes_q)
+                print(ctx.previous_neighbor.shape)
+                print('Now mask_indexes', mask_indexes.size())
+                print(ctx.previous_neighbor[idx, (mask_indexes_p * (ctx.w//2) + mask_indexes_q+0)].squeeze().size())
+                # Only 29 out of 225, have values??
+                print(((ctx.previous_neighbor[idx, (mask_indexes_p * (ctx.w//2) + mask_indexes_q+0)].squeeze().sum(dim=1)) == 0).nonzero().size())
+                print(((ctx.previous_neighbor[idx, (mask_indexes_p * (ctx.w//2) + mask_indexes_q+1)].squeeze().sum(dim=1)) == 0).nonzero().size())
+                print(((ctx.previous_neighbor[idx, (mask_indexes_p * (ctx.w//2) + mask_indexes_q+2)].squeeze().sum(dim=1)) == 0).nonzero().size())
+                print(((ctx.previous_neighbor[idx, (mask_indexes_p * (ctx.w//2) + mask_indexes_q+3)].squeeze().sum(dim=1)) == 0).nonzero().size())
+
+                # print(ctx.previous_neighbor[idx, (mask_indexes_p * (ctx.w//2) + mask_indexes_q+0)])
+                assert 1==2
 
             if ctx.show_flow:
                 shift_offset = torch.stack([non_mask_indexes.squeeze() // ctx.w, non_mask_indexes.squeeze() % ctx.w], dim=-1)
                 ctx.shift_offsets.append(shift_offset)
-
 
 
         if ctx.show_flow:
@@ -136,4 +177,4 @@ class InnerRandomMultiShiftTripleFunction(torch.autograd.Function):
         # note the input channel and the output channel are all c, as no mask input for now.
         grad_input = torch.cat([grad_former_all, grad_latter_all], 1)
 
-        return grad_input, None, None, None, None, None, None
+        return grad_input, None, None, None, None, None, None, None

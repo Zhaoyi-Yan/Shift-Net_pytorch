@@ -1,7 +1,7 @@
 #-*-coding:utf-8-*-
 from torch.nn import init
 from torch.optim import lr_scheduler
-
+from util.global_var import *
 
 from .modules import *
 
@@ -78,7 +78,7 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, opt, mask_global, norm=
     innerCos_list = []
     shift_list = []
     # It is specially for multi shift.
-    neighbor_dict = {}
+    # neighbor_dict = {}
 
     print('input_nc {}'.format(input_nc))
     print('output_nc {}'.format(output_nc))
@@ -113,7 +113,7 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, opt, mask_global, norm=
                                                          ngf, norm_layer=norm_layer, use_dropout=use_dropout, use_spectral_norm=use_spectral_norm)
     elif which_model_netG == 'random_multi_unet_shift_triple':
         netG = RandomMultiUnetGeneratorShiftTriple(input_nc, output_nc, 8, opt, innerCos_list, shift_list, mask_global, \
-                                                         ngf, norm_layer=norm_layer, use_dropout=use_dropout, use_spectral_norm=use_spectral_norm, neighbor_dict=neighbor_dict)
+                                                         ngf, norm_layer=norm_layer, use_dropout=use_dropout, use_spectral_norm=use_spectral_norm, neighbor_dict=GlVs.neighbor_dict)
     else:
         raise NotImplementedError('Generator model name [%s] is not recognized' % which_model_netG)
     print('[CREATED] MODEL')

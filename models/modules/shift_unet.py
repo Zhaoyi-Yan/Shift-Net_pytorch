@@ -282,7 +282,7 @@ class RandomMultiUnetGeneratorShiftTriple(nn.Module):
 
         unet_shift_block = RandomMultiUnetSkipConnectionShiftBlock(ngf * 2, ngf * 4, opt, innerCos_list, shift_list,
                                                                     mask_global, input_nc=None, \
-                                                                    submodule=unet_block,
+                                                                    submodule=unet_shift_block,
                                                                     norm_layer=norm_layer, use_spectral_norm=use_spectral_norm, layer_to_last=3, neighbor_dict=neighbor_dict)
 
         unet_block = UnetSkipConnectionBlock(ngf, ngf * 2, input_nc=None, submodule=unet_shift_block,
