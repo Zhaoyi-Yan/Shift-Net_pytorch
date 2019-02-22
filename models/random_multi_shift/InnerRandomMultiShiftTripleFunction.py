@@ -41,22 +41,20 @@ class InnerRandomMultiShiftTripleFunction(torch.autograd.Function):
         ctx.shift_offsets = []
 
         # We only assume that two shift layers
-        # Prepare neighbors for the next layer.
+        # Prepare neighbors for each position in the feature map.
         neighbor_size = 3
         # For multi-shift, we also need to get index_neighbor_ref_unfold.
         # It shuold be recalculated whenever mask changes.
-        if ctx.previous_neighbor is None:
-            # constructiing index map
-            neighbor_size = 3
-            index_neighbor_ref = torch.arange(ctx.h*ctx.w).type_as(input).resize_(1, 1, ctx.h, ctx.w)
-            # adding boarder with value of '-1', indicating invalid regions.
-            index_neighbor_ref_tmp = F.pad(index_neighbor_ref, (neighbor_size//2, neighbor_size//2, neighbor_size//2, neighbor_size//2), 'constant', -1)
-            # Also, we need to assigin '-1' to masked region.
-            index_neighbor_ref_tmp.view(-1)[(ctx.flag == 1).nonzero()] = -1
-            index_neighbor_ref_tmp = index_neighbor_ref_tmp.view(1, 1, ctx.h + 2*(neighbor_size//2), ctx.w + 2*(neighbor_size//2))
-            # It is static for each image in a batch.
-            # Eg.(16*16)*(3*3)
-            ctx.index_neighbor_ref_unfold = index_neighbor_ref_tmp.unfold(2, neighbor_size, 1).unfold(3, neighbor_size, 1).contiguous().view(ctx.h*ctx.w, -1)
+        # constructiing index map
+        index_neighbor_ref = torch.arange(ctx.h*ctx.w).type_as(input).resize_(ctx.h*ctx.w)
+        # First, we need to assigin '-1' to masked region.
+        index_neighbor_ref[(ctx.flag == 1).nonzero()] = -1
+        # Then, adding boarder with value of '-1', indicating invalid regions.
+        index_neighbor_ref_tmp = F.pad(index_neighbor_ref.view(1, 1, ctx.h, ctx.w), (neighbor_size//2, neighbor_size//2, neighbor_size//2, neighbor_size//2), 'constant', -1)
+        index_neighbor_ref_tmp = index_neighbor_ref_tmp.view(1, 1, ctx.h + 2*(neighbor_size//2), ctx.w + 2*(neighbor_size//2))
+        # It is static for each image in a batch.
+        # Eg.(16*16)*(3*3)
+        ctx.index_neighbor_ref_unfold = index_neighbor_ref_tmp.unfold(2, neighbor_size, 1).unfold(3, neighbor_size, 1).contiguous().view(ctx.h*ctx.w, -1)
         
         # For each position, we need to assign proper nerighbors to it.
         ctx.current_neighbor = torch.zeros(ctx.bz, ctx.h*ctx.w, neighbor_size**2).type_as(input)
@@ -86,46 +84,40 @@ class InnerRandomMultiShiftTripleFunction(torch.autograd.Function):
                 ctx.current_neighbor[idx][mask_indexes] = ctx.index_neighbor_ref_unfold[non_mask_indexes]
             # For the second shift layer.
             else:
-                # Direct get shift matrix from previous_neighbor
-                # TODO: How to map mask_index in this layer to correspoinding point in the previous layer?
-                mask_indexes_p = mask_indexes // ctx.w // 2
-                mask_indexes_q = mask_indexes % ctx.w // 2
-                print('mask_p,q', mask_indexes_p, mask_indexes_q)
-                print('cc')
-                # print(mask_indexes_p * (ctx.w//2) + mask_indexes_q)
-                print(ctx.previous_neighbor.shape)
-                print('Now mask_indexes', mask_indexes.size()) # 225*1
-                print()
-                print(((ctx.previous_neighbor[idx].squeeze().sum(dim=1))==0).nonzero().size())
-                print(ctx.previous_neighbor[idx, (mask_indexes_p * (ctx.w//2) + mask_indexes_q+0)].squeeze().size())
-                # Here, I just use for-loop to do it, maybe need optimization.
-                # TODO: for some lines, elements are all '-1'. How to deal with it?
+                # TODO, I just use for-loop to do it, maybe need optimization.
+                # Mention: It should be impossible that all elements in ctx.previous_neighbor[idx, (i_p * (ctx.w//2) + i_q+0), :] are '-1', I think.
                 for i in range(mask_indexes.size(0)):
                     # get neighbor
-                    i_p = i // ctx.w // 2
-                    i_q = i % ctx.w // 2
+                    i_p = mask_indexes[i] // ctx.w // 2
+                    i_q = mask_indexes[i] % ctx.w // 2
                     tmp = torch.randint(0, ctx.previous_neighbor.size(-1), (1,)).long()
-                    print(ctx.previous_neighbor[idx, (i_p * (ctx.w//2) + i_q+0), tmp])
-                    while((ctx.previous_neighbor[idx, (i_p * (ctx.w//2) + i_q+0), tmp]+1) == 0):
-                        print('i:',i, ' lala')
+                    while((ctx.previous_neighbor[idx, (i_p * (ctx.w//2) + i_q+0), tmp].item()+1) == 0):
                         tmp = torch.randint(0, ctx.previous_neighbor.size(-1), (1,)).long()
 
-                    tmp_neighbor = ctx.previous_neighbor[idx, (i_p * (ctx.w//2) + i_q+0), tmp].long()
-                    # mapping neighbor to the current layer, rewrite this line.
-                    tmp_neighbor *= 2
-                    # clamp tmp_neighbor to the reasonable range.
-                    ctx.ind_lst[idx, i, tmp_neighbor] = 1
+                    tmp_neighbor_preivous = ctx.previous_neighbor[idx, (i_p * (ctx.w//2) + i_q+0), tmp].long()
+                    # mapping neighbor to the current layer, rewrite  this line.
+                    # For each neighbor in the preivous layer, we have 4 corresponding positions.
+                    p_tmp_neighbor_preivous = tmp_neighbor_preivous // ctx.w // 2
+                    q_tmp_neighbor_preivous = tmp_neighbor_preivous % ctx.w // 2
+
+                    tmp_neighbor_current = torch.LongTensor([(p_tmp_neighbor_preivous * 2 ) * ctx.w + q_tmp_neighbor_preivous * 2,
+                                                             (p_tmp_neighbor_preivous * 2) * ctx.w + q_tmp_neighbor_preivous * 2 + 1,
+                                                             (p_tmp_neighbor_preivous * 2 + 1) * ctx.w + q_tmp_neighbor_preivous * 2,
+                                                             (p_tmp_neighbor_preivous * 2 + 1) * ctx.w + q_tmp_neighbor_preivous * 2 + 1])
+                    # clamp tmp_neighbor to the reasonable range.   
+                    tmp_neighbor_current.clamp_(min=0, max=ctx.h * ctx.w)
+                    # avoid tmp_neighbor_current falling in masked region.
+                    # Mention: It should be impossible that all elements in tmp_neighbor_current fall in masked reigon, I think.
+                    tmp_current_rand = torch.randint(0, tmp_neighbor_current.size(-1), (1,)).long()
+                    while((index_neighbor_ref[tmp_current_rand].item()+1) == 0):
+                        tmp_current_rand = torch.randint(0, tmp_neighbor_current.size(-1), (1,)).long()
+
+                    ctx.ind_lst[idx, mask_indexes[i], tmp_neighbor_current[tmp_current_rand]] = 1
 
 
-                    
-
-                print(((ctx.previous_neighbor[idx, (mask_indexes_p * (ctx.w//2) + mask_indexes_q+0)].squeeze().sum(dim=1)) == 0).nonzero().size())
-                print(((ctx.previous_neighbor[idx, (mask_indexes_p * (ctx.w//2) + mask_indexes_q+1)].squeeze().sum(dim=1)) == 0).nonzero().size())
-                print(((ctx.previous_neighbor[idx, (mask_indexes_p * (ctx.w//2) + mask_indexes_q+2)].squeeze().sum(dim=1)) == 0).nonzero().size())
-                print(((ctx.previous_neighbor[idx, (mask_indexes_p * (ctx.w//2) + mask_indexes_q+3)].squeeze().sum(dim=1)) == 0).nonzero().size())
 
                 # print(ctx.previous_neighbor[idx, (mask_indexes_p * (ctx.w//2) + mask_indexes_q+0)])
-                assert 1==2
+                # assert 1==2
 
             if ctx.show_flow:
                 shift_offset = torch.stack([non_mask_indexes.squeeze() // ctx.w, non_mask_indexes.squeeze() % ctx.w], dim=-1)

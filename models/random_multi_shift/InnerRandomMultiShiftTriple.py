@@ -36,9 +36,7 @@ class InnerRandomMultiShiftTriple(nn.Module):
 
         # Check neighbor information of precvious layer.
         if str(self.layer_to_last + 1) in GlVs.neighbor_dict:
-            print('In dict', str(self.layer_to_last))
             self.previous_neighbor = GlVs.neighbor_dict[str(self.layer_to_last+1)]
-            print(self.previous_neighbor.sum())
 
         final_out = InnerRandomMultiShiftTripleFunction.apply(input, self.mask, self.shift_sz, self.stride, self.triple_weight, self.flag, self.show_flow, self.previous_neighbor)
         # get current_neighbor through static method
