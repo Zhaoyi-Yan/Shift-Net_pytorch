@@ -82,7 +82,7 @@ class InnerRandomMultiShiftTripleFunction(torch.autograd.Function):
                 shift_masked_all[idx] = Nonparm._paste(latter_windows, ctx.ind_lst[idx], i_2, i_3, i_1, i_4)
 
                 # Construct neighbors for the next shift layer.
-                # torch.set_printoptions(threshold=10e7)
+                torch.set_printoptions(threshold=10e7)
                 ctx.current_neighbor[idx][mask_indexes] = ctx.index_neighbor_ref_unfold[non_mask_indexes]
             # For the second shift layer.
             else:
@@ -94,9 +94,31 @@ class InnerRandomMultiShiftTripleFunction(torch.autograd.Function):
                 print('cc')
                 # print(mask_indexes_p * (ctx.w//2) + mask_indexes_q)
                 print(ctx.previous_neighbor.shape)
-                print('Now mask_indexes', mask_indexes.size())
+                print('Now mask_indexes', mask_indexes.size()) # 225*1
+                print()
+                print(((ctx.previous_neighbor[idx].squeeze().sum(dim=1))==0).nonzero().size())
                 print(ctx.previous_neighbor[idx, (mask_indexes_p * (ctx.w//2) + mask_indexes_q+0)].squeeze().size())
-                # Only 29 out of 225, have values??
+                # Here, I just use for-loop to do it, maybe need optimization.
+                # TODO: for some lines, elements are all '-1'. How to deal with it?
+                for i in range(mask_indexes.size(0)):
+                    # get neighbor
+                    i_p = i // ctx.w // 2
+                    i_q = i % ctx.w // 2
+                    tmp = torch.randint(0, ctx.previous_neighbor.size(-1), (1,)).long()
+                    print(ctx.previous_neighbor[idx, (i_p * (ctx.w//2) + i_q+0), tmp])
+                    while((ctx.previous_neighbor[idx, (i_p * (ctx.w//2) + i_q+0), tmp]+1) == 0):
+                        print('i:',i, ' lala')
+                        tmp = torch.randint(0, ctx.previous_neighbor.size(-1), (1,)).long()
+
+                    tmp_neighbor = ctx.previous_neighbor[idx, (i_p * (ctx.w//2) + i_q+0), tmp].long()
+                    # mapping neighbor to the current layer, rewrite this line.
+                    tmp_neighbor *= 2
+                    # clamp tmp_neighbor to the reasonable range.
+                    ctx.ind_lst[idx, i, tmp_neighbor] = 1
+
+
+                    
+
                 print(((ctx.previous_neighbor[idx, (mask_indexes_p * (ctx.w//2) + mask_indexes_q+0)].squeeze().sum(dim=1)) == 0).nonzero().size())
                 print(((ctx.previous_neighbor[idx, (mask_indexes_p * (ctx.w//2) + mask_indexes_q+1)].squeeze().sum(dim=1)) == 0).nonzero().size())
                 print(((ctx.previous_neighbor[idx, (mask_indexes_p * (ctx.w//2) + mask_indexes_q+2)].squeeze().sum(dim=1)) == 0).nonzero().size())
@@ -112,7 +134,7 @@ class InnerRandomMultiShiftTripleFunction(torch.autograd.Function):
 
         if ctx.show_flow:
             # Note: Here we assume that each mask is the same for the same batch image.
-            ctx.shift_offsets = torch.cat(ctx.shift_offsets, dim=0).float() # make it cudaFloatTensor
+            ctx.shift_offsets = torch.cat(ctx.shift_offsets, dim=0).float() # make it cudaFloatTensor 
             # Assume mask is the same for each image in a batch.
             mask_nums = ctx.shift_offsets.size(0)//ctx.bz
             ctx.flow_srcs = torch.zeros(ctx.bz, 3, ctx.h, ctx.w).type_as(input)
