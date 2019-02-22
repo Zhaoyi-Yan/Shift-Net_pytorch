@@ -53,9 +53,9 @@ class NLayerDiscriminator(nn.Module):
 
 # Defines a densetnet inspired discriminator (Should improve its ability to create stronger representation)
 class DenseNetDiscrimator(nn.Module):
-    def __init__(self, input_nc, ndf=64, n_layers=3, norm_layer=nn.BatchNorm2d, use_sigmoid=False):
+    def __init__(self, input_nc, ndf=64, n_layers=3, norm_layer=nn.BatchNorm2d, use_sigmoid=False, use_spectral_norm=True):
         super(DenseNetDiscrimator, self).__init__()
-        self.model = densenet121(pretrained=True)
+        self.model = densenet121(pretrained=True, use_spectral_norm=use_spectral_norm)
         self.use_sigmoid = use_sigmoid
         if self.use_sigmoid:
             self.sigmoid = nn.Sigmoid()
