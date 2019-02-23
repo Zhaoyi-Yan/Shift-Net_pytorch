@@ -84,40 +84,74 @@ class InnerRandomMultiShiftTripleFunction(torch.autograd.Function):
                 ctx.current_neighbor[idx][mask_indexes] = ctx.index_neighbor_ref_unfold[non_mask_indexes]
             # For the second shift layer.
             else:
+                torch.cuda.synchronize()
+                t1 = time.time()
                 # TODO, I just use for-loop to do it, maybe need optimization.
                 # Mention: It should be impossible that all elements in ctx.previous_neighbor[idx, (i_p * (ctx.w//2) + i_q+0), :] are '-1', I think.
-                for i in range(mask_indexes.size(0)):
-                    # get neighbor
-                    i_p = mask_indexes[i] // ctx.w // 2
-                    i_q = mask_indexes[i] % ctx.w // 2
-                    tmp = torch.randint(0, ctx.previous_neighbor.size(-1), (1,)).long()
-                    while((ctx.previous_neighbor[idx, (i_p * (ctx.w//2) + i_q+0), tmp].item()+1) == 0):
-                        tmp = torch.randint(0, ctx.previous_neighbor.size(-1), (1,)).long()
+                print(ctx.previous_neighbor.size())
+                mask_indexes_p = mask_indexes // ctx.w // 2
+                mask_indexes_q = mask_indexes % ctx.w // 2
+                previous_neighbor_masked = ctx.previous_neighbor[idx, mask_indexes_p*(ctx.w // 2)+ mask_indexes_q].squeeze()
+                valid_idx_previous = (previous_neighbor_masked != -1).nonzero()
+                unique_rows_previous = valid_idx_previous[:, 0].unique()
+                valid_row_idx_previous = [valid_idx_previous[valid_idx_previous[:, 0] == u] for u in unique_rows_previous]
 
-                    tmp_neighbor_preivous = ctx.previous_neighbor[idx, (i_p * (ctx.w//2) + i_q+0), tmp].long()
-                    # mapping neighbor to the current layer, rewrite  this line.
-                    # For each neighbor in the preivous layer, we have 4 corresponding positions.
-                    p_tmp_neighbor_preivous = tmp_neighbor_preivous // ctx.w // 2
-                    q_tmp_neighbor_preivous = tmp_neighbor_preivous % ctx.w // 2
+                previous_neighbor = []
+                for v in valid_row_idx_previous:
+                    choice = torch.multinomial(torch.arange(v.size(0)).float(), 1)
+                    previous_neighbor.append(previous_neighbor_masked[v[choice].squeeze().chunk(2)])
+                previous_neighbor = torch.stack(previous_neighbor)
+                p_previous_neighbor = previous_neighbor // ctx.w // 2
+                q_previous_neighbor = previous_neighbor % ctx.w // 2
+                
+                tmp_neighbor_current = [(p_previous_neighbor * 2 ) * ctx.w + q_previous_neighbor * 2,
+                                        (p_previous_neighbor * 2) * ctx.w + q_previous_neighbor * 2 + 1,
+                                        (p_previous_neighbor * 2 + 1) * ctx.w + q_previous_neighbor * 2,
+                                        (p_previous_neighbor * 2 + 1) * ctx.w + q_previous_neighbor * 2 + 1]
+                # make it size of xx*4
+                tmp_neighbor_current = torch.stack(tmp_neighbor_current).squeeze().t()
+                # clamp tmp_neighbor to the reasonable range.
+                valid_idx_current = (tmp_neighbor_current != -1).nonzero()
+                unique_rows_current = valid_idx_current[:, 0].unique()
+                valid_row_idx_current = [valid_idx_current[valid_idx_current[:, 0] == u] for u in unique_rows_current]
 
-                    tmp_neighbor_current = torch.LongTensor([(p_tmp_neighbor_preivous * 2 ) * ctx.w + q_tmp_neighbor_preivous * 2,
-                                                             (p_tmp_neighbor_preivous * 2) * ctx.w + q_tmp_neighbor_preivous * 2 + 1,
-                                                             (p_tmp_neighbor_preivous * 2 + 1) * ctx.w + q_tmp_neighbor_preivous * 2,
-                                                             (p_tmp_neighbor_preivous * 2 + 1) * ctx.w + q_tmp_neighbor_preivous * 2 + 1])
-                    # clamp tmp_neighbor to the reasonable range.   
-                    tmp_neighbor_current.clamp_(min=0, max=ctx.h * ctx.w)
-                    # avoid tmp_neighbor_current falling in masked region.
-                    # Mention: It should be impossible that all elements in tmp_neighbor_current fall in masked reigon, I think.
-                    tmp_current_rand = torch.randint(0, tmp_neighbor_current.size(-1), (1,)).long()
-                    while((index_neighbor_ref[tmp_current_rand].item()+1) == 0):
-                        tmp_current_rand = torch.randint(0, tmp_neighbor_current.size(-1), (1,)).long()
+                current_neighbor = []
+                for v in valid_row_idx_current:
+                    choice = torch.multinomial(torch.arange(v.size(0)).float(), 1)
+                    current_neighbor.append(tmp_neighbor_current[v[choice].squeeze().chunk(2)])
 
-                    ctx.ind_lst[idx, mask_indexes[i], tmp_neighbor_current[tmp_current_rand]] = 1
+                current_neighbor = torch.stack(current_neighbor)
+                ctx.ind_lst[idx, mask_indexes, current_neighbor.long()] = 1
+                torch.cuda.synchronize()
+                print('Elapse time: ', time.time() - t1)
+                # for i in range(mask_indexes.size(0)):
+                #     # get neighbor
+                #     i_p = mask_indexes[i] // ctx.w // 2
+                #     i_q = mask_indexes[i] % ctx.w // 2
+                #     tmp = torch.randint(0, ctx.previous_neighbor.size(-1), (1,)).long()
+                #     while((ctx.previous_neighbor[idx, (i_p * (ctx.w//2) + i_q+0), tmp].item()+1) == 0):
+                #         tmp = torch.randint(0, ctx.previous_neighbor.size(-1), (1,)).long()
 
+                #     tmp_neighbor_preivous = ctx.previous_neighbor[idx, (i_p * (ctx.w//2) + i_q+0), tmp].long()
+                #     # mapping neighbor to the current layer, rewrite  this line.
+                #     # For each neighbor in the preivous layer, we have 4 corresponding positions.
+                #     p_tmp_neighbor_preivous = tmp_neighbor_preivous // ctx.w // 2
+                #     q_tmp_neighbor_preivous = tmp_neighbor_preivous % ctx.w // 2
 
+                #     tmp_neighbor_current = torch.LongTensor([(p_tmp_neighbor_preivous * 2 ) * ctx.w + q_tmp_neighbor_preivous * 2,
+                #                                              (p_tmp_neighbor_preivous * 2) * ctx.w + q_tmp_neighbor_preivous * 2 + 1,
+                #                                              (p_tmp_neighbor_preivous * 2 + 1) * ctx.w + q_tmp_neighbor_preivous * 2,
+                #                                              (p_tmp_neighbor_preivous * 2 + 1) * ctx.w + q_tmp_neighbor_preivous * 2 + 1])
+                #     # clamp tmp_neighbor to the reasonable range.   
+                #     tmp_neighbor_current.clamp_(min=0, max=ctx.h * ctx.w)
+                #     # avoid tmp_neighbor_current falling in masked region.
+                #     # Mention: It should be impossible that all elements in tmp_neighbor_current fall in masked reigon, I think.
+                #     tmp_current_rand = torch.randint(0, tmp_neighbor_current.size(-1), (1,)).long()
+                #     while((index_neighbor_ref[tmp_current_rand].item()+1) == 0):
+                #         tmp_current_rand = torch.randint(0, tmp_neighbor_current.size(-1), (1,)).long()
 
-                # print(ctx.previous_neighbor[idx, (mask_indexes_p * (ctx.w//2) + mask_indexes_q+0)])
-                # assert 1==2
+                #     ctx.ind_lst[idx, mask_indexes[i], tmp_neighbor_current[tmp_current_rand]] = 1
+
 
             if ctx.show_flow:
                 shift_offset = torch.stack([non_mask_indexes.squeeze() // ctx.w, non_mask_indexes.squeeze() % ctx.w], dim=-1)
