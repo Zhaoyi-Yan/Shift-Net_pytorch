@@ -251,6 +251,8 @@ class ShiftNetModel(BaseModel):
         # Using the cropped fake_B as the input of D.
             fake_B = self.fake_B[:, :, self.rand_t:self.rand_t+self.opt.fineSize//2-2*self.opt.overlap, \
                                             self.rand_l:self.rand_l+self.opt.fineSize//2-2*self.opt.overlap]
+            real_B = self.real_B[:, :, self.rand_t:self.rand_t+self.opt.fineSize//2-2*self.opt.overlap, \
+                                            self.rand_l:self.rand_l+self.opt.fineSize//2-2*self.opt.overlap]                                            
         pred_fake = self.netD(fake_B)
 
 
@@ -261,11 +263,11 @@ class ShiftNetModel(BaseModel):
                 self.loss_G_GAN = self.criterionGAN(pred_fake, True)
 
             elif self.opt.gan_type == 're_s_gan':
-                pred_real = self.netD (self.real_B)
+                pred_real = self.netD (real_B)
                 self.loss_G_GAN = self.criterionGAN (pred_fake - pred_real, True)
 
             elif self.opt.gan_type == 're_avg_gan':
-                self.pred_real = self.netD(self.real_B)
+                self.pred_real = self.netD(real_B)
                 self.loss_G_GAN =  (self.criterionGAN (self.pred_real - torch.mean(self.pred_fake), False) \
                                + self.criterionGAN (self.pred_fake - torch.mean(self.pred_real), True)) / 2.
 
