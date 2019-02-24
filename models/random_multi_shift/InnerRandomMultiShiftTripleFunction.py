@@ -84,11 +84,7 @@ class InnerRandomMultiShiftTripleFunction(torch.autograd.Function):
                 ctx.current_neighbor[idx][mask_indexes] = ctx.index_neighbor_ref_unfold[non_mask_indexes]
             # For the second shift layer.
             else:
-                torch.cuda.synchronize()
-                t1 = time.time()
-                # TODO, I just use for-loop to do it, maybe need optimization.
                 # Mention: It should be impossible that all elements in ctx.previous_neighbor[idx, (i_p * (ctx.w//2) + i_q+0), :] are '-1', I think.
-                print(ctx.previous_neighbor.size())
                 mask_indexes_p = mask_indexes // ctx.w // 2
                 mask_indexes_q = mask_indexes % ctx.w // 2
                 previous_neighbor_masked = ctx.previous_neighbor[idx, mask_indexes_p*(ctx.w // 2)+ mask_indexes_q].squeeze()
@@ -122,8 +118,7 @@ class InnerRandomMultiShiftTripleFunction(torch.autograd.Function):
 
                 current_neighbor = torch.stack(current_neighbor)
                 ctx.ind_lst[idx, mask_indexes, current_neighbor.long()] = 1
-                torch.cuda.synchronize()
-                print('Elapse time: ', time.time() - t1)
+
                 # for i in range(mask_indexes.size(0)):
                 #     # get neighbor
                 #     i_p = mask_indexes[i] // ctx.w // 2
