@@ -223,7 +223,6 @@ class ShiftNetModel(BaseModel):
 
             self.loss_D = self.loss_D_fake - self.loss_D_real + gradient_penalty
         else:
-            self.pred_fake = self.netD(fake_B.detach())
 
             if self.opt.gan_type in ['vanilla', 'lsgan']:
                 self.loss_D_fake = self.criterionGAN(self.pred_fake, False)
