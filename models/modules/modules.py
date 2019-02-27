@@ -328,11 +328,11 @@ class InceptionUp(nn.Module):
         return torch.cat(holder, 1)
 
 class ResnetBlock(nn.Module):
-    def __init__(self, dim, padding_type, norm_layer, use_dropout, use_bias):
+    def __init__(self, dim, padding_type, norm_layer, use_bias):
         super(ResnetBlock, self).__init__()
-        self.conv_block = self.build_conv_block(dim, padding_type, norm_layer, use_dropout, use_bias)
+        self.conv_block = self.build_conv_block(dim, padding_type, norm_layer, use_bias)
 
-    def build_conv_block(self, dim, padding_type, norm_layer, use_dropout, use_bias):
+    def build_conv_block(self, dim, padding_type, norm_layer, use_bias):
         conv_block = []
         p = 0
         if padding_type == 'reflect':
@@ -347,8 +347,6 @@ class ResnetBlock(nn.Module):
         conv_block += [nn.Conv2d(dim, dim, kernel_size=3, padding=p, bias=use_bias),
                        norm_layer(dim),
                        nn.ReLU(True)]
-        if use_dropout:
-            conv_block += [nn.Dropout(0.5)]
 
         p = 0
         if padding_type == 'reflect':

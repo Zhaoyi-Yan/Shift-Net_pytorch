@@ -35,12 +35,24 @@ cd Shift-Net_pytorch
 Please read this paragraph carefully before running the code.
 
 By now, 5 kinds of shift-nets are proposed, presented to you by \"advanced-descending\" order.
+
 Usually, we train and test a model with `center` mask.
+**Mention: For now, the best performance of `center mask inpainiting` can be achieved if you train this line: **.
+
+```bash
+python train.py --batchsize=1 --use_spectral_norm_D=1 --which_model_netG='basic' --mask_type='center'
+```
+
+For training random mask, you need to train the model by setting
+`mask_type='random'` and also `mask_sub_type='rect'` or `mask_sub_type='island'`.
+
 
 For `navie shift-net`:
 ```bash
 python train.py --which_model_netG='unet_shift_triple' --model='shiftnet' --shift_sz=1 --maskA_thred=1
 ```
+
+**These 4 models are just experimental**
 
 For `res navie shift-net`:
 ```bash
@@ -65,6 +77,7 @@ DO NOT change the shift_sz and mask_thred. Otherwise, it errors with a high prob
 
 For `patch soft shift-net` or `res patch soft shift-net`. You may set `fuse=1` to see whether it delivers better results.
 
+
 - To view training results and loss plots, run `python -m visdom.server` and click the URL http://localhost:8097. The checkpoints will be saved in `./log` by default.
 
 - Test the model
@@ -88,9 +101,10 @@ year = {2018}
 }
 ```
 
-## Mention Multi-GPU usage
-I suggest you not to try to run the code on multi-gpu. It will only degrade your performance and the training speed slows down.
-If you insist on doing that, set 'opt.skip=1'.
+## Performance degrades when batchsize > 1
+A very strange thing is that if the `batchSize>1`, then the performance degrades.
+I wonder whether it is due to some incompatibility of IN with UNet.
+
 
 ## Kindly remindier
 If you find it a little hard to read the code, you may read [Guides](https://github.com/Zhaoyi-Yan/Shift-Net_pytorch/blob/master/guides.md).

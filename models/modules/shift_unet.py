@@ -31,7 +31,7 @@ from .modules import *
 # at the bottleneck
 class UnetGeneratorShiftTriple(nn.Module):
     def __init__(self, input_nc, output_nc, num_downs, opt, innerCos_list, shift_list, mask_global, ngf=64,
-                 norm_layer=nn.BatchNorm2d, use_dropout=False, use_spectral_norm=False):
+                 norm_layer=nn.BatchNorm2d, use_spectral_norm=False):
         super(UnetGeneratorShiftTriple, self).__init__()
 
         # construct unet structure
@@ -40,7 +40,7 @@ class UnetGeneratorShiftTriple(nn.Module):
         print(unet_block)
         for i in range(num_downs - 5):  # The innner layers number is 3 (sptial size:512*512), if unet_256.
             unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=unet_block,
-                                                 norm_layer=norm_layer, use_dropout=use_dropout, use_spectral_norm=use_spectral_norm)
+                                                 norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
         unet_block = UnetSkipConnectionBlock(ngf * 4, ngf * 8, input_nc=None, submodule=unet_block,
                                              norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
 
@@ -64,7 +64,7 @@ class UnetGeneratorShiftTriple(nn.Module):
 class UnetSkipConnectionShiftBlock(nn.Module):
     def __init__(self, outer_nc, inner_nc, opt, innerCos_list, shift_list, mask_global, input_nc, \
                  submodule=None, shift_layer=None, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d,
-                 use_dropout=False, use_spectral_norm=False, layer_to_last=3):
+                 use_spectral_norm=False, layer_to_last=3):
         super(UnetSkipConnectionShiftBlock, self).__init__()
         self.outermost = outermost
         if input_nc is None:
@@ -120,10 +120,7 @@ class UnetSkipConnectionShiftBlock(nn.Module):
             # to former part.
             up = [uprelu, innerCos, shift, upconv, upnorm]
 
-            if use_dropout:
-                model = down + [submodule] + up + [nn.Dropout(0.5)]
-            else:
-                model = down + [submodule] + up
+            model = down + [submodule] + up
 
         self.model = nn.Sequential(*model)
 
@@ -146,7 +143,7 @@ class UnetSkipConnectionShiftBlock(nn.Module):
 # at the bottleneck
 class ResUnetGeneratorShiftTriple(nn.Module):
     def __init__(self, input_nc, output_nc, num_downs, opt, innerCos_list, shift_list, mask_global, ngf=64,
-                 norm_layer=nn.BatchNorm2d, use_dropout=False, use_spectral_norm=False):
+                 norm_layer=nn.BatchNorm2d, use_spectral_norm=False):
         super(ResUnetGeneratorShiftTriple, self).__init__()
 
         # construct unet structure
@@ -155,7 +152,7 @@ class ResUnetGeneratorShiftTriple(nn.Module):
         print(unet_block)
         for i in range(num_downs - 5):  # The innner layers number is 3 (sptial size:512*512), if unet_256.
             unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=unet_block,
-                                                 norm_layer=norm_layer, use_dropout=use_dropout, use_spectral_norm=use_spectral_norm)
+                                                 norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
         unet_block = UnetSkipConnectionBlock(ngf * 4, ngf * 8, input_nc=None, submodule=unet_block,
                                              norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
 
@@ -179,7 +176,7 @@ class ResUnetGeneratorShiftTriple(nn.Module):
 class ResUnetSkipConnectionBlock(nn.Module):
     def __init__(self, outer_nc, inner_nc, opt, innerCos_list, shift_list, mask_global, input_nc, \
                  submodule=None, shift_layer=None, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d,
-                 use_dropout=False, use_spectral_norm=False, layer_to_last=3):
+                 use_spectral_norm=False, layer_to_last=3):
         super(ResUnetSkipConnectionBlock, self).__init__()
         self.outermost = outermost
         if input_nc is None:
@@ -235,10 +232,7 @@ class ResUnetSkipConnectionBlock(nn.Module):
             # to former part.
             up = [uprelu, innerCos, shift, upconv, upnorm]
 
-            if use_dropout:
-                model = down + [submodule] + up + [nn.Dropout(0.5)]
-            else:
-                model = down + [submodule] + up
+            model = down + [submodule] + up
 
         self.model = nn.Sequential(*model)
 
@@ -257,7 +251,7 @@ class ResUnetSkipConnectionBlock(nn.Module):
 ################################### ***************************  #####################################
 class SoftUnetGeneratorShiftTriple(nn.Module):
     def __init__(self, input_nc, output_nc, num_downs, opt, innerCos_list, shift_list, mask_global, ngf=64,
-                 norm_layer=nn.BatchNorm2d, use_dropout=False, use_spectral_norm=False):
+                 norm_layer=nn.BatchNorm2d, use_spectral_norm=False):
         super(SoftUnetGeneratorShiftTriple, self).__init__()
 
         # construct unet structure
@@ -266,7 +260,7 @@ class SoftUnetGeneratorShiftTriple(nn.Module):
         print(unet_block)
         for i in range(num_downs - 5):  # The innner layers number is 3 (sptial size:512*512), if unet_256.
             unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=unet_block,
-                                                 norm_layer=norm_layer, use_dropout=use_dropout, use_spectral_norm=use_spectral_norm)
+                                                 norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
         unet_block = UnetSkipConnectionBlock(ngf * 4, ngf * 8, input_nc=None, submodule=unet_block,
                                              norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
 
@@ -291,7 +285,7 @@ class SoftUnetGeneratorShiftTriple(nn.Module):
 #   |-- downsampling -- |submodule| -- upsampling --|
 class SoftUnetSkipConnectionBlock(nn.Module):
     def __init__(self, outer_nc, inner_nc, opt, innerCos_list, shift_list, mask_global, input_nc, \
-                 submodule=None, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d, use_dropout=False, use_spectral_norm=False, layer_to_last=3):
+                 submodule=None, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d, use_spectral_norm=False, layer_to_last=3):
         super(SoftUnetSkipConnectionBlock, self).__init__()
         self.outermost = outermost
         if input_nc is None:
@@ -346,10 +340,7 @@ class SoftUnetSkipConnectionBlock(nn.Module):
             # to former part.
             up = [uprelu, innerCos, shift, upconv, upnorm]
 
-            if use_dropout:
-                model = down + [submodule] + up + [nn.Dropout(0.5)]
-            else:
-                model = down + [submodule] + up
+            model = down + [submodule] + up
 
         self.model = nn.Sequential(*model)
 
@@ -373,7 +364,7 @@ class SoftUnetSkipConnectionBlock(nn.Module):
 # at the bottleneck
 class PatchSoftUnetGeneratorShiftTriple(nn.Module):
     def __init__(self, input_nc, output_nc, num_downs, opt, innerCos_list, shift_list, mask_global, ngf=64,
-                 norm_layer=nn.BatchNorm2d, use_dropout=False, use_spectral_norm=False):
+                 norm_layer=nn.BatchNorm2d, use_spectral_norm=False):
         super(PatchSoftUnetGeneratorShiftTriple, self).__init__()
 
         # construct unet structure
@@ -382,7 +373,7 @@ class PatchSoftUnetGeneratorShiftTriple(nn.Module):
         print(unet_block)
         for i in range(num_downs - 5):  # The innner layers number is 3 (sptial size:512*512), if unet_256.
             unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=unet_block,
-                                                 norm_layer=norm_layer, use_dropout=use_dropout, use_spectral_norm=use_spectral_norm)
+                                                 norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
         unet_block = UnetSkipConnectionBlock(ngf * 4, ngf * 8, input_nc=None, submodule=unet_block,
                                              norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
 
@@ -406,7 +397,7 @@ class PatchSoftUnetGeneratorShiftTriple(nn.Module):
 class PatchSoftUnetSkipConnectionShiftTriple(nn.Module):
     def __init__(self, outer_nc, inner_nc, opt, innerCos_list, shift_list, mask_global, input_nc, \
                  submodule=None, shift_layer=None, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d,
-                 use_dropout=False, use_spectral_norm=False, layer_to_last=3):
+                 use_spectral_norm=False, layer_to_last=3):
         super(PatchSoftUnetSkipConnectionShiftTriple, self).__init__()
         self.outermost = outermost
         if input_nc is None:
@@ -462,10 +453,7 @@ class PatchSoftUnetSkipConnectionShiftTriple(nn.Module):
             # to former part.
             up = [uprelu, innerCos, shift, upconv, upnorm]
 
-            if use_dropout:
-                model = down + [submodule] + up + [nn.Dropout(0.5)]
-            else:
-                model = down + [submodule] + up
+            model = down + [submodule] + up
 
         self.model = nn.Sequential(*model)
 
@@ -489,7 +477,7 @@ class PatchSoftUnetSkipConnectionShiftTriple(nn.Module):
 # at the bottleneck
 class ResPatchSoftUnetGeneratorShiftTriple(nn.Module):
     def __init__(self, input_nc, output_nc, num_downs, opt, innerCos_list, shift_list, mask_global, ngf=64,
-                 norm_layer=nn.BatchNorm2d, use_dropout=False, use_spectral_norm=False):
+                 norm_layer=nn.BatchNorm2d, use_spectral_norm=False):
         super(ResPatchSoftUnetGeneratorShiftTriple, self).__init__()
 
         # construct unet structure
@@ -498,7 +486,7 @@ class ResPatchSoftUnetGeneratorShiftTriple(nn.Module):
         print(unet_block)
         for i in range(num_downs - 5):  # The innner layers number is 3 (sptial size:512*512), if unet_256.
             unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=unet_block,
-                                                 norm_layer=norm_layer, use_dropout=use_dropout, use_spectral_norm=use_spectral_norm)
+                                                 norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
         unet_block = UnetSkipConnectionBlock(ngf * 4, ngf * 8, input_nc=None, submodule=unet_block,
                                              norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
 
@@ -522,7 +510,7 @@ class ResPatchSoftUnetGeneratorShiftTriple(nn.Module):
 class ResPatchSoftUnetSkipConnectionShiftTriple(nn.Module):
     def __init__(self, outer_nc, inner_nc, opt, innerCos_list, shift_list, mask_global, input_nc, \
                  submodule=None, shift_layer=None, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d,
-                 use_dropout=False, use_spectral_norm=False, layer_to_last=3):
+                 use_spectral_norm=False, layer_to_last=3):
         super(ResPatchSoftUnetSkipConnectionShiftTriple, self).__init__()
         self.outermost = outermost
         if input_nc is None:
@@ -578,10 +566,7 @@ class ResPatchSoftUnetSkipConnectionShiftTriple(nn.Module):
             # to former part.
             up = [uprelu, innerCos, shift, upconv, upnorm]
 
-            if use_dropout:
-                model = down + [submodule] + up + [nn.Dropout(0.5)]
-            else:
-                model = down + [submodule] + up
+            model = down + [submodule] + up
 
         self.model = nn.Sequential(*model)
 
@@ -601,7 +586,7 @@ class ResPatchSoftUnetSkipConnectionShiftTriple(nn.Module):
 ################################### ***************************  #####################################
 class InceptionUnetGeneratorShiftTriple(nn.Module):
     def __init__(self, input_nc, output_nc, num_downs, opt, innerCos_list, shift_list, mask_global, ngf=64,
-                 norm_layer=nn.BatchNorm2d, use_dropout=False):
+                 norm_layer=nn.BatchNorm2d):
         super(InceptionUnetGeneratorShiftTriple, self).__init__()
 
         # construct unet structure
@@ -609,7 +594,7 @@ class InceptionUnetGeneratorShiftTriple(nn.Module):
                                              innermost=True)
         for i in range(num_downs - 5):  # The innner layers number is 3 (sptial size:512*512), if unet_256.
             unet_block = InceptionUnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=unet_block,
-                                                 norm_layer=norm_layer, use_dropout=use_dropout)
+                                                 norm_layer=norm_layer)
 
         unet_block = InceptionUnetSkipConnectionBlock(ngf * 4, ngf * 8, input_nc=None, submodule=unet_block,
                                              norm_layer=norm_layer)
@@ -617,7 +602,7 @@ class InceptionUnetGeneratorShiftTriple(nn.Module):
         unet_shift_block = InceptionShiftUnetSkipConnectionBlock(ngf * 2, ngf * 4, opt=opt, innerCos_list=innerCos_list, shift_list=shift_list,
                                                                  mask_global=mask_global, input_nc=None, \
                                                                  submodule=unet_block,
-                                                                 norm_layer=norm_layer, shift_layer=True, layer_to_last=3)  # passing in unet_shift_block # innerCos_list=None, shift_list=None, mask_global=None, input_nc=None, opt=None,\submodule=None, shift_layer=False, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d, use_dropout=False
+                                                                 norm_layer=norm_layer, shift_layer=True, layer_to_last=3)  # passing in unet_shift_block
 
         unet_block = InceptionUnetSkipConnectionBlock(ngf, ngf * 2, input_nc=None, submodule=unet_shift_block,
                                              norm_layer=norm_layer)
@@ -635,7 +620,7 @@ class InceptionUnetGeneratorShiftTriple(nn.Module):
 #   |-- downsampling -- |submodule| -- upsampling --|
 class InceptionUnetSkipConnectionBlock(nn.Module):
     def __init__(self, outer_nc, inner_nc, input_nc,
-                 submodule=None, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d, use_dropout=False):
+                 submodule=None, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d):
         super(InceptionUnetSkipConnectionBlock, self).__init__()
         self.outermost = outermost
 
@@ -674,10 +659,7 @@ class InceptionUnetSkipConnectionBlock(nn.Module):
             down = [downrelu, downconv, downnorm]
             up = [uprelu, upconv, upnorm]
 
-            if use_dropout:
-                model = down + [submodule] + up + [nn.Dropout(0.5)]
-            else:
-                model = down + [submodule] + up
+            model = down + [submodule] + up
 
         self.model = nn.Sequential(*model)
 
@@ -698,7 +680,7 @@ class InceptionUnetSkipConnectionBlock(nn.Module):
 #   |-- downsampling -- |submodule| -- upsampling --|
 class InceptionShiftUnetSkipConnectionBlock(nn.Module):
     def __init__(self, outer_nc, inner_nc, innerCos_list=None, shift_list=None, mask_global=None, input_nc=None, opt=None,\
-                 submodule=None, shift_layer=False, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d, use_dropout=False, layer_to_last=3):
+                 submodule=None, shift_layer=False, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d, layer_to_last=3):
         super(InceptionShiftUnetSkipConnectionBlock, self).__init__()
 
         self.outermost = outermost
@@ -750,10 +732,7 @@ class InceptionShiftUnetSkipConnectionBlock(nn.Module):
             down = [downrelu, downconv, downnorm]
             up = [uprelu, innerCosBefore, shift, upconv, upnorm]
 
-            if use_dropout:
-                model = down + [submodule] + up + [nn.Dropout(0.5)]
-            else:
-                model = down + [submodule] + up
+            model = down + [submodule] + up
 
         self.model = nn.Sequential(*model)
 
