@@ -71,7 +71,7 @@ def init_net(net, init_type='normal', init_gain=0.02, gpu_ids=[]):
 
 
 # Note: Adding SN to G tends to give inferior results. Need more checking.
-def define_G(input_nc, output_nc, ngf, which_model_netG, opt, mask_global, norm='batch', use_dropout=False, use_spectral_norm=False, init_type='normal', gpu_ids=[], init_gain=0.02):
+def define_G(input_nc, output_nc, ngf, which_model_netG, opt, mask_global, norm='batch', use_spectral_norm=False, init_type='normal', gpu_ids=[], init_gain=0.02):
     netG = None
     norm_layer = get_norm_layer(norm_type=norm)
 
@@ -89,26 +89,26 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, opt, mask_global, norm=
     # as well as setting masks for these special layers.
     print('[CREATED] MODEL')
     if which_model_netG == 'unet_256':
-        netG = UnetGenerator(input_nc, output_nc, 8, ngf, norm_layer=norm_layer, use_dropout=use_dropout, use_spectral_norm=use_spectral_norm)
+        netG = UnetGenerator(input_nc, output_nc, 8, ngf, norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
     elif which_model_netG == 'unet_shift_triple':
         netG = UnetGeneratorShiftTriple(input_nc, output_nc, 8, opt, innerCos_list, shift_list, mask_global, \
-                                                         ngf, norm_layer=norm_layer, use_dropout=use_dropout, use_spectral_norm=use_spectral_norm)
+                                                         ngf, norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
     elif which_model_netG == 'res_unet_shift_triple':
         netG = ResUnetGeneratorShiftTriple(input_nc, output_nc, 8, opt, innerCos_list, shift_list, mask_global, \
-                                                         ngf, norm_layer=norm_layer, use_dropout=use_dropout, use_spectral_norm=use_spectral_norm)
+                                                         ngf, norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
     elif which_model_netG == 'inception_unet_shift_triple':
         assert opt.use_spectral_norm_G != 1, "Spectral norm on inception_unet is not support yet!"
         netG = InceptionUnetGeneratorShiftTriple(input_nc, output_nc, 8, opt, innerCos_list, shift_list, mask_global, \
-                                                         ngf, norm_layer=norm_layer, use_dropout=use_dropout)
+                                                         ngf, norm_layer=norm_layer)
     elif which_model_netG == 'soft_unet_shift_triple':
         netG = SoftUnetGeneratorShiftTriple(input_nc, output_nc, 8, opt, innerCos_list, shift_list, mask_global, \
-                                                         ngf, norm_layer=norm_layer, use_dropout=use_dropout, use_spectral_norm=use_spectral_norm)
+                                                         ngf, norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
     elif which_model_netG == 'patch_soft_unet_shift_triple':
         netG = PatchSoftUnetGeneratorShiftTriple(input_nc, output_nc, 8, opt, innerCos_list, shift_list, mask_global, \
-                                                         ngf, norm_layer=norm_layer, use_dropout=use_dropout, use_spectral_norm=use_spectral_norm)
+                                                         ngf, norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
     elif which_model_netG == 'res_patch_soft_unet_shift_triple':
         netG = ResPatchSoftUnetGeneratorShiftTriple(input_nc, output_nc, 8, opt, innerCos_list, shift_list, mask_global, \
-                                                         ngf, norm_layer=norm_layer, use_dropout=use_dropout, use_spectral_norm=use_spectral_norm)
+                                                         ngf, norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
     else:
         raise NotImplementedError('Generator model name [%s] is not recognized' % which_model_netG)
     print('[CREATED] MODEL')
