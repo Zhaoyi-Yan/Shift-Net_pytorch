@@ -4,7 +4,10 @@ import util.util as util
 from models import networks
 from models.shift_net.base_model import BaseModel
 import time
-
+import torchvision.transforms as transforms
+import os
+import numpy as np
+from PIL import Image
 
 class ShiftNetModel(BaseModel):
     def name(self):
@@ -116,10 +119,11 @@ class ShiftNetModel(BaseModel):
 
         if not self.isTrain or opt.continue_train:
             self.load_networks(opt.which_epoch)
-
+ 
         self.print_networks(opt.verbose)
 
     def set_input(self, input):
+        self.image_paths = input['A_paths']
         real_A = input['A'].to(self.device)
         real_B = input['B'].to(self.device)
 
@@ -133,10 +137,14 @@ class ShiftNetModel(BaseModel):
             self.mask_global = self.create_random_mask().type_as(self.mask_global).view_as(self.mask_global)
         else:
             raise ValueError("Mask_type [%s] not recognized." % self.opt.mask_type)
+        # Add 
+        if not self.opt.isTrain and self.opt.offline_testing:
+            self.mask_global = Image.open(os.path.join('masks', os.path.splitext(os.path.basename(self.image_paths[0]))[0]+'_mask.png'))
+            self.mask_global = transforms.ToTensor()(self.mask_global).unsqueeze(0).type_as(real_A).byte()
+            
+
 
         self.set_latent_mask(self.mask_global)
-
-        #print(torch.max(real_A), torch.min(real_A))
 
         real_A.narrow(1,0,1).masked_fill_(self.mask_global, 0.)#2*123.0/255.0 - 1.0
         real_A.narrow(1,1,1).masked_fill_(self.mask_global, 0.)#2*104.0/255.0 - 1.0
@@ -149,7 +157,6 @@ class ShiftNetModel(BaseModel):
 
         self.real_A = real_A
         self.real_B = real_B
-        self.image_paths = input['A_paths']
     
 
     def set_latent_mask(self, mask_global):
