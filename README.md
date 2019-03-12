@@ -40,7 +40,7 @@ Usually, we train and test a model with `center` mask.
 **Mention: For now, the best performance of `center mask inpainiting` can be achieved if you train this line: **.
 
 ```bash
-python train.py --batchsize=1 --use_spectral_norm_D=1 --which_model_netG='basic' --mask_type='center'
+python train.py --batchsize=1 --use_spectral_norm_D=1 --which_model_netD='basic' --mask_type='center'
 ```
 
 For training random mask, you need to train the model by setting
