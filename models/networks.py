@@ -88,10 +88,20 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, opt, mask_global, norm=
     # else we need to set the masks each iteration, generating new random masks and mask the input
     # as well as setting masks for these special layers.
     print('[CREATED] MODEL')
-    if which_model_netG == 'unet_256':
+    if which_model_netG == 'unet':
         netG = UnetGenerator(input_nc, output_nc, 8, ngf, norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
-    if which_model_netG == 'easy_unet_256':
+    elif which_model_netG == 'easy_unet':
         netG = EasyUnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
+    elif which_model_netG == 'easy_unet2':
+        netG = EasyUnetGenerator2(input_nc, output_nc, innerCos_list, shift_list, mask_global, opt, ngf, norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
+    elif which_model_netG == 'easy_unet3':
+        netG = EasyUnetGenerator3(input_nc, output_nc, innerCos_list, shift_list, mask_global, opt, ngf, norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
+    elif which_model_netG == 'easy_unet4':
+        netG = EasyUnetGenerator4(input_nc, output_nc, innerCos_list, shift_list, mask_global, opt, ngf, norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
+    elif which_model_netG == 'easy_unet5':
+        netG = EasyUnetGenerator5(input_nc, output_nc, innerCos_list, shift_list, mask_global, opt, ngf, norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
+    elif which_model_netG == 'easy_unet_dilated':
+        netG = EasyUnetDilatedGenerator(input_nc, output_nc, innerCos_list, shift_list, mask_global, opt, ngf, norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
     elif which_model_netG == 'unet_shift_triple':
         netG = UnetGeneratorShiftTriple(input_nc, output_nc, 8, opt, innerCos_list, shift_list, mask_global, \
                                                          ngf, norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
@@ -115,6 +125,9 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, opt, mask_global, norm=
 
     print('Shift in netG:')
     print(shift_list)
+
+    print('NetG architecture:')
+    print(netG)
 
     return init_net(netG, init_type, init_gain, gpu_ids), innerCos_list, shift_list
 
