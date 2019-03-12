@@ -100,6 +100,8 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, opt, mask_global, norm=
         netG = EasyUnetGenerator4(input_nc, output_nc, innerCos_list, shift_list, mask_global, opt, ngf, norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
     elif which_model_netG == 'easy_unet5':
         netG = EasyUnetGenerator5(input_nc, output_nc, innerCos_list, shift_list, mask_global, opt, ngf, norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
+    elif which_model_netG == 'easy_unet6':
+        netG = EasyUnetGenerator6(input_nc, output_nc, innerCos_list, shift_list, mask_global, opt, ngf, norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
     elif which_model_netG == 'easy_unet_dilated':
         netG = EasyUnetDilatedGenerator(input_nc, output_nc, innerCos_list, shift_list, mask_global, opt, ngf, norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
     elif which_model_netG == 'unet_shift_triple':

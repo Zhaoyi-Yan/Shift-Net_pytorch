@@ -561,6 +561,120 @@ class EasyUnetGenerator5(nn.Module):
 
         return d8
 
+#############################################################################################
+######################   UNet_6: use more symmetrical network. 
+######################  Testing: Whether bigger kernels(InnerMost the layer) gives better results.
+######################   Make sure that UNet_6 with D_2(This is competiable)
+#############################################################################################
+class EasyUnetGenerator6(nn.Module):
+    def __init__(self, input_nc, output_nc, innerCos_list, shift_list, mask_global, opt, ngf=64,
+                 norm_layer=nn.BatchNorm2d, use_spectral_norm=False):
+        super(EasyUnetGenerator6, self).__init__()
+
+        # Encoder layers
+        self.e1_c = spectral_norm(nn.Conv2d(input_nc, ngf, kernel_size=8, stride=2, padding=3), use_spectral_norm)
+
+        self.e2_c = spectral_norm(nn.Conv2d(ngf, ngf*2, kernel_size=6, stride=2, padding=2), use_spectral_norm)
+        self.e2_norm = norm_layer(ngf*2)
+
+        self.e3_c = spectral_norm(nn.Conv2d(ngf*2, ngf*4, kernel_size=6, stride=2, padding=2), use_spectral_norm)
+        self.e3_norm = norm_layer(ngf*4)
+
+        self.e4_c = spectral_norm(nn.Conv2d(ngf*4, ngf*8, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        self.e4_norm = norm_layer(ngf*8)
+
+        self.e5_c = spectral_norm(nn.Conv2d(ngf*8, ngf*8, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        self.e5_norm = norm_layer(ngf*8)
+
+        self.e6_c = spectral_norm(nn.Conv2d(ngf*8, ngf*8, kernel_size=6, stride=2, padding=2), use_spectral_norm)
+        self.e6_norm = norm_layer(ngf*8)
+
+        self.e7_c = spectral_norm(nn.Conv2d(ngf*8, ngf*8, kernel_size=6, stride=2, padding=2), use_spectral_norm)
+        self.e7_norm = norm_layer(ngf*8)
+
+
+        # Deocder layers
+        self.d1_dc = spectral_norm(nn.ConvTranspose2d(ngf*8, ngf*8, kernel_size=6, stride=2, padding=2), use_spectral_norm)
+        self.d1_cc = spectral_norm(nn.Conv2d(ngf*8*2, ngf*8, kernel_size=3, stride=1, padding=1), use_spectral_norm)
+        self.d1_norm = norm_layer(ngf*8)
+
+        self.d2_dc = spectral_norm(nn.ConvTranspose2d(ngf*8 , ngf*8, kernel_size=6, stride=2, padding=2), use_spectral_norm)
+        self.d2_cc = spectral_norm(nn.Conv2d(ngf*8*2, ngf*8, kernel_size=3, stride=1, padding=1), use_spectral_norm)
+        self.d2_norm = norm_layer(ngf*8)
+
+        self.d3_dc = spectral_norm(nn.ConvTranspose2d(ngf*8, ngf*8, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        self.d3_cc = spectral_norm(nn.Conv2d(ngf*8*2, ngf*8, kernel_size=3, stride=1, padding=1), use_spectral_norm)
+        self.d3_norm = norm_layer(ngf*8)
+
+        self.d4_dc = spectral_norm(nn.ConvTranspose2d(ngf*8, ngf*4, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        # shift before this layer
+        self.d4_cc = spectral_norm(nn.Conv2d(ngf*4*3, ngf*4, kernel_size=3, stride=1, padding=1), use_spectral_norm)
+        self.d4_norm = norm_layer(ngf*4)
+
+        self.d5_dc = spectral_norm(nn.ConvTranspose2d(ngf*4, ngf*2, kernel_size=6, stride=2, padding=2), use_spectral_norm)
+        self.d5_cc = spectral_norm(nn.Conv2d(ngf*2*2, ngf*2, kernel_size=3, stride=1, padding=1), use_spectral_norm)
+        self.d5_norm = norm_layer(ngf*2)
+
+        self.d6_dc = spectral_norm(nn.ConvTranspose2d(ngf*2, ngf, kernel_size=6, stride=2, padding=2), use_spectral_norm)
+        self.d6_cc = spectral_norm(nn.Conv2d(ngf*2, ngf, kernel_size=3, stride=1, padding=1), use_spectral_norm)
+        self.d6_norm = norm_layer(ngf)
+
+        self.d7_dc = spectral_norm(nn.ConvTranspose2d(ngf, output_nc, kernel_size=8, stride=2, padding=3), use_spectral_norm)
+        self.d7_cc = spectral_norm(nn.Conv2d(output_nc*2 + 1, output_nc, kernel_size=3, stride=1, padding=1), use_spectral_norm)
+
+
+        # construct shift and innerCos
+        self.shift = InnerShiftTriple(opt.shift_sz, opt.stride, opt.mask_thred,
+                                            opt.triple_weight, layer_to_last=3)
+        self.shift.set_mask(mask_global)
+        shift_list.append(self.shift)
+
+        self.innerCos = InnerCos(strength=opt.strength, skip=opt.skip, layer_to_last=3)
+        self.innerCos.set_mask(mask_global)  # Here we need to set mask for innerCos layer too.
+        innerCos_list.append(self.innerCos)
+
+    # In this case, we have very flexible unet construction mode.
+    def forward(self, input):
+        # Encoder
+        # No norm on the first layer
+        x = input
+        e1 = self.e1_c(input)
+        e2 = self.e2_norm(self.e2_c(F.leaky_relu_(e1, negative_slope=0.2)))
+        e3 = self.e3_norm(self.e3_c(F.leaky_relu_(e2, negative_slope=0.2)))
+        e4 = self.e4_norm(self.e4_c(F.leaky_relu_(e3, negative_slope=0.2)))
+        e5 = self.e5_norm(self.e5_c(F.leaky_relu_(e4, negative_slope=0.2)))
+        e6 = self.e6_norm(self.e6_c(F.leaky_relu_(e5, negative_slope=0.2)))
+        e7 = self.e7_norm(self.e7_c(F.leaky_relu_(e6, negative_slope=0.2)))
+
+        # Decoder
+        d1 = F.leaky_relu_(self.d1_dc(F.leaky_relu_(e7, negative_slope=0.2)), negative_slope=0.2)
+        d2 = self.d1_norm(self.d1_cc(torch.cat([d1, e6], dim=1)))
+
+        d2 = F.leaky_relu_(self.d2_dc(F.leaky_relu_(d2, negative_slope=0.2)), negative_slope=0.2)
+        d3 = self.d2_norm(self.d2_cc(torch.cat([d2, e5], dim=1)))
+
+        d3 = F.leaky_relu_(self.d3_dc(F.leaky_relu_(d3, negative_slope=0.2)), negative_slope=0.2)
+        d4 = self.d3_norm(self.d3_cc(torch.cat([d3, e4], dim=1)))
+
+        d4 = F.leaky_relu_(self.d4_dc(F.leaky_relu_(d4, negative_slope=0.2)), negative_slope=0.2)
+        d4_tmp = self.shift(self.innerCos(torch.cat([d4, e3], dim=1)))
+        d5 = self.d4_norm(self.d4_cc(d4_tmp))
+
+        d5 = F.leaky_relu_(self.d5_dc(F.leaky_relu_(d5, negative_slope=0.2)), negative_slope=0.2)
+        d6 = self.d5_norm(self.d5_cc(torch.cat([d5, e2], dim=1)))
+
+        d6 = F.leaky_relu_(self.d6_dc(F.leaky_relu_(d6, negative_slope=0.2)), negative_slope=0.2)
+        d7 = self.d6_norm(self.d6_cc(torch.cat([d6, e1], dim=1)))
+
+        d7 = F.leaky_relu_(self.d7_dc(F.leaky_relu_(d7, negative_slope=0.2)), negative_slope=0.2)
+        # No norm on the last layer
+        # concat the original feature...
+        d8 = self.d7_cc(F.leaky_relu_(torch.cat([d7, x], dim=1), negative_slope=0.2))
+        d8 = torch.tanh(d8)
+
+        return d8
+
+
 ################################### ***************************  #####################################
 ###################################         Res Shift_net            #####################################
 ################################### ***************************  #####################################
