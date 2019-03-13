@@ -90,6 +90,12 @@ python test.py --fuse=1/0 --which_model_netG='patch_soft_unet_shift_triple' --mo
 ```
 The test results will be saved to a html file here: `./results/`.
 
+### Testing models on given masks
+You should firstly generate masks by running `generate_masks.py`, we assume that only `mask_type=random`, then it makes sense to generate masks by yourself.
+Make sure that you should keep the same setting with that you train the model when generating masks.
+It generates masks with the names by adding a suffix of `_mask.png` to corresponding names of testing images.
+Then set `offline_testing=1` when testing, the program will read corresponding masks when testing.
+
 If you find this work useful, please cite:
 ```
 @InProceedings{Yan_2018_Shift,
@@ -104,7 +110,7 @@ year = {2018}
 ## Performance degrades when batchsize > 1
 A very strange thing is that if the `batchSize>1`, then the performance degrades.
 I wonder whether it is due to some incompatibility of IN with UNet.
-
+I will try to solve this problem.
 
 ## Kindly remindier
 If you find it a little hard to read the code, you may read [Guides](https://github.com/Zhaoyi-Yan/Shift-Net_pytorch/blob/master/guides.md).
