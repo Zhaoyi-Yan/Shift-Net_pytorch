@@ -73,8 +73,6 @@ class BaseOptions():
                             help='If True, it will save only the lastest weights and the one minimizing the L1 loss')
         parser.add_argument('--add_mask2input', type=int, default=1,
                             help='If True, It will add the mask as a fourth dimension over input space')
-        parser.add_argument('--residual_soft_attention', type=int, default=0,
-                            help='Not implemented yet')
 
         self.initialized = True
         return parser

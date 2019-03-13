@@ -10,6 +10,7 @@ class TestOptions(BaseOptions):
         parser.add_argument('--phase', type=str, default='test', help='train, val, test, etc')
         parser.add_argument('--which_epoch', type=str, default='20', help='which epoch to load? set to latest to use latest cached model')
         parser.add_argument('--how_many', type=int, default=1000, help='how many test images to run')
+        parser.add_argument('--offline_testing', type=int, default=0, help='whether testing on given masks from folder \'masks\' ')
         self.isTrain = False
 
         return parser
