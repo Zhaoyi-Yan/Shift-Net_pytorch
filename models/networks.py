@@ -116,6 +116,8 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, opt, mask_global, norm=
     print('Shift in netG:')
     print(shift_list)
 
+    print('Net G:')
+    print(netG)
     return init_net(netG, init_type, init_gain, gpu_ids), innerCos_list, shift_list
 
 
@@ -126,7 +128,8 @@ def define_D(input_nc, ndf, which_model_netD,
 
     if which_model_netD == 'basic':
         netD = NLayerDiscriminator(input_nc, ndf, n_layers=3, norm_layer=norm_layer, use_sigmoid=use_sigmoid, use_spectral_norm=use_spectral_norm)
-
+    elif which_model_netD == 'SP_D1':
+        netD = SP_D1(input_nc, ndf, n_layers=3, norm_layer=norm_layer, use_sigmoid=use_sigmoid, use_spectral_norm=use_spectral_norm)
     elif which_model_netD == 'n_layers':
         netD = NLayerDiscriminator(input_nc, ndf, n_layers_D, norm_layer=norm_layer, use_sigmoid=use_sigmoid, use_spectral_norm=use_spectral_norm)
 
@@ -136,5 +139,7 @@ def define_D(input_nc, ndf, which_model_netD,
     else:
         print('Discriminator model name [%s] is not recognized' %
               which_model_netD)
+    print('Net D:')
+    print(netD)
     return init_net(netD, init_type, init_gain, gpu_ids)
 
