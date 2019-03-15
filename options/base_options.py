@@ -49,7 +49,7 @@ class BaseOptions():
         parser.add_argument('--mask_thred', type=int, default=1, help='number to decide whether a patch is masked')
         parser.add_argument('--bottleneck', type=int, default=512, help='neurals of fc')
         parser.add_argument('--gp_lambda', type=float, default=10.0, help='gradient penalty coefficient')
-        parser.add_argument('--ncritic', type=int, default=5, help='critic iterations')
+        parser.add_argument('--ncritic', type=int, default=1, help='critic iterations')
         parser.add_argument('--constrain', type=str, default='MSE', help='guidance loss type')
         parser.add_argument('--strength', type=float, default=1, help='the weight of guidance loss')
         parser.add_argument('--init_gain', type=float, default=0.02, help='scaling factor for normal, xavier and orthogonal.')
