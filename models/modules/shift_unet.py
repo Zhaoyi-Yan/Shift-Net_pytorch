@@ -138,6 +138,8 @@ class UnetSkipConnectionShiftBlock(nn.Module):
 ######################   UNet_2: add bigger kernel size
 ######################   Testing: Whehther bigger kernel size gives better results.
 ######################   Make sure that UNet_2 with D_2
+##### Conclusion: A little better results for simple samples, yet more easier artifacts in the center.
+################
 #########################################################################
 class EasyUnetGenerator2(nn.Module):
     def __init__(self, input_nc, output_nc, innerCos_list, shift_list, mask_global, opt, ngf=64,
@@ -238,6 +240,8 @@ class EasyUnetGenerator2(nn.Module):
 ######################   UNet_3: add bigger kernel size and  also **ALL ACtivations are leaky_relu**
 ######################   Testing whether all leakly_relu gives better results.
 ######################   Make sure that UNet_3 with D_2
+##########  **Worse**
+##########  Conclusion: Quite easier to get more central artifacts.
 #########################################################################
 class EasyUnetGenerator3(nn.Module):
     def __init__(self, input_nc, output_nc, innerCos_list, shift_list, mask_global, opt, ngf=64,
@@ -337,6 +341,7 @@ class EasyUnetGenerator3(nn.Module):
 ######################   UNet_4: add bigger kernel size and more convs in the decoder layers, also **ALL ACtivations are leaky_relu**
 ######################  Testing: Whether more convs gives better results.
 ######################   Make sure that UNet_4 with D_2(This is competiable)
+########### Concolusion: A little bit Worse
 #############################################################################################
 class EasyUnetGenerator4(nn.Module):
     def __init__(self, input_nc, output_nc, innerCos_list, shift_list, mask_global, opt, ngf=64,
@@ -451,6 +456,7 @@ class EasyUnetGenerator4(nn.Module):
 ######################   UNet_5: use more symmetrical network. 
 ######################  Testing: Whether less parameters gives better results compared to Unet_4
 ######################   Make sure that UNet_5 with D_2(This is competiable)
+########### Conclusion: A little Worse
 #############################################################################################
 class EasyUnetGenerator5(nn.Module):
     def __init__(self, input_nc, output_nc, innerCos_list, shift_list, mask_global, opt, ngf=64,
@@ -565,6 +571,7 @@ class EasyUnetGenerator5(nn.Module):
 ######################   UNet_6: use more symmetrical network. 
 ######################  Testing: Whether bigger kernels(InnerMost the layer) gives better results.
 ######################   Make sure that UNet_6 with D_2(This is competiable)
+###########  Conlusion: A little Worse
 #############################################################################################
 class EasyUnetGenerator6(nn.Module):
     def __init__(self, input_nc, output_nc, innerCos_list, shift_list, mask_global, opt, ngf=64,
