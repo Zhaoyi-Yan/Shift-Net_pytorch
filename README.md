@@ -5,7 +5,7 @@
 <img src="shift_layer.png" width="800"/> 
 
 # Shift-Net_pytorch
-This repositity is our Pytorch implementation for Shift-Net, it is just for those who are interesting in our work and want to get a skeleton Pytorch implemention. The original code is https://github.com/Zhaoyi-Yan/Shift-Net.
+This repositity is our Pytorch implementation for Shift-Net, it is much faster than the original code is https://github.com/Zhaoyi-Yan/Shift-Net.
 
 ## Prerequisites
 - Linux or Windows.
@@ -37,7 +37,8 @@ Please read this paragraph carefully before running the code.
 By now, 5 kinds of shift-nets are proposed, presented to you by \"advanced-descending\" order.
 
 Usually, we train and test a model with `center` mask.
-**Mention: For now, the best performance of `center mask inpainiting` can be achieved if you train this line: **.
+
+**Mention: For now, the best performance of `center mask inpainiting` can be achieved if you train this line:**.
 
 ```bash
 python train.py --batchsize=1 --use_spectral_norm_D=1 --which_model_netG='basic' --mask_type='center'
@@ -102,6 +103,7 @@ year = {2018}
 ```
 
 ## Performance degrades when batchsize > 1
+-^_^-, trying to fix it...
 A very strange thing is that if the `batchSize>1`, then the performance degrades.
 I wonder whether it is due to some incompatibility of IN with UNet.
 
@@ -120,6 +122,7 @@ If you find it a little hard to read the code, you may read [Guides](https://git
 - [x] Directly resize the global_mask to get the mask in feature space.
 - [x] Visualization of flow. It is still experimental now.
 - [x] Extensions of Shift-Net. Still active in absorbing new features.
+- [ ] Fix performance degradance when batchsize is larger than 1.
 - [ ] Fix bug in guidance loss when adopting it in multi-gpu.
 - [ ] Add random batch of masks
 - [ ] Add soft transition from centered mask to random ones
