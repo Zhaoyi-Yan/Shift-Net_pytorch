@@ -89,7 +89,7 @@ class ShiftNetModel(BaseModel):
             # don't use cGAN
             self.netD = networks.define_D(opt.input_nc, opt.ndf,
                                           opt.which_model_netD,
-                                          opt.n_layers_D, opt.norm, use_sigmoid, opt.use_spectral_norm_D, opt.init_type, self.gpu_ids, opt.init_gain)
+                                          opt.n_layers_D, opt.norm, use_sigmoid, opt.use_spectral_norm_D, opt.init_type, self.gpu_ids, opt.init_gain, opt.weight_mask)
 
         if self.isTrain:
             self.old_lr = opt.lr
@@ -164,6 +164,8 @@ class ShiftNetModel(BaseModel):
             ng_shift.set_mask(mask_global)
         for ng_innerCos in self.ng_innerCos_list: # ITERATE OVER THE LIST OF ng_innerCos_list:
             ng_innerCos.set_mask(mask_global)
+        # set mask for D.
+        self.netD.module.set_mask(mask_global.float())
 
     def set_gt_latent(self):
         if not self.opt.skip:
