@@ -100,7 +100,9 @@ class D_WM(nn.Module):
     def forward(self, input):
         output = self.model(input)
         self.mask_binary = util.cal_flag_given_mask_thred(self.mask.squeeze(), 1, 1, 1).type_as(input).view(30, 30)
-        output *= self.mask_binary
+        self.mask_binary_verse = (1. - self.mask_binary)*(1. - self.weight_mask)
+        self.mask_binary *= self.weight_mask
+        output *= (self.mask_binary + self.mask_binary_verse)
         output = self.sigmoid(output) if self.use_sigmoid else output
 
         return output
