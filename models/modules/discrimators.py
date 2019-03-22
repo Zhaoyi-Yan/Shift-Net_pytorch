@@ -54,7 +54,7 @@ class NLayerDiscriminator(nn.Module):
 
 # D2: weight mask
 class D_WM(nn.Module):
-    def __init__(self, input_nc, ndf=64, n_layers=3, norm_layer=nn.BatchNorm2d, use_sigmoid=False, use_spectral_norm=True, weight_mask=0.9):
+    def __init__(self, input_nc, ndf=64, n_layers=3, norm_layer=nn.BatchNorm2d, use_sigmoid=False, use_spectral_norm=True, weight_mask=2, weight_nonmask=1):
         super(D_WM, self).__init__()
         if type(norm_layer) == functools.partial:
             use_bias = norm_layer.func == nn.InstanceNorm2d
@@ -62,6 +62,7 @@ class D_WM(nn.Module):
             use_bias = norm_layer == nn.InstanceNorm2d
 
         self.weight_mask = weight_mask
+        self.weight_nonmask = weight_nonmask
         kw = 4
         padw = 1
         sequence = [
@@ -100,7 +101,7 @@ class D_WM(nn.Module):
     def forward(self, input):
         output = self.model(input)
         self.mask_binary = util.cal_flag_given_mask_thred(self.mask.squeeze(), 1, 1, 1).type_as(input).view(30, 30)
-        self.mask_binary_verse = (1. - self.mask_binary)*(1. - self.weight_mask)
+        self.mask_binary_verse = (1. - self.mask_binary)*self.weight_nonmask
         self.mask_binary *= self.weight_mask
         output *= (self.mask_binary + self.mask_binary_verse)
         output = self.sigmoid(output) if self.use_sigmoid else output
