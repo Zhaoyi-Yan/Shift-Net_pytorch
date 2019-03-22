@@ -120,7 +120,7 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, opt, mask_global, norm=
 
 
 def define_D(input_nc, ndf, which_model_netD,
-             n_layers_D=3, norm='batch', use_sigmoid=False, use_spectral_norm=False, init_type='normal', gpu_ids=[], init_gain=0.02, weight_mask=0.9):
+             n_layers_D=3, norm='batch', use_sigmoid=False, use_spectral_norm=False, init_type='normal', gpu_ids=[], init_gain=0.02, weight_mask=2, weight_nonmask=1):
     netD = None
     norm_layer = get_norm_layer(norm_type=norm)
 
@@ -128,7 +128,7 @@ def define_D(input_nc, ndf, which_model_netD,
         netD = NLayerDiscriminator(input_nc, ndf, n_layers=3, norm_layer=norm_layer, use_sigmoid=use_sigmoid, use_spectral_norm=use_spectral_norm)
 
     elif which_model_netD == 'D_WM':
-        netD = D_WM(input_nc, ndf, n_layers=3, norm_layer=norm_layer, use_sigmoid=use_sigmoid, use_spectral_norm=use_spectral_norm, weight_mask=weight_mask)
+        netD = D_WM(input_nc, ndf, n_layers=3, norm_layer=norm_layer, use_sigmoid=use_sigmoid, use_spectral_norm=use_spectral_norm, weight_mask=weight_mask, weight_nonmask=weight_nonmask)
 
     elif which_model_netD == 'n_layers':
         netD = NLayerDiscriminator(input_nc, ndf, n_layers_D, norm_layer=norm_layer, use_sigmoid=use_sigmoid, use_spectral_norm=use_spectral_norm)
