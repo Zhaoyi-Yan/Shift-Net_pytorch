@@ -165,7 +165,8 @@ class ShiftNetModel(BaseModel):
         for ng_innerCos in self.ng_innerCos_list: # ITERATE OVER THE LIST OF ng_innerCos_list:
             ng_innerCos.set_mask(mask_global)
         # set mask for D.
-        self.netD.module.set_mask(mask_global.float())
+        if self.isTrain:
+            self.netD.module.set_mask(mask_global.float())
 
     def set_gt_latent(self):
         if not self.opt.skip:
