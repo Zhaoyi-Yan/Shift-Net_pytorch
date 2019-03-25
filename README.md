@@ -7,11 +7,16 @@
 # Shift-Net_pytorch
 This repositity is our Pytorch implementation for Shift-Net, it is just for those who are interesting in our work and want to get a skeleton Pytorch implemention. The original code is https://github.com/Zhaoyi-Yan/Shift-Net.
 
+# Why no pretrain modes ?
+It is because the code is still in active development, making pretrained models broken from time to time.
+
+Just pull the latest code and train following the instructions.
+
 ## Prerequisites
 - Linux or Windows.
 - Python 2 or Python 3.
 - CPU or NVIDIA GPU + CUDA CuDNN.
-- Tested on pytorch >= 0.4.0
+- Tested on pytorch >= 1.0
 
 ## Getting Started
 ### Installation
@@ -34,7 +39,7 @@ cd Shift-Net_pytorch
 - Train a model:
 Please read this paragraph carefully before running the code.
 
-By now, 5 kinds of shift-nets are proposed, presented to you by \"advanced-descending\" order.
+By now, 5 kinds of shift-nets are proposed.
 
 Usually, we train and test a model with `center` mask.
 
@@ -44,8 +49,15 @@ Usually, we train and test a model with `center` mask.
 python train.py --batchsize=1 --use_spectral_norm_D=1 --which_model_netD='basic' --mask_type='center'
 ```
 
+**DO NOT** set batchsize larger than 1 for `square` mask training, the performance degrades a lot(I don't know why...)
+
+For `random mask`(`mask_sub_type` is NOT `rect`), the batchsize can be larger than 1 without hurt of performance.
+
 For training random mask, you need to train the model by setting
 `mask_type='random'` and also `mask_sub_type='rect'` or `mask_sub_type='island'`.
+
+
+
 
 
 For `navie shift-net`:
