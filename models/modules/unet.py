@@ -85,9 +85,9 @@ class UnetSkipConnectionBlock(nn.Module):
                 x_latter = F.interpolate(x_latter, (h, w), mode='bilinear')
             return torch.cat([x_latter, x], 1)  # cat in the C channel
 
-#
-# I just write the easiest construction down now.
-# I cannot use sequential for flexibility.
+
+# It is an easy type of UNet, intead of constructing UNet with UnetSkipConnectionBlocks.
+# In this way, every thing is much clear and more flexible for extension.
 class EasyUnetGenerator(nn.Module):
     def __init__(self, input_nc, output_nc, ngf=64,
                  norm_layer=nn.BatchNorm2d, use_spectral_norm=False):

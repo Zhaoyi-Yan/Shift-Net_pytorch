@@ -16,7 +16,7 @@ class BaseOptions():
         parser.add_argument('--output_nc', type=int, default=3, help='# of output image channels')
         parser.add_argument('--ngf', type=int, default=64, help='# of gen filters in first conv layer')
         parser.add_argument('--ndf', type=int, default=64, help='# of discrim filters in first conv layer')
-        parser.add_argument('--which_model_netD', type=str, default='densenet', help='selects model to use for netD, [basic|densenet]')
+        parser.add_argument('--which_model_netD', type=str, default='basic', help='selects model to use for netD, [basic|densenet]')
         parser.add_argument('--which_model_netG', type=str, default='unet_shift_triple', help='selects model to use for netG [unet_256| unet_shift_triple| \
                                                                 res_unet_shift_triple|soft_unet_shift_triple|patch_soft_unet_shift_triple|res_patch_soft_unet_shift_triple]')
         parser.add_argument('--model', type=str, default='shiftnet', \
@@ -49,7 +49,6 @@ class BaseOptions():
         parser.add_argument('--mask_thred', type=int, default=1, help='number to decide whether a patch is masked')
         parser.add_argument('--bottleneck', type=int, default=512, help='neurals of fc')
         parser.add_argument('--gp_lambda', type=float, default=10.0, help='gradient penalty coefficient')
-        parser.add_argument('--ncritic', type=int, default=1, help='critic iterations')
         parser.add_argument('--constrain', type=str, default='MSE', help='guidance loss type')
         parser.add_argument('--strength', type=float, default=1, help='the weight of guidance loss')
         parser.add_argument('--init_gain', type=float, default=0.02, help='scaling factor for normal, xavier and orthogonal.')
@@ -62,7 +61,7 @@ class BaseOptions():
                                                                             're_avg_gan (Relativistic average Standard GAN), '
                                                                             're_avg_hinGan (Relativistic average HingeGAN),  WARNING: wgan_gp should never be used here.')
         parser.add_argument('--gan_weight', type=float, default=0.2, help='the weight of gan loss')
-        parser.add_argument('--mask_weight', type=float, default=400.0, help='the weight of mask part, you can try different mask_weight')
+        parser.add_argument('--mask_weight_G', type=float, default=400.0, help='the weight of mask part in ouput of G, you can try different mask_weight')
         parser.add_argument('--discounting', type=int, default=1, help='the loss type of mask part, whether using discounting l1 loss or normal l1')
         parser.add_argument('--use_spectral_norm_D', type=int, default=1, help='whether to add spectral norm to D, it helps improve results')
         parser.add_argument('--use_spectral_norm_G', type=int, default=0, help='whether to add spectral norm in G. Seems very bad when adding SN to G')
