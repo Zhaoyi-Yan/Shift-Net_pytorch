@@ -51,20 +51,17 @@ class ShiftNetModel(BaseModel):
         self.mask_global = torch.ByteTensor(1, 1, \
                                  opt.fineSize, opt.fineSize)
 
-        # Here we need to set an artificial mask_global(not to make it broken, so center hole is ok.)
+        # Here we need to set an artificial mask_global(center hole is ok.)
         self.mask_global.zero_()
         self.mask_global[:, :, int(self.opt.fineSize/4) + self.opt.overlap : int(self.opt.fineSize/2) + int(self.opt.fineSize/4) - self.opt.overlap,\
                                 int(self.opt.fineSize/4) + self.opt.overlap: int(self.opt.fineSize/2) + int(self.opt.fineSize/4) - self.opt.overlap] = 1
 
         self.mask_type = opt.mask_type
-        self.gMask_opts = {}
-
 
         self.wgan_gp = False
         # added for wgan-gp
         if opt.gan_type == 'wgan_gp':
             self.gp_lambda = opt.gp_lambda
-            self.ncritic = opt.ncritic
             self.wgan_gp = True
 
 
@@ -104,9 +101,9 @@ class ShiftNetModel(BaseModel):
             if self.wgan_gp:
                 opt.beta1 = 0
                 self.optimizer_G = torch.optim.Adam(self.netG.parameters(),
-                                    lr=opt.lr, betas=(opt.beta1, 0.999))
+                                    lr=opt.lr, betas=(opt.beta1, 0.9))
                 self.optimizer_D = torch.optim.Adam(self.netD.parameters(),
-                                                    lr=opt.lr, betas=(opt.beta1, 0.999))
+                                                    lr=opt.lr, betas=(opt.beta1, 0.9))
             else:
                 self.optimizer_G = torch.optim.Adam(self.netG.parameters(),
                                                     lr=opt.lr, betas=(opt.beta1, 0.999))
@@ -137,7 +134,8 @@ class ShiftNetModel(BaseModel):
             self.mask_global = self.create_random_mask().type_as(self.mask_global).view_as(self.mask_global)
         else:
             raise ValueError("Mask_type [%s] not recognized." % self.opt.mask_type)
-        # Add 
+        
+        # For masking inputs with offline random masks.
         if not self.opt.isTrain and self.opt.offline_testing:
             self.mask_global = Image.open(os.path.join('masks', os.path.splitext(os.path.basename(self.image_paths[0]))[0]+'_mask.png'))
             self.mask_global = transforms.ToTensor()(self.mask_global).unsqueeze(0).type_as(real_A).byte()
@@ -291,7 +289,7 @@ class ShiftNetModel(BaseModel):
             mask_patch_real = self.real_B[:, :, self.rand_t:self.rand_t+self.opt.fineSize//2-2*self.opt.overlap, \
                                         self.rand_l:self.rand_l+self.opt.fineSize//2-2*self.opt.overlap]
             # Using Discounting L1 loss
-            self.loss_G_L1_m += self.criterionL1_mask(mask_patch_fake, mask_patch_real)*self.opt.mask_weight
+            self.loss_G_L1_m += self.criterionL1_mask(mask_patch_fake, mask_patch_real)*self.opt.mask_weight_G
 
         if self.wgan_gp:
             self.loss_G = self.loss_G_L1 + self.loss_G_L1_m - self.loss_G_GAN * self.opt.gan_weight
@@ -310,15 +308,11 @@ class ShiftNetModel(BaseModel):
 
     def optimize_parameters(self):
         self.forward()
-        # for other type of GAN, ncritic = 1.
-        if not self.wgan_gp:
-            self.ncritic = 1
         # update D
         self.set_requires_grad(self.netD, True)
-        for i in range(self.ncritic):
-            self.optimizer_D.zero_grad()
-            self.backward_D()
-            self.optimizer_D.step()
+        self.optimizer_D.zero_grad()
+        self.backward_D()
+        self.optimizer_D.step()
 
         # update G
         self.set_requires_grad(self.netD, False)

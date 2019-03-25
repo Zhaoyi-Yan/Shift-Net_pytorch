@@ -44,7 +44,6 @@ if __name__ == "__main__":
                 if opt.show_flow:
                     model.set_flow_src()
                     model.set_show_map_false()
-                visuals = model.get_current_visuals()
                 visualizer.display_current_results(model.get_current_visuals(), epoch, save_result)
 
             if total_steps % opt.print_freq == 0:
