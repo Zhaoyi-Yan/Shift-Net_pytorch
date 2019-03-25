@@ -7,7 +7,7 @@
 # Shift-Net_pytorch
 This repositity is our Pytorch implementation for Shift-Net, it is just for those who are interesting in our work and want to get a skeleton Pytorch implemention. The original code is https://github.com/Zhaoyi-Yan/Shift-Net.
 
-# Why no pretrain modes ?
+# Why no pretrain models ?
 It is because the code is still in active development, making pretrained models broken from time to time.
 
 Just pull the latest code and train following the instructions.

@@ -21,8 +21,8 @@ class BaseOptions():
                                                                 res_unet_shift_triple|soft_unet_shift_triple|patch_soft_unet_shift_triple|res_patch_soft_unet_shift_triple]')
         parser.add_argument('--model', type=str, default='shiftnet', \
                                  help='chooses which model to use. [shiftnet|res_shiftnet|soft_shiftnet|patch_soft_shiftnet|res_patch_soft_shiftnet|test]')
-        parser.add_argument('--triple_weight', type=float, default=1, help='The weight on the gradient of skip connections from the gradient of swapped')
-        parser.add_argument('--name', type=str, default='', help='name of the experiment. It decides where to store samples and models')
+        parser.add_argument('--triple_weight', type=float, default=1, help='The weight on the gradient of skip connections from the gradient of shifted')
+        parser.add_argument('--name', type=str, default='exp', help='name of the experiment. It decides where to store samples and models')
         parser.add_argument('--n_layers_D', type=int, default=3, help='only used if which_model_netD==n_layers')
         parser.add_argument('--gpu_ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2')
         parser.add_argument('--dataset_mode', type=str, default='aligned', help='chooses how datasets are loaded. [aligned | aligned_resized | single]')
