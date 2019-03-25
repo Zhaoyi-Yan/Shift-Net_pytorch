@@ -57,9 +57,6 @@ For training random mask, you need to train the model by setting
 `mask_type='random'` and also `mask_sub_type='rect'` or `mask_sub_type='island'`.
 
 
-
-
-
 For `navie shift-net`:
 ```bash
 python train.py --which_model_netG='unet_shift_triple' --model='shiftnet' --shift_sz=1 --maskA_thred=1
@@ -109,17 +106,6 @@ Make sure that you should keep the same setting with that you train the model wh
 It generates masks with the names by adding a suffix of `_mask.png` to corresponding names of testing images.
 Then set `offline_testing=1` when testing, the program will read corresponding masks when testing.
 
-If you find this work useful, please cite:
-```
-@InProceedings{Yan_2018_Shift,
-author = {Yan, Zhaoyi and Li, Xiaoming and Li, Mu and Zuo, Wangmeng and Shan, Shiguang},
-title = {Shift-Net: Image Inpainting via Deep Feature Rearrangement},
-booktitle = {The European Conference on Computer Vision (ECCV)},
-month = {September},
-year = {2018}
-}
-```
-
 ## Performance degrades when batchsize > 1
 -^_^, I trying to solve it...
 A very strange thing is that if the `batchSize>1`, then the performance degrades.
@@ -147,6 +133,18 @@ If you find it a little hard to read the code, you may read [Guides](https://git
 - [ ] Add composit L1 loss between mask loss and non-mask loss
 - [ ] Finish optimizing soft-shift
 - [ ] Evaluate imagenet pre-trained models as discriminator
+
+## Citation
+If you find this work useful or gives you some insights, please cite:
+```
+@InProceedings{Yan_2018_Shift,
+author = {Yan, Zhaoyi and Li, Xiaoming and Li, Mu and Zuo, Wangmeng and Shan, Shiguang},
+title = {Shift-Net: Image Inpainting via Deep Feature Rearrangement},
+booktitle = {The European Conference on Computer Vision (ECCV)},
+month = {September},
+year = {2018}
+}
+```
 
 ## Acknowledgments
 We benefit a lot from [pytorch-CycleGAN-and-pix2pix](https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix)
