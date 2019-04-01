@@ -102,7 +102,8 @@ The test results will be saved to a html file here: `./results/`.
 
 ### Testing models on given masks
 You should firstly generate masks by running `generate_masks.py`, we assume that only `mask_type=random`, then it makes sense to generate masks by yourself.
-Make sure that you should keep the same setting with that you train the model when generating masks.
+Make sure that you should **keep the same setting with what you train the model** when generating masks.
+It means that you when you train the model with `mask_type='random'` and `mask_sub_type='island'`, then keep the same setting when generating masks using this `generate_masks.py`.
 It generates masks with the names by adding a suffix of `_mask.png` to corresponding names of testing images.
 Then set `offline_testing=1` when testing, the program will read corresponding masks when testing.
 
