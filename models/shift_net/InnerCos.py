@@ -41,4 +41,5 @@ class InnerCos(nn.Module):
         skip_str = 'True' if not self.skip else 'False'
         return self.__class__.__name__+ '(' \
               + 'skip: ' + skip_str \
+              + 'layer ' + str(self.layer_to_last) + ' to last' \
               + ' ,strength: ' + str(self.strength) + ')'
