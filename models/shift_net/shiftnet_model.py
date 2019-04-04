@@ -34,7 +34,7 @@ class ShiftNetModel(BaseModel):
         self.opt = opt
         self.isTrain = opt.isTrain
         # specify the training losses you want to print out. The program will call base_model.get_current_losses
-        self.loss_names = ['G_GAN', 'G_L1', 'D', 'style', 'content']
+        self.loss_names = ['G_GAN', 'G_L1', 'D']
         # specify the images you want to save/display. The program will call base_model.get_current_visuals
         if self.opt.show_flow:
             self.visual_names = ['real_A', 'fake_B', 'real_B', 'flow_srcs']
@@ -79,10 +79,6 @@ class ShiftNetModel(BaseModel):
 
         self.netG, self.ng_innerCos_list, self.ng_shift_list = networks.define_G(input_nc, opt.output_nc, opt.ngf,
                                       opt.which_model_netG, opt, self.mask_global, opt.norm, opt.use_spectral_norm_G, opt.init_type, self.gpu_ids, opt.init_gain) # add opt, we need opt.shift_sz and other stuffs
-        
-        # add style extractor(not competible for multi-gpu)
-        self.vgg16_extractor = util.VGG16FeatureExtractor().to(self.gpu_ids[0])
-        self.vgg16_extractor = torch.nn.DataParallel(self.vgg16_extractor, self.gpu_ids)
 
         if self.isTrain:
             use_sigmoid = False
@@ -311,21 +307,6 @@ class ShiftNetModel(BaseModel):
             for gl in self.ng_innerCos_list:
                 self.ng_loss_value += gl.loss
             self.loss_G += self.ng_loss_value
-
-        # Finally, add style loss
-        vgg_ft_fakeB = self.vgg16_extractor(fake_B)
-        vgg_ft_realB = self.vgg16_extractor(real_B)
-        self.loss_style = 0
-        self.loss_content = 0
-
-        for i in range(3):
-            self.loss_style += self.criterionL2_style_loss(util.gram_matrix(vgg_ft_fakeB[i]), util.gram_matrix(vgg_ft_realB[i]))
-            self.loss_content += self.criterionL2_content_loss(vgg_ft_fakeB[i], vgg_ft_realB[i])
-
-        self.loss_style *= self.opt.style_weight
-        self.loss_content *= self.opt.content_weight
-
-        self.loss_G += (self.loss_style + self.loss_content)
 
         self.loss_G.backward()
 
