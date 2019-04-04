@@ -10,6 +10,7 @@ results/
 log/
 logs/
 *.swp
+*.pth
 *.pyc
 .idea/
 *-checkpoint.py
