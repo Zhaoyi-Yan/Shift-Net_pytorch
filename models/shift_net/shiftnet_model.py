@@ -95,8 +95,6 @@ class ShiftNetModel(BaseModel):
             self.criterionGAN = networks.GANLoss(gan_type=opt.gan_type).to(self.device)
             self.criterionL1 = torch.nn.L1Loss()
             self.criterionL1_mask = networks.Discounted_L1(opt).to(self.device) # make weights/buffers transfer to the correct device
-            self.criterionL2_style_loss = torch.nn.MSELoss()
-            self.criterionL2_content_loss = torch.nn.MSELoss()
 
             # initialize optimizers
             self.schedulers = []
