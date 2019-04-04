@@ -10,6 +10,7 @@ import collections
 import math
 import torch.nn as nn
 import torch.nn.functional as F
+from torchvision import models
 from skimage.transform import resize
 
 def create_masks(opt, N=10):
@@ -456,47 +457,43 @@ def make_color_wheel():
     colorwheel[col:col+MR, 0] = 255
     return colorwheel
 
-class Discounted_L1(nn.Module):
-    def __init__(self, opt):
-        super(Discounted_L1, self).__init__()
-        # Register discounting template as a buffer
-        self.register_buffer('discounting_mask', torch.tensor(spatial_discounting_mask(opt.fineSize//2 - opt.overlap * 2, opt.fineSize//2 - opt.overlap * 2, 0.9, opt.discounting)))
-        self.L1 = nn.L1Loss()
+################# Style loss #########################
+######################################################
+class VGG16FeatureExtractor(nn.Module):
+    def __init__(self):
+        super(VGG16FeatureExtractor, self).__init__()
+        vgg16 = models.vgg16(pretrained=True)
 
-    def forward(self, input, target):
-        self._assert_no_grad(target)
-        input_tmp = input * self.discounting_mask
-        target_tmp = target * self.discounting_mask
-        return self.L1(input_tmp, target_tmp)
+        self.enc_1 = nn.Sequential(*vgg16.features[:5])
+        self.enc_2 = nn.Sequential(*vgg16.features[5:10])
+        self.enc_3 = nn.Sequential(*vgg16.features[10:17])
 
+        # print(self.enc_1)
+        # print(self.enc_2)
+        # print(self.enc_3)
 
-    def _assert_no_grad(self, variable):
-        assert not variable.requires_grad, \
-        "nn criterions don't compute the gradient w.r.t. targets - please " \
-        "mark these variables as volatile or not requiring gradients"
+        # fix the encoder
+        for i in range(3):
+            for param in getattr(self, 'enc_{:d}'.format(i + 1)).parameters():
+                param.requires_grad = False
 
+    def forward(self, image):
 
-def spatial_discounting_mask(mask_width, mask_height, discounting_gamma, discounting=1):
-    """Generate spatial discounting mask constant.
-    Spatial discounting mask is first introduced in publication:
-        Generative Image Inpainting with Contextual Attention, Yu et al.
-    Returns:
-        tf.Tensor: spatial discounting mask
-    """
-    gamma = discounting_gamma
-    shape = [1, 1, mask_width, mask_height]
-    if discounting:
-        print('Use spatial discounting l1 loss.')
-        mask_values = np.ones((mask_width, mask_height), dtype='float32')
-        for i in range(mask_width):
-            for j in range(mask_height):
-                mask_values[i, j] = max(
-                    gamma**min(i, mask_width-i),
-                    gamma**min(j, mask_height-j))
-        mask_values = np.expand_dims(mask_values, 0)
-        mask_values = np.expand_dims(mask_values, 1)
-        mask_values = mask_values
-    else:
-        mask_values = np.ones(shape, dtype='float32')
+        results = [image]
+        for i in range(3):
+            func = getattr(self, 'enc_{:d}'.format(i + 1))
+            results.append(func(results[-1]))
+        return results[1:]
 
-    return mask_values 
+def total_variation_loss(image):
+    # shift one pixel and get difference (for both x and y direction)
+    loss = torch.mean(torch.abs(image[:, :, :, :-1] - image[:, :, :, 1:])) + \
+            torch.mean(torch.abs(image[:, :, :-1, :] - image[:, :, 1:, :]))
+    return loss
+
+def gram_matrix(feat):
+    (batch, ch, h, w) = feat.size()
+    feat = feat.view(batch, ch, h*w)
+    feat_t = feat.transpose(1, 2)
+    gram = torch.bmm(feat, feat_t) / (ch * h * w)
+    return gram

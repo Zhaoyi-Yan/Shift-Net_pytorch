@@ -1,6 +1,7 @@
 #-*-coding:utf-8-*-
 from torch.nn import init
 from torch.optim import lr_scheduler
+from torchvision import models
 
 
 from .modules import *
