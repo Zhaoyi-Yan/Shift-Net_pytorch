@@ -299,13 +299,6 @@ class ShiftNetModel(BaseModel):
             self.loss_G = self.loss_G_L1 + self.loss_G_L1_m + self.loss_G_GAN
 
 
-        # Third add additional netG contraint loss!
-        self.ng_loss_value = 0
-        if not self.opt.skip:
-            for gl in self.ng_innerCos_list:
-                self.ng_loss_value += gl.loss
-            self.loss_G += self.ng_loss_value
-
         self.loss_G.backward()
 
     def optimize_parameters(self):
