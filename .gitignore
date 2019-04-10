@@ -5,6 +5,7 @@
 datasets/
 checkpoints/
 output/
+pretrained_models/
 results/
 .vscode/
 log/
