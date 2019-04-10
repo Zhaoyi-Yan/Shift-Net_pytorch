@@ -77,6 +77,8 @@ class PartialConv(nn.Module):
 			param.requires_grad = False
 
 	def forward(self, input, mask):
+		with torch.no_grad():
+			output_mask = self.mask_conv(mask)
 
 		output = self.input_conv(input * mask)
 		if self.input_conv.bias is not None:
@@ -84,9 +86,6 @@ class PartialConv(nn.Module):
 				output)
 		else:
 			output_bias = torch.zeros_like(output)
-
-		with torch.no_grad():
-			output_mask = self.mask_conv(mask)
 
 		no_update_holes = output_mask == 0
 		mask_sum = output_mask.masked_fill_(no_update_holes, 1.0)
