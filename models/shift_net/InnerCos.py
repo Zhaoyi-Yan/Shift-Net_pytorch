@@ -19,13 +19,11 @@ class InnerCos(nn.Module):
     def set_mask(self, mask_global):
         mask = util.cal_feat_mask(mask_global, self.layer_to_last)
         self.mask = mask.squeeze()
-        if torch.cuda.is_available:
-            self.mask = self.mask.float().cuda()
+        self.mask = self.mask.float()
 
     def forward(self, in_data):
         self.bs, self.c, _, _ = in_data.size()
-        if torch.cuda.is_available:
-            self.mask = self.mask.cuda()
+        self.mask = self.mask.to(in_data)
         if not self.skip:
             # It works like this:
             # Each iteration contains 2 forward, In the first forward, we input GT, just to get the target.

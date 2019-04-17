@@ -20,9 +20,7 @@ class InnerShiftTripleFunction(torch.autograd.Function):
         ctx.bz, c_real, ctx.h, ctx.w = input.size()
         c = c_real
 
-        ctx.Tensor = torch.cuda.FloatTensor if torch.cuda.is_available else torch.FloatTensor
-
-        ctx.ind_lst = ctx.Tensor(ctx.bz, ctx.h * ctx.w, ctx.h * ctx.w).zero_()
+        ctx.ind_lst = torch.Tensor(ctx.bz, ctx.h * ctx.w, ctx.h * ctx.w).zero_().to(input)
 
         # former and latter are all tensors
         former_all = input.narrow(1, 0, c//2) ### decoder feature
@@ -31,8 +29,7 @@ class InnerShiftTripleFunction(torch.autograd.Function):
 
         assert mask.dim() == 2, "Mask dimension must be 2"
 
-        if torch.cuda.is_available:
-            ctx.flag = ctx.flag.cuda()
+        ctx.flag = ctx.flag.to(input).long()
 
         # None batch version
         Nonparm = Modified_NonparametricShift()
