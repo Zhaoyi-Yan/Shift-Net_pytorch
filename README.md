@@ -4,13 +4,10 @@
 # Shift layer
 <img src="shift_layer.png" width="800"/> 
 
-# Shift-Net_pytorch
-This repositity is our Pytorch implementation for Shift-Net, it is just for those who are interesting in our work and want to get a skeleton Pytorch implemention. The original code is https://github.com/Zhaoyi-Yan/Shift-Net.
-
 # Why no pretrain models ?
 It is because the code is still in active development, making pretrained models broken from time to time.
 
-Just pull the latest code and train following the instructions.
+Just pull the latest code and train by following the instructions.
 
 ## Prerequisites
 - Linux or Windows.
@@ -22,6 +19,7 @@ Just pull the latest code and train following the instructions.
 ### Installation
 - Install PyTorch and dependencies from http://pytorch.org/
 - Install python libraries [visdom](https://github.com/facebookresearch/visdom) and [dominate](https://github.com/Knio/dominate).
+
 ```bash
 pip install visdom
 pip install dominate
@@ -59,19 +57,19 @@ For training random mask, you need to train the model by setting
 
 For `navie shift-net`:
 ```bash
-python train.py --which_model_netG='unet_shift_triple' --model='shiftnet' --shift_sz=1 --maskA_thred=1
+python train.py --which_model_netG='unet_shift_triple' --model='shiftnet' --shift_sz=1 --mask_thred=1
 ```
 
 **These 4 models are just experimental**
 
 For `res navie shift-net`:
 ```bash
-python train.py --which_model_netG='res_unet_shift_triple' --model='res_shiftnet' --shift_sz=1 --maskA_thred=1
+python train.py --which_model_netG='res_unet_shift_triple' --model='res_shiftnet' --shift_sz=1 --mask_thred=1
 ```
 
 For `pixel soft shift-net`:
 ```bash
-python train.py --which_model_netG='soft_unet_shift_triple' --model='soft_shiftnet' --shift_sz=1 --maskA_thred=1
+python train.py --which_model_netG='soft_unet_shift_triple' --model='soft_shiftnet' --shift_sz=1 --mask_thred=1
 ```
 
 For `patch soft shift-net`:
@@ -127,13 +125,11 @@ If you find it a little hard to read the code, you may read [Guides](https://git
 - [x] Directly resize the global_mask to get the mask in feature space.
 - [x] Visualization of flow. It is still experimental now.
 - [x] Extensions of Shift-Net. Still active in absorbing new features.
+- [x] Fix bug in guidance loss when adopting it in multi-gpu.
+- [x] Add composit L1 loss between mask loss and non-mask loss
+- [x] Finish optimizing soft-shift
 - [ ] Fix performance degradance when batchsize is larger than 1.
-- [ ] Fix bug in guidance loss when adopting it in multi-gpu.
 - [ ] Add random batch of masks
-- [ ] Add soft transition from centered mask to random ones
-- [ ] Add composit L1 loss between mask loss and non-mask loss
-- [ ] Finish optimizing soft-shift
-- [ ] Evaluate imagenet pre-trained models as discriminator
 
 ## Citation
 If you find this work useful or gives you some insights, please cite:
