@@ -134,6 +134,245 @@ class UnetSkipConnectionShiftBlock(nn.Module):
                 x_latter = F.interpolate(x_latter, (h, w), mode='bilinear')
             return torch.cat([x_latter, x], 1)  # cat in the C channel
 
+
+################################### ***************************  #####################################
+###################################      UNet dilated shift_net  #####################################
+################################### ***************************  #####################################
+'''
+Add 4 layers of dilated convs to replace the inner 4 unet architecture.
+'''
+# Defines the Unet generator.
+# |num_downs|: number of downsamplings in UNet. For example,
+# if |num_downs| == 7, image of size 128x128 will become of size 1x1
+# at the bottleneck
+class UnetDilatedGeneratorShiftTriple_1(nn.Module):
+    def __init__(self, input_nc, output_nc, innerCos_list, shift_list, mask_global, opt, ngf=64,
+                norm_layer=nn.BatchNorm2d, use_spectral_norm=False):
+        super(UnetDilatedGeneratorShiftTriple_1, self).__init__()
+
+        # Encoder layers
+        self.e1_c = spectral_norm(nn.Conv2d(input_nc, ngf, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+
+        self.e2_c = spectral_norm(nn.Conv2d(ngf, ngf*2, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        # stay for one stage
+        self.e2_cc = spectral_norm(nn.Conv2d(ngf*2, ngf*2, kernel_size=3, stride=1, padding=1), use_spectral_norm)
+        self.e2_norm1 = norm_layer(ngf*2)
+        self.e2_norm2 = norm_layer(ngf*2)
+
+        self.e3_c = spectral_norm(nn.Conv2d(ngf*2, ngf*4, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        # stay for one stage
+        self.e3_cc = spectral_norm(nn.Conv2d(ngf*4, ngf*4, kernel_size=3, stride=1, padding=1), use_spectral_norm)
+        self.e3_norm1 = norm_layer(ngf*4)
+        self.e3_norm2 = norm_layer(ngf*4)
+
+        self.e4_c = spectral_norm(nn.Conv2d(ngf*4, ngf*8, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        # stay for two stages
+        self.e4_cc1 = spectral_norm(nn.Conv2d(ngf*8, ngf*8, kernel_size=3, stride=1, padding=1), use_spectral_norm)
+        self.e4_cc2 = spectral_norm(nn.Conv2d(ngf*8, ngf*8, kernel_size=3, stride=1, padding=1), use_spectral_norm)
+        self.e4_norm1 = norm_layer(ngf*8)
+        self.e4_norm2 = norm_layer(ngf*8)
+        self.e4_norm3 = norm_layer(ngf*8)
+
+        # Dilated blocks
+        self.dt1 = spectral_norm(nn.Conv2d(ngf*8, ngf*8, kernel_size=3, stride=1, padding=2, dilation=2), use_spectral_norm)
+        self.dt2 = spectral_norm(nn.Conv2d(ngf*8, ngf*8, kernel_size=3, stride=1, padding=4, dilation=4), use_spectral_norm)
+        self.dt3 = spectral_norm(nn.Conv2d(ngf*8, ngf*8, kernel_size=3, stride=1, padding=8, dilation=8), use_spectral_norm)
+        self.dt4 = spectral_norm(nn.Conv2d(ngf*8, ngf*8, kernel_size=3, stride=1, padding=16, dilation=16), use_spectral_norm)
+        self.dt1_norm = norm_layer(ngf*8)
+        self.dt2_norm = norm_layer(ngf*8)
+        self.dt3_norm = norm_layer(ngf*8)
+        self.dt4_norm = norm_layer(ngf*8)
+
+        # Then stay for another two stages
+        self.e5_c = spectral_norm(nn.Conv2d(ngf*8, ngf*8, kernel_size=3, stride=1, padding=1), use_spectral_norm)
+        self.e5_cc = spectral_norm(nn.Conv2d(ngf*8, ngf*8, kernel_size=3, stride=1, padding=1), use_spectral_norm)
+        self.e5_norm1 = norm_layer(ngf*8)
+        self.e5_norm2 = norm_layer(ngf*8)
+
+        # decoder
+        self.d5_dc = spectral_norm(nn.ConvTranspose2d(ngf*8*2, ngf*4, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        self.d5_dcc = spectral_norm(nn.Conv2d(ngf*4, ngf*4, kernel_size=3, stride=1, padding=1), use_spectral_norm)
+        self.d5_norm1 = norm_layer(ngf*4)
+        self.d5_norm2 = norm_layer(ngf*4)
+
+        self.d6_dc = spectral_norm(nn.ConvTranspose2d(ngf*4*3, ngf*2, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        self.d6_dcc = spectral_norm(nn.Conv2d(ngf*2, ngf*2, kernel_size=3, stride=1, padding=1), use_spectral_norm)
+        self.d6_norm1 = norm_layer(ngf*2)
+        self.d6_norm2 = norm_layer(ngf*2)
+
+        self.d7_dc = spectral_norm(nn.ConvTranspose2d(ngf*2*2, ngf, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        self.d7_dcc = spectral_norm(nn.Conv2d(ngf, ngf, kernel_size=3, stride=1, padding=1), use_spectral_norm)
+        self.d7_norm1 = norm_layer(ngf)
+        self.d7_norm2 = norm_layer(ngf)
+
+        self.d8_dc = spectral_norm(nn.ConvTranspose2d(ngf*2, output_nc, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+
+        # construct shift and innerCos
+        self.shift = InnerShiftTriple(opt.shift_sz, opt.stride, opt.mask_thred,
+                                            opt.triple_weight, layer_to_last=3)
+        self.shift.set_mask(mask_global)
+        shift_list.append(self.shift)
+
+        self.innerCos = InnerCos(strength=opt.strength, skip=opt.skip, layer_to_last=3)
+        self.innerCos.set_mask(mask_global)  # Here we need to set mask for innerCos layer too.
+        innerCos_list.append(self.innerCos)
+
+    # In this case, we have very flexible unet construction mode.
+    def forward(self, input):
+        # Encoder
+        # No norm on the first layer
+        e1 = self.e1_c(input)
+        e2_1 = self.e2_norm1(self.e2_c(F.leaky_relu_(e1, negative_slope=0.2)))
+        e2_2 = self.e2_norm2(self.e2_cc(F.leaky_relu_(e2_1, negative_slope=0.2)))
+
+        e3_1 = self.e3_norm1(self.e3_c(F.leaky_relu_(e2_2, negative_slope=0.2)))
+        e3_2 = self.e3_norm2(self.e3_cc(F.leaky_relu_(e3_1, negative_slope=0.2)))
+
+        e4_1 = self.e4_norm1(self.e4_c(F.leaky_relu_(e3_2, negative_slope=0.2)))
+        e4_2 = self.e4_norm2(self.e4_cc1(F.leaky_relu_(e4_1, negative_slope=0.2)))
+        e4_3 = self.e4_norm3(self.e4_cc2(F.leaky_relu_(e4_2, negative_slope=0.2)))
+        # dilated convs
+        dt1 = self.dt1_norm(self.dt1(F.leaky_relu_(e4_3, negative_slope=0.2)))
+        dt2 = self.dt2_norm(self.dt2(F.leaky_relu_(dt1, negative_slope=0.2)))
+        dt3 = self.dt3_norm(self.dt3(F.leaky_relu_(dt2, negative_slope=0.2)))
+        dt4 = self.dt4_norm(self.dt4(F.leaky_relu_(dt3, negative_slope=0.2)))
+
+        e5_1 = self.e5_norm1(self.e5_c(F.leaky_relu_(dt4, negative_slope=0.2)))
+        e5_2 = self.e5_norm2(self.e5_cc(F.leaky_relu_(e5_1, negative_slope=0.2)))
+
+        # Decoder
+        d5_1 = self.d5_norm1(self.d5_dc(F.relu_(torch.cat([e5_2, e4_3], dim=1))))
+        d5_2 = self.d5_norm2(self.d5_dcc(F.relu_(d5_1)))
+        d6_1 = self.d6_norm1(self.d6_dc(self.shift(self.innerCos(F.relu_(torch.cat([d5_2, e3_2], dim=1))))))
+        d6_2 = self.d6_norm2(self.d6_dcc(F.relu_(d6_1)))
+        d7_1 = self.d7_norm1(self.d7_dc(F.relu_(torch.cat([d6_2, e2_2], dim=1))))
+        d7_2 = self.d7_norm2(self.d7_dcc(F.relu_(d7_1)))
+        # No norm on the last layer
+        d8 = self.d8_dc(F.relu_(torch.cat([d7_2, e1], 1)))
+
+        d8 = torch.tanh(d8)
+
+        return d8
+
+################################### ***************************  #####################################
+###################################      UNet dilated shift_net  #####################################
+################################### ***************************  #####################################
+'''
+Add 3 layers of dilated convs to replace the inner 4 unet architecture.
+'''
+# Defines the Unet generator.
+# |num_downs|: number of downsamplings in UNet. For example,
+# if |num_downs| == 7, image of size 128x128 will become of size 1x1
+# at the bottleneck
+class UnetDilatedGeneratorShiftTriple_2(nn.Module):
+    def __init__(self, input_nc, output_nc, innerCos_list, shift_list, mask_global, opt, ngf=64,
+                norm_layer=nn.BatchNorm2d, use_spectral_norm=False):
+        super(UnetDilatedGeneratorShiftTriple_2, self).__init__()
+
+        # Encoder layers
+        self.e1_c = spectral_norm(nn.Conv2d(input_nc, ngf, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+
+        self.e2_c = spectral_norm(nn.Conv2d(ngf, ngf*2, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        # stay for one stage
+        self.e2_cc = spectral_norm(nn.Conv2d(ngf*2, ngf*2, kernel_size=3, stride=1, padding=1), use_spectral_norm)
+        self.e2_norm1 = norm_layer(ngf*2)
+        self.e2_norm2 = norm_layer(ngf*2)
+
+        self.e3_c = spectral_norm(nn.Conv2d(ngf*2, ngf*4, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        # stay for one stage
+        self.e3_cc = spectral_norm(nn.Conv2d(ngf*4, ngf*4, kernel_size=3, stride=1, padding=1), use_spectral_norm)
+        self.e3_norm1 = norm_layer(ngf*4)
+        self.e3_norm2 = norm_layer(ngf*4)
+
+        self.e4_c = spectral_norm(nn.Conv2d(ngf*4, ngf*8, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        # stay for two stages
+        self.e4_cc1 = spectral_norm(nn.Conv2d(ngf*8, ngf*8, kernel_size=3, stride=1, padding=1), use_spectral_norm)
+        self.e4_cc2 = spectral_norm(nn.Conv2d(ngf*8, ngf*8, kernel_size=3, stride=1, padding=1), use_spectral_norm)
+        self.e4_norm1 = norm_layer(ngf*8)
+        self.e4_norm2 = norm_layer(ngf*8)
+        self.e4_norm3 = norm_layer(ngf*8)
+
+        # Dilated blocks
+        self.dt1 = spectral_norm(nn.Conv2d(ngf*8, ngf*8, kernel_size=3, stride=1, padding=2, dilation=2), use_spectral_norm)
+        self.dt2 = spectral_norm(nn.Conv2d(ngf*8, ngf*8, kernel_size=3, stride=1, padding=4, dilation=4), use_spectral_norm)
+        self.dt3 = spectral_norm(nn.Conv2d(ngf*8, ngf*8, kernel_size=3, stride=1, padding=8, dilation=8), use_spectral_norm)
+        # self.dt4 = spectral_norm(nn.Conv2d(ngf*8, ngf*8, kernel_size=3, stride=1, padding=16, dilation=16), use_spectral_norm)
+        self.dt1_norm = norm_layer(ngf*8)
+        self.dt2_norm = norm_layer(ngf*8)
+        self.dt3_norm = norm_layer(ngf*8)
+        # self.dt4_norm = norm_layer(ngf*8)
+
+        # Then stay for another two stages
+        self.e5_c = spectral_norm(nn.Conv2d(ngf*8, ngf*8, kernel_size=3, stride=1, padding=1), use_spectral_norm)
+        self.e5_cc = spectral_norm(nn.Conv2d(ngf*8, ngf*8, kernel_size=3, stride=1, padding=1), use_spectral_norm)
+        self.e5_norm1 = norm_layer(ngf*8)
+        self.e5_norm2 = norm_layer(ngf*8)
+
+        # decoder
+        self.d5_dc = spectral_norm(nn.ConvTranspose2d(ngf*8*2, ngf*4, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        self.d5_dcc = spectral_norm(nn.Conv2d(ngf*4, ngf*4, kernel_size=3, stride=1, padding=1), use_spectral_norm)
+        self.d5_norm1 = norm_layer(ngf*4)
+        self.d5_norm2 = norm_layer(ngf*4)
+
+        self.d6_dc = spectral_norm(nn.ConvTranspose2d(ngf*4*3, ngf*2, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        self.d6_dcc = spectral_norm(nn.Conv2d(ngf*2, ngf*2, kernel_size=3, stride=1, padding=1), use_spectral_norm)
+        self.d6_norm1 = norm_layer(ngf*2)
+        self.d6_norm2 = norm_layer(ngf*2)
+
+        self.d7_dc = spectral_norm(nn.ConvTranspose2d(ngf*2*2, ngf, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        self.d7_dcc = spectral_norm(nn.Conv2d(ngf, ngf, kernel_size=3, stride=1, padding=1), use_spectral_norm)
+        self.d7_norm1 = norm_layer(ngf)
+        self.d7_norm2 = norm_layer(ngf)
+
+        self.d8_dc = spectral_norm(nn.ConvTranspose2d(ngf*2, output_nc, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+
+        # construct shift and innerCos
+        self.shift = InnerShiftTriple(opt.shift_sz, opt.stride, opt.mask_thred,
+                                            opt.triple_weight, layer_to_last=3)
+        self.shift.set_mask(mask_global)
+        shift_list.append(self.shift)
+
+        self.innerCos = InnerCos(strength=opt.strength, skip=opt.skip, layer_to_last=3)
+        self.innerCos.set_mask(mask_global)  # Here we need to set mask for innerCos layer too.
+        innerCos_list.append(self.innerCos)
+
+    # In this case, we have very flexible unet construction mode.
+    def forward(self, input):
+        # Encoder
+        # No norm on the first layer
+        e1 = self.e1_c(input)
+        e2_1 = self.e2_norm1(self.e2_c(F.leaky_relu_(e1, negative_slope=0.2)))
+        e2_2 = self.e2_norm2(self.e2_cc(F.leaky_relu_(e2_1, negative_slope=0.2)))
+
+        e3_1 = self.e3_norm1(self.e3_c(F.leaky_relu_(e2_2, negative_slope=0.2)))
+        e3_2 = self.e3_norm2(self.e3_cc(F.leaky_relu_(e3_1, negative_slope=0.2)))
+
+        e4_1 = self.e4_norm1(self.e4_c(F.leaky_relu_(e3_2, negative_slope=0.2)))
+        e4_2 = self.e4_norm2(self.e4_cc1(F.leaky_relu_(e4_1, negative_slope=0.2)))
+        e4_3 = self.e4_norm3(self.e4_cc2(F.leaky_relu_(e4_2, negative_slope=0.2)))
+        # dilated convs
+        dt1 = self.dt1_norm(self.dt1(F.leaky_relu_(e4_3, negative_slope=0.2)))
+        dt2 = self.dt2_norm(self.dt2(F.leaky_relu_(dt1, negative_slope=0.2)))
+        dt3 = self.dt3_norm(self.dt3(F.leaky_relu_(dt2, negative_slope=0.2)))
+        # dt4 = self.dt4_norm(self.dt4(F.leaky_relu_(dt3, negative_slope=0.2)))
+
+        e5_1 = self.e5_norm1(self.e5_c(F.leaky_relu_(dt3, negative_slope=0.2)))
+        e5_2 = self.e5_norm2(self.e5_cc(F.leaky_relu_(e5_1, negative_slope=0.2)))
+
+        # Decoder
+        d5_1 = self.d5_norm1(self.d5_dc(F.relu_(torch.cat([e5_2, e4_3], dim=1))))
+        d5_2 = self.d5_norm2(self.d5_dcc(F.relu_(d5_1)))
+        d6_1 = self.d6_norm1(self.d6_dc(self.shift(self.innerCos(F.relu_(torch.cat([d5_2, e3_2], dim=1))))))
+        d6_2 = self.d6_norm2(self.d6_dcc(F.relu_(d6_1)))
+        d7_1 = self.d7_norm1(self.d7_dc(F.relu_(torch.cat([d6_2, e2_2], dim=1))))
+        d7_2 = self.d7_norm2(self.d7_dcc(F.relu_(d7_1)))
+        # No norm on the last layer
+        d8 = self.d8_dc(F.relu_(torch.cat([d7_2, e1], 1)))
+
+        d8 = torch.tanh(d8)
+
+        return d8
+
 ################################### ***************************  #####################################
 ###################################         Res Shift_net            #####################################
 ################################### ***************************  #####################################

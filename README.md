@@ -1,3 +1,4 @@
+This branch mainly want to replace the inner-5 layers with normal dilated convs.
 # Architecutre
 <img src="architecture.png" width="1000"/> 
 
