@@ -257,7 +257,10 @@ class ShiftNetModel(BaseModel):
             fake_B = self.fake_B[:, :, self.rand_t:self.rand_t+self.opt.fineSize//2-2*self.opt.overlap, \
                                             self.rand_l:self.rand_l+self.opt.fineSize//2-2*self.opt.overlap]
             real_B = self.real_B[:, :, self.rand_t:self.rand_t+self.opt.fineSize//2-2*self.opt.overlap, \
-                                            self.rand_l:self.rand_l+self.opt.fineSize//2-2*self.opt.overlap]                                            
+                                            self.rand_l:self.rand_l+self.opt.fineSize//2-2*self.opt.overlap]
+        else:
+            real_B = self.real_B
+        
         pred_fake = self.netD(fake_B)
 
 
