@@ -37,16 +37,18 @@ class BaseOptions():
         parser.add_argument('--resize_or_crop', type=str, default='resize_and_crop', help='scaling and cropping of images at load time [resize_and_crop|crop|scale_width]')
         parser.add_argument('--no_flip', action='store_true', help='if specified, do not flip the images for data argumentation')
         parser.add_argument('--init_type', type=str, default='normal', help='network initialization [normal|xavier|kaiming|orthogonal]')
+        parser.add_argument('--show_flow', type=int, default=0, help='show the flow information. WARNING: set display_freq a large number as it is quite slow when showing flow')
         parser.add_argument('--verbose', action='store_true', help='if specified, print more debugging information')
-        ## new added
+        ## model specific
         parser.add_argument('--mask_type', type=str, default='center',
                             help='the type of mask you want to apply, \'center\' or \'random\'')
         parser.add_argument('--mask_sub_type', type=str, default='island',
-                            help='the type of mask you want to apply, \'rect \' or \'fractal \ or \'island \'')
+                            help='the type of mask you want to apply, \'rect \' or \'fractal \' or \'island \'')
         parser.add_argument('--lambda_A', type=int, default=100, help='weight on L1 term in objective')
         parser.add_argument('--stride', type=int, default=1, help='should be dense, 1 is a good option.')
         parser.add_argument('--shift_sz', type=int, default=1, help='shift_sz>1 only for \'soft_shift_patch\'.')
         parser.add_argument('--mask_thred', type=int, default=1, help='number to decide whether a patch is masked')
+        parser.add_argument('--overlap', type=int, default=4, help='the overlap for center mask')
         parser.add_argument('--bottleneck', type=int, default=512, help='neurals of fc')
         parser.add_argument('--gp_lambda', type=float, default=10.0, help='gradient penalty coefficient')
         parser.add_argument('--constrain', type=str, default='MSE', help='guidance loss type')
@@ -60,15 +62,13 @@ class BaseOptions():
                                                                             're_s_gan (Relativistic Standard GAN), '
                                                                             're_avg_gan (Relativistic average Standard GAN), ')
         parser.add_argument('--gan_weight', type=float, default=0.2, help='the weight of gan loss')
+        # New added
         parser.add_argument('--mask_weight_G', type=float, default=400.0, help='the weight of mask part in ouput of G, you can try different mask_weight')
         parser.add_argument('--discounting', type=int, default=1, help='the loss type of mask part, whether using discounting l1 loss or normal l1')
         parser.add_argument('--use_spectral_norm_D', type=int, default=1, help='whether to add spectral norm to D, it helps improve results')
         parser.add_argument('--use_spectral_norm_G', type=int, default=0, help='whether to add spectral norm in G. Seems very bad when adding SN to G')
-        parser.add_argument('--overlap', type=int, default=4, help='the overlap for center mask')
-        parser.add_argument('--show_flow', type=int, default=0, help='show the flow information. WARNING: set display_freq a large number as it is quite slow when showing flow')
-
         parser.add_argument('--only_lastest', type=int, default=0,
-                            help='If True, it will save only the lastest weights and the one minimizing the L1 loss')
+                            help='If True, it will save only the lastest weights')
         parser.add_argument('--add_mask2input', type=int, default=1,
                             help='If True, It will add the mask as a fourth dimension over input space')
 
