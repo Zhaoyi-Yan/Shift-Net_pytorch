@@ -15,7 +15,7 @@ class ShiftNetModel(BaseModel):
 
 
     def create_random_mask(self):
-        if self.mask_type == 'random':
+        if self.opt.mask_type == 'random':
             if self.opt.mask_sub_type == 'fractal':
                 mask = util.create_walking_mask()  # create an initial random mask.
 
@@ -56,21 +56,12 @@ class ShiftNetModel(BaseModel):
         self.mask_global[:, :, int(self.opt.fineSize/4) + self.opt.overlap : int(self.opt.fineSize/2) + int(self.opt.fineSize/4) - self.opt.overlap,\
                                 int(self.opt.fineSize/4) + self.opt.overlap: int(self.opt.fineSize/2) + int(self.opt.fineSize/4) - self.opt.overlap] = 1
 
-        self.mask_type = opt.mask_type
-
-        self.wgan_gp = False
-        # added for wgan-gp
-        if opt.gan_type == 'wgan_gp':
-            self.gp_lambda = opt.gp_lambda
-            self.wgan_gp = True
-
-
         if len(opt.gpu_ids) > 0:
             self.use_gpu = True
             self.mask_global = self.mask_global.to(self.device)
 
         # load/define networks
-        # self.ng_innerCos_list is the constraint list in netG inner layers.
+        # self.ng_innerCos_list is the guidance loss list in netG inner layers.
         # self.ng_shift_list is the mask list constructing shift operation.
         if opt.add_mask2input:
             input_nc = opt.input_nc + 1
@@ -78,7 +69,7 @@ class ShiftNetModel(BaseModel):
             input_nc = opt.input_nc
 
         self.netG, self.ng_innerCos_list, self.ng_shift_list = networks.define_G(input_nc, opt.output_nc, opt.ngf,
-                                      opt.which_model_netG, opt, self.mask_global, opt.norm, opt.use_spectral_norm_G, opt.init_type, self.gpu_ids, opt.init_gain) # add opt, we need opt.shift_sz and other stuffs
+                                      opt.which_model_netG, opt, self.mask_global, opt.norm, opt.use_spectral_norm_G, opt.init_type, self.gpu_ids, opt.init_gain)
 
         if self.isTrain:
             # don't use cGAN
@@ -96,7 +87,7 @@ class ShiftNetModel(BaseModel):
             # initialize optimizers
             self.schedulers = []
             self.optimizers = []
-            if self.wgan_gp:
+            if self.opt.gan_type == 'wgan_gp':
                 opt.beta1 = 0
                 self.optimizer_G = torch.optim.Adam(self.netG.parameters(),
                                     lr=opt.lr, betas=(opt.beta1, 0.9))
@@ -208,24 +199,13 @@ class ShiftNetModel(BaseModel):
         self.pred_fake = self.netD(fake_B.detach())
         self.pred_real = self.netD(real_B)
 
-        if self.wgan_gp:
+        if self.opt.gan_type == 'wgan_gp':
+            gradient_penalty, _ = util.cal_gradient_penalty(self.netD, real_B, fake_B.detach(), self.device, constant=1, lambda_gp=self.opt.gp_lambda)
             self.loss_D_fake = torch.mean(self.pred_fake)
-            self.loss_D_real = torch.mean(self.pred_real)
+            self.loss_D_real = -torch.mean(self.pred_real)
 
-            # calculate gradient penalty
-            alpha = torch.rand(real_B.size()).to(self.device)
-            x_hat = alpha * real_B.detach() + (1 - alpha) * fake_B.detach()
-            x_hat.requires_grad_(True)
-            pred_hat = self.netD(x_hat)
-
-            gradients = torch.autograd.grad(outputs=pred_hat, inputs=x_hat, grad_outputs=torch.ones(pred_hat.size()).to(self.device),
-                                create_graph=True, retain_graph=True, only_inputs=True)[0]
-
-            gradient_penalty = self.gp_lambda * ((gradients.view(gradients.size(0), -1).norm(2, 1) - 1) ** 2).mean()
-
-            self.loss_D = self.loss_D_fake - self.loss_D_real + gradient_penalty
+            self.loss_D = self.loss_D_fake + self.loss_D_real + gradient_penalty
         else:
-
             if self.opt.gan_type in ['vanilla', 'lsgan']:
                 self.loss_D_fake = self.criterionGAN(self.pred_fake, False)
                 self.loss_D_real = self.criterionGAN (self.pred_real, True)
@@ -261,8 +241,8 @@ class ShiftNetModel(BaseModel):
         pred_fake = self.netD(fake_B)
 
 
-        if self.wgan_gp:
-            self.loss_G_GAN = torch.mean(pred_fake)
+        if self.opt.gan_type == 'wgan_gp':
+            self.loss_G_GAN = -torch.mean(pred_fake)
         else:
             if self.opt.gan_type in ['vanilla', 'lsgan']:
                 self.loss_G_GAN = self.criterionGAN(pred_fake, True) * self.opt.gan_weight
@@ -292,10 +272,7 @@ class ShiftNetModel(BaseModel):
             # Using Discounting L1 loss
             self.loss_G_L1_m += self.criterionL1_mask(mask_patch_fake, mask_patch_real)*self.opt.mask_weight_G
 
-        if self.wgan_gp:
-            self.loss_G = self.loss_G_L1 + self.loss_G_L1_m - self.loss_G_GAN
-        else:
-            self.loss_G = self.loss_G_L1 + self.loss_G_L1_m + self.loss_G_GAN
+        self.loss_G = self.loss_G_L1 + self.loss_G_L1_m + self.loss_G_GAN
 
 
         self.loss_G.backward()
