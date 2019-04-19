@@ -16,7 +16,7 @@ class GANLoss(nn.Module):
         elif gan_type == 'lsgan':
             self.loss = nn.MSELoss()
         elif gan_type == 'vanilla':
-            self.loss = nn.BCELoss()
+            self.loss = nn.BCEWithLogitsLoss()
         #######################################################################
         ###  Relativistic GAN - https://github.com/AlexiaJM/RelativisticGAN ###
         #######################################################################
@@ -31,16 +31,16 @@ class GANLoss(nn.Module):
         else:
             raise ValueError("GAN type [%s] not recognized." % gan_type)
 
-    def get_target_tensor(self, input, target_is_real):
+    def get_target_tensor(self, prediction, target_is_real):
         if target_is_real:
             target_tensor = self.real_label
         else:
             target_tensor = self.fake_label
-        return target_tensor.expand_as(input)
+        return target_tensor.expand_as(prediction)
 
-    def __call__(self, input, target_is_real):
-        target_tensor = self.get_target_tensor(input, target_is_real)
-        return self.loss(input, target_tensor)
+    def __call__(self, prediction, target_is_real):
+        target_tensor = self.get_target_tensor(prediction, target_is_real)
+        return self.loss(prediction, target_tensor)
 
 ################# Discounting loss #########################
 ######################################################
