@@ -60,8 +60,7 @@ class BaseOptions():
                                                                             'lsgan, '
                                                                             'vanilla, '
                                                                             're_s_gan (Relativistic Standard GAN), '
-                                                                            're_avg_gan (Relativistic average Standard GAN), '
-                                                                            're_avg_hinGan (Relativistic average HingeGAN),  WARNING: wgan_gp should never be used here.')
+                                                                            're_avg_gan (Relativistic average Standard GAN), ')
         parser.add_argument('--gan_weight', type=float, default=0.2, help='the weight of gan loss')
         # New added
         parser.add_argument('--mask_weight_G', type=float, default=400.0, help='the weight of mask part in ouput of G, you can try different mask_weight')

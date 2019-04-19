@@ -71,7 +71,7 @@ class ShiftNetModel(BaseModel):
 
         # load/define networks
         # self.ng_innerCos_list is the constraint list in netG inner layers.
-        # self.ng_mask_list is the mask list constructing shift operation.
+        # self.ng_shift_list is the mask list constructing shift operation.
         if opt.add_mask2input:
             input_nc = opt.input_nc + 1
         else:
@@ -81,13 +81,10 @@ class ShiftNetModel(BaseModel):
                                       opt.which_model_netG, opt, self.mask_global, opt.norm, opt.use_spectral_norm_G, opt.init_type, self.gpu_ids, opt.init_gain) # add opt, we need opt.shift_sz and other stuffs
 
         if self.isTrain:
-            use_sigmoid = False
-            if opt.gan_type == 'vanilla':
-                use_sigmoid = True  # only vanilla GAN using BCECriterion
             # don't use cGAN
             self.netD = networks.define_D(opt.input_nc, opt.ndf,
                                           opt.which_model_netD,
-                                          opt.n_layers_D, opt.norm, use_sigmoid, opt.use_spectral_norm_D, opt.init_type, self.gpu_ids, opt.init_gain)
+                                          opt.n_layers_D, opt.norm, opt.use_spectral_norm_D, opt.init_type, self.gpu_ids, opt.init_gain)
 
         if self.isTrain:
             self.old_lr = opt.lr
@@ -260,7 +257,7 @@ class ShiftNetModel(BaseModel):
                                             self.rand_l:self.rand_l+self.opt.fineSize//2-2*self.opt.overlap]
         else:
             real_B = self.real_B
-        
+
         pred_fake = self.netD(fake_B)
 
 
