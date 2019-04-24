@@ -72,10 +72,13 @@ class ShiftNetModel(BaseModel):
                                       opt.which_model_netG, opt, self.mask_global, opt.norm, opt.use_spectral_norm_G, opt.init_type, self.gpu_ids, opt.init_gain)
 
         if self.isTrain:
+            use_sigmoid = False
+            if opt.gan_type == 'vanilla':
+                use_sigmoid = True  # only vanilla GAN using BCECriterion
             # don't use cGAN
             self.netD = networks.define_D(opt.input_nc, opt.ndf,
                                           opt.which_model_netD,
-                                          opt.n_layers_D, opt.norm, opt.use_spectral_norm_D, opt.init_type, self.gpu_ids, opt.init_gain)
+                                          opt.n_layers_D, opt.norm, use_sigmoid, opt.use_spectral_norm_D, opt.init_type, self.gpu_ids, opt.init_gain)
 
         if self.isTrain:
             self.old_lr = opt.lr

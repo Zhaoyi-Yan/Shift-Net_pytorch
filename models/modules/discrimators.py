@@ -6,7 +6,7 @@ from .modules import *
 ################################### This is for D ###################################
 # Defines the PatchGAN discriminator with the specified arguments.
 class NLayerDiscriminator(nn.Module):
-    def __init__(self, input_nc, ndf=64, n_layers=3, norm_layer=nn.BatchNorm2d, use_spectral_norm=True):
+    def __init__(self, input_nc, ndf=64, n_layers=3, norm_layer=nn.BatchNorm2d, use_sigmoid=False, use_spectral_norm=True):
         super(NLayerDiscriminator, self).__init__()
         if type(norm_layer) == functools.partial:
             use_bias = norm_layer.func == nn.InstanceNorm2d
@@ -42,6 +42,8 @@ class NLayerDiscriminator(nn.Module):
         ]
         sequence += [spectral_norm(nn.Conv2d(ndf * nf_mult, 1, kernel_size=kw, stride=1, padding=padw), use_spectral_norm)]
 
+        if use_sigmoid:
+            sequence += [nn.Sigmoid()]
 
         self.model = nn.Sequential(*sequence)
 
@@ -51,9 +53,15 @@ class NLayerDiscriminator(nn.Module):
 
 # Defines a densetnet inspired discriminator (Should improve its ability to create stronger representation)
 class DenseNetDiscrimator(nn.Module):
-    def __init__(self, input_nc, ndf=64, n_layers=3, norm_layer=nn.BatchNorm2d, use_spectral_norm=True):
+    def __init__(self, input_nc, ndf=64, n_layers=3, norm_layer=nn.BatchNorm2d, use_sigmoid=False, use_spectral_norm=True):
         super(DenseNetDiscrimator, self).__init__()
         self.model = densenet121(pretrained=True, use_spectral_norm=use_spectral_norm)
+        self.use_sigmoid = use_sigmoid
+        if self.use_sigmoid:
+            self.sigmoid = nn.Sigmoid()
 
     def forward(self, input):
-        return self.model(input)
+        if self.use_sigmoid:
+            return self.sigmoid(self.model(input))
+        else:
+            return self.model(input)
