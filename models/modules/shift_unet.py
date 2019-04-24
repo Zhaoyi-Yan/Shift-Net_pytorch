@@ -559,7 +559,7 @@ class ResPatchSoftUnetSkipConnectionShiftTriple(nn.Module):
             # Res shift differs with other shift here. It is `*2` not `*3`.
             upconv = spectral_norm(nn.ConvTranspose2d(inner_nc * 2, outer_nc,
                                         kernel_size=4, stride=2,
-                                        padding=1). use_spectral_norm)
+                                        padding=1), use_spectral_norm)
             down = [downrelu, downconv, downnorm]
             # shift should be placed after uprelu
             # NB: innerCos are placed before shift. So need to add the latent gredient to
