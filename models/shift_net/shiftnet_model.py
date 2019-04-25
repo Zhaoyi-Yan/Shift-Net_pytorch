@@ -113,6 +113,7 @@ class ShiftNetModel(BaseModel):
 
     def set_input(self, input):
         self.image_paths = input['A_paths']
+        print('Image path', self.image_paths)
         real_A = input['A'].to(self.device)
         real_B = input['B'].to(self.device)
 
