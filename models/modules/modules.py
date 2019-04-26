@@ -101,11 +101,11 @@ class PartialConv(nn.Module):
 
 
 class ResnetBlock(nn.Module):
-    def __init__(self, dim, padding_type, norm_layer, use_bias):
+    def __init__(self, dim, kernel_size, padding_type, norm_layer, use_spectral_norm, use_bias):
         super(ResnetBlock, self).__init__()
-        self.conv_block = self.build_conv_block(dim, padding_type, norm_layer, use_bias)
+        self.conv_block = self.build_conv_block(dim, kernel_size, padding_type, norm_layer, use_spectral_norm, use_bias)
 
-    def build_conv_block(self, dim, padding_type, norm_layer, use_bias):
+    def build_conv_block(self, dim, kernel_size, padding_type, norm_layer, use_spectral_norm, use_bias):
         conv_block = []
         p = 0
         if padding_type == 'reflect':
@@ -117,7 +117,7 @@ class ResnetBlock(nn.Module):
         else:
             raise NotImplementedError('padding [%s] is not implemented' % padding_type)
 
-        conv_block += [nn.Conv2d(dim, dim, kernel_size=3, padding=p, bias=use_bias),
+        conv_block += [spectral_norm(nn.Conv2d(dim, dim, kernel_size=kernel_size, padding=p, bias=use_bias),use_spectral_norm),
                        norm_layer(dim),
                        nn.ReLU(True)]
 
@@ -130,7 +130,7 @@ class ResnetBlock(nn.Module):
             p = 1
         else:
             raise NotImplementedError('padding [%s] is not implemented' % padding_type)
-        conv_block += [nn.Conv2d(dim, dim, kernel_size=3, padding=p, bias=use_bias),
+        conv_block += [spectral_norm(nn.Conv2d(dim, dim, kernel_size=kernel_size, padding=p, bias=use_bias), use_spectral_norm),
                        norm_layer(dim)]
 
         return nn.Sequential(*conv_block)

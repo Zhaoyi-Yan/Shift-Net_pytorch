@@ -1,3 +1,7 @@
+# This branch aims to repalce the inner blocks with resnet_blocks.
+unet_resBlock_my_shift_1: Add 5 resblocks to replace the inner layers.
+unet_resBlock_my_shift_2
+
 # Architecutre
 <img src="architecture.png" width="1000"/> 
 
