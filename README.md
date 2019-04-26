@@ -1,6 +1,10 @@
 # This branch aims to repalce the inner blocks with resnet_blocks.
-unet_resBlock_my_shift_1: Add 5 resblocks to replace the inner layers.
-unet_resBlock_my_shift_2
+This branch is derived from UNet_InnerResNet.
+It mainly want to perform shift in the original `ResnetGenerator`.
+`ResnetGenerator` is much more computational light as it is encoder-resnet-decoder.
+Try to remove unet with such architecture to see whether it delivers better performance.
+
+Mention: As it is the original encoder-decoder, so I need to change a little for shift/innerCos. (InnerShiftSingle /)
 
 # Architecutre
 <img src="architecture.png" width="1000"/> 

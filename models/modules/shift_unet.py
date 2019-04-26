@@ -6,6 +6,8 @@ import torch.nn.functional as F
 # For original shift
 from models.shift_net.InnerShiftTriple import InnerShiftTriple
 from models.shift_net.InnerCos import InnerCos
+from models.shift_net.InnerCosSingle import InnerCosSingle
+from models.shift_net.InnerShiftSingle import InnerShiftSingle
 
 # For res shift
 from models.res_shift_net.innerResShiftTriple import InnerResShiftTriple
@@ -381,7 +383,8 @@ class ResnetGenerator_shift(nn.Module):
     We adapt Torch code and idea from Justin Johnson's neural style transfer project(https://github.com/jcjohnson/fast-neural-style)
     """
 
-    def __init__(self, input_nc, output_nc, ngf=64, norm_layer=nn.BatchNorm2d, n_blocks=6, padding_type='reflect', use_spectral_norm=False):
+    def __init__(self, input_nc, output_nc, innerCos_list, shift_list, mask_global, opt, \
+                                             ngf=64, norm_layer=nn.BatchNorm2d, n_blocks=6, padding_type='reflect', use_spectral_norm=False):
         """Construct a Resnet-based generator
         Parameters:
             input_nc (int)      -- the number of channels in input images
@@ -415,6 +418,20 @@ class ResnetGenerator_shift(nn.Module):
         for i in range(n_blocks):       # add ResNet blocks
 
             model += [ResnetBlock(ngf * mult, kernel_size=3, padding_type=padding_type, norm_layer=norm_layer, use_spectral_norm=use_spectral_norm, use_bias=use_bias)]
+
+        # As the downconv layer is outer_nc in and inner_nc out.
+        # So the shift define like this:
+        shift = InnerShiftSingle(opt.shift_sz, opt.stride, opt.mask_thred,
+                                            opt.triple_weight, layer_to_last=3)
+
+        shift.set_mask(mask_global)
+        shift_list.append(shift)
+
+        # Add latent constraint
+        # Then add the constraint to the constrain layer list!
+        innerCos = InnerCosSingle(strength=opt.strength, skip=opt.skip, layer_to_last=3)
+        innerCos.set_mask(mask_global)  # Here we need to set mask for innerCos layer too.
+        innerCos_list.append(innerCos)
 
         for i in range(n_downsampling):  # add upsampling layers
             mult = 2 ** (n_downsampling - i)
