@@ -541,7 +541,7 @@ class UnetResNetGeneratorShiftTriple_4(nn.Module):
 
         res5_f = res5 + e4_1_tmp
         # Decoder
-        d5_1 = self.d5_norm1(self.d5_dc(F.relu_(torch.cat([res5, e4_1], dim=1))))
+        d5_1 = self.d5_norm1(self.d5_dc(F.relu_(torch.cat([res5_f, e4_1], dim=1))))
         d6_1 = self.d6_norm1(self.d6_dc(self.shift(self.innerCos(F.relu_(torch.cat([d5_1, e3_1], dim=1))))))
         d7_1 = self.d7_norm1(self.d7_dc(F.relu_(torch.cat([d6_1, e2_1], dim=1))))
         # No norm on the last layer
