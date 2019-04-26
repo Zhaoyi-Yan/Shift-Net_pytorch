@@ -136,7 +136,7 @@ class UnetSkipConnectionShiftBlock(nn.Module):
             return torch.cat([x_latter, x], 1)  # cat in the C channel
 
 ################################### ***************************  #####################################
-###################################      UNet dilated shift_net  #####################################
+###################################      UNet ResNet shift_net  #####################################
 ################################### ***************************  #####################################
 '''
 Add 5 ResNet blocks layers of dilated convs to replace the inner 4 unet architecture.
@@ -254,7 +254,7 @@ class UnetResNetGeneratorShiftTriple_1(nn.Module):
         return d8
 
 ################################### ***************************  #####################################
-###################################      UNet dilated shift_net  #####################################
+###################################      UNet ResNet shift_net  #####################################
 ################################### ***************************  #####################################
 '''
 Add 5 ResNet blocks layers of dilated convs to replace the inner 4 unet architecture.
@@ -371,6 +371,181 @@ class UnetResNetGeneratorShiftTriple_2(nn.Module):
         d7_2 = self.d7_norm2(self.d7_dcc(F.relu_(d7_1)))
         # No norm on the last layer
         d8 = self.d8_dc(F.relu_(torch.cat([d7_2, e1], 1)))
+
+        d8 = torch.tanh(d8)
+
+        return d8
+
+################################### ***************************  #####################################
+###################################      UNet ResNet shift_net  #####################################
+################################### ***************************  #####################################
+'''
+Add 5 ResNet blocks layers of dilated convs to replace the inner 4 unet architecture.
+NO more stages for each resolution.
+'''
+# Defines the Unet generator.
+# |num_downs|: number of downsamplings in UNet. For example,
+# if |num_downs| == 7, image of size 128x128 will become of size 1x1
+# at the bottleneck
+class UnetResNetGeneratorShiftTriple_3(nn.Module):
+    def __init__(self, input_nc, output_nc, innerCos_list, shift_list, mask_global, opt, ngf=64,
+                norm_layer=nn.BatchNorm2d, use_spectral_norm=False):
+        super(UnetResNetGeneratorShiftTriple_3, self).__init__()
+
+        # Encoder layers
+        self.e1_c = spectral_norm(nn.Conv2d(input_nc, ngf, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+
+        self.e2_c = spectral_norm(nn.Conv2d(ngf, ngf*2, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        self.e2_norm1 = norm_layer(ngf*2)
+
+        self.e3_c = spectral_norm(nn.Conv2d(ngf*2, ngf*4, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        self.e3_norm1 = norm_layer(ngf*4)
+
+        self.e4_c = spectral_norm(nn.Conv2d(ngf*4, ngf*8, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        self.e4_norm1 = norm_layer(ngf*8)
+
+        # ResNet blocks
+        self.res1 = ResnetBlock(ngf*8, kernel_size=3, padding_type='reflect', norm_layer=norm_layer, use_spectral_norm=use_spectral_norm, use_bias=True)
+        self.res2 = ResnetBlock(ngf*8, kernel_size=3, padding_type='reflect', norm_layer=norm_layer, use_spectral_norm=use_spectral_norm, use_bias=True)
+        self.res3 = ResnetBlock(ngf*8, kernel_size=3, padding_type='reflect', norm_layer=norm_layer, use_spectral_norm=use_spectral_norm, use_bias=True)
+        self.res4 = ResnetBlock(ngf*8, kernel_size=3, padding_type='reflect', norm_layer=norm_layer, use_spectral_norm=use_spectral_norm, use_bias=True)
+        self.res5 = ResnetBlock(ngf*8, kernel_size=3, padding_type='reflect', norm_layer=norm_layer, use_spectral_norm=use_spectral_norm, use_bias=True)
+
+        # decoder
+        self.d5_dc = spectral_norm(nn.ConvTranspose2d(ngf*8*2, ngf*4, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        self.d5_norm1 = norm_layer(ngf*4)
+
+        self.d6_dc = spectral_norm(nn.ConvTranspose2d(ngf*4*3, ngf*2, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        self.d6_norm1 = norm_layer(ngf*2)
+
+        self.d7_dc = spectral_norm(nn.ConvTranspose2d(ngf*2*2, ngf, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        self.d7_norm1 = norm_layer(ngf)
+
+        self.d8_dc = spectral_norm(nn.ConvTranspose2d(ngf*2, output_nc, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+
+        # construct shift and innerCos
+        self.shift = InnerShiftTriple(opt.shift_sz, opt.stride, opt.mask_thred,
+                                            opt.triple_weight, layer_to_last=3)
+        self.shift.set_mask(mask_global)
+        shift_list.append(self.shift)
+
+        self.innerCos = InnerCos(strength=opt.strength, skip=opt.skip, layer_to_last=3)
+        self.innerCos.set_mask(mask_global)  # Here we need to set mask for innerCos layer too.
+        innerCos_list.append(self.innerCos)
+
+    # In this case, we have very flexible unet construction mode.
+    def forward(self, input):
+        # Encoder
+        # No norm on the first layer
+        e1 = self.e1_c(input)
+        e2_1 = self.e2_norm1(self.e2_c(F.leaky_relu_(e1, negative_slope=0.2)))
+
+        e3_1 = self.e3_norm1(self.e3_c(F.leaky_relu_(e2_1, negative_slope=0.2)))
+
+        e4_1 = self.e4_norm1(self.e4_c(F.leaky_relu_(e3_1, negative_slope=0.2)))
+
+        # dilated convs
+        res1 = self.res1(F.relu_(e4_1))
+        res2 = self.res2(F.relu_(res1))
+        res3 = self.res3(F.relu_(res2))
+        res4 = self.res4(F.relu_(res3))
+        res5 = self.res5(F.relu_(res4))
+
+        # Decoder
+        d5_1 = self.d5_norm1(self.d5_dc(F.relu_(torch.cat([res5, e4_1], dim=1))))
+        d6_1 = self.d6_norm1(self.d6_dc(self.shift(self.innerCos(F.relu_(torch.cat([d5_1, e3_1], dim=1))))))
+        d7_1 = self.d7_norm1(self.d7_dc(F.relu_(torch.cat([d6_1, e2_1], dim=1))))
+        # No norm on the last layer
+        d8 = self.d8_dc(F.relu_(torch.cat([d7_1, e1], 1)))
+
+        d8 = torch.tanh(d8)
+
+        return d8
+
+################################### ***************************  #####################################
+###################################      UNet ResNet shift_net  #####################################
+################################### ***************************  #####################################
+'''
+Add 5 ResNet blocks layers of dilated convs to replace the inner 4 unet architecture.
+NO more stages for each resolution.
+Add another `res from the frist resblock to the last block`
+'''
+# Defines the Unet generator.
+# |num_downs|: number of downsamplings in UNet. For example,
+# if |num_downs| == 7, image of size 128x128 will become of size 1x1
+# at the bottleneck
+class UnetResNetGeneratorShiftTriple_4(nn.Module):
+    def __init__(self, input_nc, output_nc, innerCos_list, shift_list, mask_global, opt, ngf=64,
+                norm_layer=nn.BatchNorm2d, use_spectral_norm=False):
+        super(UnetResNetGeneratorShiftTriple_4, self).__init__()
+
+        # Encoder layers
+        self.e1_c = spectral_norm(nn.Conv2d(input_nc, ngf, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+
+        self.e2_c = spectral_norm(nn.Conv2d(ngf, ngf*2, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        self.e2_norm1 = norm_layer(ngf*2)
+
+        self.e3_c = spectral_norm(nn.Conv2d(ngf*2, ngf*4, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        self.e3_norm1 = norm_layer(ngf*4)
+
+        self.e4_c = spectral_norm(nn.Conv2d(ngf*4, ngf*8, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        self.e4_norm1 = norm_layer(ngf*8)
+
+        # ResNet blocks
+        self.res1 = ResnetBlock(ngf*8, kernel_size=3, padding_type='reflect', norm_layer=norm_layer, use_spectral_norm=use_spectral_norm, use_bias=True)
+        self.res2 = ResnetBlock(ngf*8, kernel_size=3, padding_type='reflect', norm_layer=norm_layer, use_spectral_norm=use_spectral_norm, use_bias=True)
+        self.res3 = ResnetBlock(ngf*8, kernel_size=3, padding_type='reflect', norm_layer=norm_layer, use_spectral_norm=use_spectral_norm, use_bias=True)
+        self.res4 = ResnetBlock(ngf*8, kernel_size=3, padding_type='reflect', norm_layer=norm_layer, use_spectral_norm=use_spectral_norm, use_bias=True)
+        self.res5 = ResnetBlock(ngf*8, kernel_size=3, padding_type='reflect', norm_layer=norm_layer, use_spectral_norm=use_spectral_norm, use_bias=True)
+
+        # decoder
+        self.d5_dc = spectral_norm(nn.ConvTranspose2d(ngf*8*2, ngf*4, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        self.d5_norm1 = norm_layer(ngf*4)
+
+        self.d6_dc = spectral_norm(nn.ConvTranspose2d(ngf*4*3, ngf*2, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        self.d6_norm1 = norm_layer(ngf*2)
+
+        self.d7_dc = spectral_norm(nn.ConvTranspose2d(ngf*2*2, ngf, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        self.d7_norm1 = norm_layer(ngf)
+
+        self.d8_dc = spectral_norm(nn.ConvTranspose2d(ngf*2, output_nc, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+
+        # construct shift and innerCos
+        self.shift = InnerShiftTriple(opt.shift_sz, opt.stride, opt.mask_thred,
+                                            opt.triple_weight, layer_to_last=3)
+        self.shift.set_mask(mask_global)
+        shift_list.append(self.shift)
+
+        self.innerCos = InnerCos(strength=opt.strength, skip=opt.skip, layer_to_last=3)
+        self.innerCos.set_mask(mask_global)  # Here we need to set mask for innerCos layer too.
+        innerCos_list.append(self.innerCos)
+
+    # In this case, we have very flexible unet construction mode.
+    def forward(self, input):
+        # Encoder
+        # No norm on the first layer
+        e1 = self.e1_c(input)
+        e2_1 = self.e2_norm1(self.e2_c(F.leaky_relu_(e1, negative_slope=0.2)))
+
+        e3_1 = self.e3_norm1(self.e3_c(F.leaky_relu_(e2_1, negative_slope=0.2)))
+
+        e4_1 = self.e4_norm1(self.e4_c(F.leaky_relu_(e3_1, negative_slope=0.2)))
+
+        e4_1_tmp = e4_1
+        # dilated convs
+        res1 = self.res1(F.relu_(e4_1))
+        res2 = self.res2(F.relu_(res1))
+        res3 = self.res3(F.relu_(res2))
+        res4 = self.res4(F.relu_(res3))
+        res5 = self.res5(F.relu_(res4))
+
+        res5_f = res5 + e4_1_tmp
+        # Decoder
+        d5_1 = self.d5_norm1(self.d5_dc(F.relu_(torch.cat([res5, e4_1], dim=1))))
+        d6_1 = self.d6_norm1(self.d6_dc(self.shift(self.innerCos(F.relu_(torch.cat([d5_1, e3_1], dim=1))))))
+        d7_1 = self.d7_norm1(self.d7_dc(F.relu_(torch.cat([d6_1, e2_1], dim=1))))
+        # No norm on the last layer
+        d8 = self.d8_dc(F.relu_(torch.cat([d7_1, e1], 1)))
 
         d8 = torch.tanh(d8)
 
