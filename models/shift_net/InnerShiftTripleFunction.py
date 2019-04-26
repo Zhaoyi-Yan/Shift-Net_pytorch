@@ -25,7 +25,7 @@ class InnerShiftTripleFunction(torch.autograd.Function):
         # former and latter are all tensors
         former_all = input.narrow(1, 0, c//2) ### decoder feature
         latter_all = input.narrow(1, c//2, c//2) ### encoder feature
-        shift_masked_all = torch.Tensor(former_all.size()).type_as(former_all) # addition feature
+        shift_masked_all = torch.Tensor(former_all.size()).type_as(former_all).zero_() # addition feature
 
         assert mask.dim() == 2, "Mask dimension must be 2"
 
