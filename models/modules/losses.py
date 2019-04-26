@@ -93,3 +93,20 @@ def spatial_discounting_mask(mask_width, mask_height, discounting_gamma, discoun
         mask_values = np.ones(shape, dtype='float32')
 
     return mask_values
+
+class TVLoss(nn.Module):
+    def __init__(self, tv_loss_weight=1):
+        super(TVLoss, self).__init__()
+        self.tv_loss_weight = tv_loss_weight
+
+    def forward(self, x):
+        bz, _, h, w = x.size()
+        count_h = self._tensor_size(x[:, :, 1:, :])
+        count_w = self._tensor_size(x[:, :, :, 1:])
+        h_tv = torch.pow((x[:, :, 1:, :] - x[:, :, :h - 1, :]), 2).sum()
+        w_tv = torch.pow((x[:, :, :, 1:] - x[:, :, :, :w - 1]), 2).sum()
+        return self.tv_loss_weight * 2 * (h_tv / count_h + w_tv / count_w) / bz
+
+    @staticmethod
+    def _tensor_size(t):
+        return t.size(1) * t.size(2) * t.size(3)

@@ -34,7 +34,7 @@ class ShiftNetModel(BaseModel):
         self.opt = opt
         self.isTrain = opt.isTrain
         # specify the training losses you want to print out. The program will call base_model.get_current_losses
-        self.loss_names = ['G_GAN', 'G_L1', 'D']
+        self.loss_names = ['G_GAN', 'G_L1', 'D', 'style', 'content', 'tv']
         # specify the images you want to save/display. The program will call base_model.get_current_visuals
         if self.opt.show_flow:
             self.visual_names = ['real_A', 'fake_B', 'real_B', 'flow_srcs']
@@ -80,12 +80,21 @@ class ShiftNetModel(BaseModel):
                                           opt.which_model_netD,
                                           opt.n_layers_D, opt.norm, use_sigmoid, opt.use_spectral_norm_D, opt.init_type, self.gpu_ids, opt.init_gain)
 
+        # add style extractor(not competible for multi-gpu ?)
+        self.vgg16_extractor = util.VGG16FeatureExtractor().to(self.gpu_ids[0])
+        self.vgg16_extractor = torch.nn.DataParallel(self.vgg16_extractor, self.gpu_ids)
+
         if self.isTrain:
             self.old_lr = opt.lr
             # define loss functions
             self.criterionGAN = networks.GANLoss(gan_type=opt.gan_type).to(self.device)
             self.criterionL1 = torch.nn.L1Loss()
             self.criterionL1_mask = networks.Discounted_L1(opt).to(self.device) # make weights/buffers transfer to the correct device
+            # VGG loss
+            self.criterionL2_style_loss = torch.nn.MSELoss()
+            self.criterionL2_content_loss = torch.nn.MSELoss()
+            # TV loss
+            self.tv_criterion = networks.TVLoss(self.opt.tv_weight)
 
             # initialize optimizers
             self.schedulers = []
@@ -277,6 +286,23 @@ class ShiftNetModel(BaseModel):
 
         self.loss_G = self.loss_G_L1 + self.loss_G_L1_m + self.loss_G_GAN
 
+        # Then, add TV loss
+        self.loss_tv = self.tv_criterion(self.fake_B*self.mask_global.float())
+
+        # Finally, add style loss
+        vgg_ft_fakeB = self.vgg16_extractor(fake_B)
+        vgg_ft_realB = self.vgg16_extractor(real_B)
+        self.loss_style = 0
+        self.loss_content = 0
+
+        for i in range(3):
+            self.loss_style += self.criterionL2_style_loss(util.gram_matrix(vgg_ft_fakeB[i]), util.gram_matrix(vgg_ft_realB[i]))
+            self.loss_content += self.criterionL2_content_loss(vgg_ft_fakeB[i], vgg_ft_realB[i])
+
+        self.loss_style *= self.opt.style_weight
+        self.loss_content *= self.opt.content_weight
+
+        self.loss_G += (self.loss_style + self.loss_content + self.loss_tv)
 
         self.loss_G.backward()
 
