@@ -27,6 +27,7 @@ class TrainOptions(BaseOptions):
         parser.add_argument('--lr_policy', type=str, default='lambda', help='learning rate policy: lambda|step|plateau|cosine')
         parser.add_argument('--lr_decay_iters', type=int, default=50, help='multiply by a gamma every lr_decay_iters iterations')
         parser.add_argument('--update_html_freq', type=int, default=1000, help='frequency of saving training results to html')
+        parser.add_argument('--training_mask_folder', type=str, default='masks/training_masks', help='prepared masks for training')
         self.isTrain = True
 
         return parser
