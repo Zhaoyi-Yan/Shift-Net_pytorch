@@ -201,11 +201,10 @@ def create_mask():
     print(ini_x, ini_y)
     return random_walk(canvas, ini_x, ini_y, 128 ** 2)
 
-# inMask is tensor should be 1*1*256*256 float
+# inMask is tensor should be bz*1*256*256 float
 # Return: ByteTensor
 def cal_feat_mask(inMask, nlayers):
     assert inMask.dim() == 4, "mask must be 4 dimensions"
-    assert inMask.size(0) == 1, "the first dimension must be 1 for mask"
     inMask = inMask.float()
     ntimes = 2**nlayers
     inMask = F.interpolate(inMask, (inMask.size(2)//ntimes, inMask.size(3)//ntimes), mode='nearest')
@@ -214,20 +213,24 @@ def cal_feat_mask(inMask, nlayers):
     return inMask
 
 # It is only for patch_size=1 for now.
+# return: flag indicating where the mask is using 1s.
+#         flag size: bz*(h*w)
 def cal_flag_given_mask_thred(mask, patch_size, stride, mask_thred):
-    assert mask.dim() == 2, 'mask has to be 2 dimenison!'
-
+    assert mask.dim() == 4, "mask must be 4 dimensions"
+    assert mask.size(1) == 1, "the size of the dim=1 must be 1"
     mask = mask.float()
+    b = mask.size(0)
     # This line of code is for further development of supporting patch_size > 1.
     # mask = F.pad(mask, (patch_size//2, patch_size//2, patch_size//2, patch_size//2), 'constant', 0)
-    m = mask.unfold(0, patch_size, stride).unfold(1, patch_size, stride)
-    m = m.contiguous().view(1, -1, patch_size, patch_size)
-    m = torch.mean(torch.mean(m, dim=2, keepdim=True), dim=3, keepdim=True)
+    m = mask.unfold(2, patch_size, stride).unfold(3, patch_size, stride)
+    m = m.contiguous().view(b, 1, -1, patch_size, patch_size)
+    m = torch.mean(torch.mean(m, dim=3, keepdim=True), dim=4, keepdim=True)
     # Adding eps=1e-4 is important here.
     mm = m.gt(mask_thred/(1.*patch_size**2 + 1e-4)).long()
-    flag = mm.view(-1)
+    flag = mm.view(b, -1)
 
     # Obsolete Method
+    # It is Only for mask: H*W
     # dim = img.dim()
     # _, H, W = img.size(dim - 3), img.size(dim - 2), img.size(dim - 1)
     # nH = int(math.floor((H - patch_size) / stride + 1))

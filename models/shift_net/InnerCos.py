@@ -18,8 +18,7 @@ class InnerCos(nn.Module):
 
     def set_mask(self, mask_global):
         mask = util.cal_feat_mask(mask_global, self.layer_to_last)
-        self.mask = mask.squeeze()
-        self.mask = self.mask.float()
+        self.mask = mask.float()
 
     def forward(self, in_data):
         self.bs, self.c, _, _ = in_data.size()

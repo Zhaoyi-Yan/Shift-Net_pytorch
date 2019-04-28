@@ -9,7 +9,7 @@ class InnerShiftTripleFunction(torch.autograd.Function):
     ctx = None
 
     @staticmethod
-    def forward(ctx, input, mask, shift_sz, stride, triple_w, flag, show_flow):
+    def forward(ctx, input, shift_sz, stride, triple_w, flag, show_flow):
         #print('[INFO] GET INTO FORWARD')
         InnerShiftTripleFunction.ctx = ctx
         assert input.dim() == 4, "Input Dim has to be 4"
@@ -27,8 +27,6 @@ class InnerShiftTripleFunction(torch.autograd.Function):
         latter_all = input.narrow(1, c//2, c//2) ### encoder feature
         shift_masked_all = torch.Tensor(former_all.size()).type_as(former_all).zero_() # addition feature
 
-        assert mask.dim() == 2, "Mask dimension must be 2"
-
         ctx.flag = ctx.flag.to(input).long()
 
         # None batch version
@@ -36,18 +34,19 @@ class InnerShiftTripleFunction(torch.autograd.Function):
         ctx.shift_offsets = []
 
         for idx in range(ctx.bz):
+            flag_cur = ctx.flag[idx]
             latter = latter_all.narrow(0, idx, 1) ### encoder feature
             former = former_all.narrow(0, idx, 1) ### decoder feature
 
             #GET COSINE, RESHAPED LATTER AND ITS INDEXES
-            cosine, latter_windows, i_2, i_3, i_1, i_4 = Nonparm.cosine_similarity(former.clone().squeeze(), latter.clone().squeeze(), 1, stride, flag)
+            cosine, latter_windows, i_2, i_3, i_1, i_4 = Nonparm.cosine_similarity(former.clone().squeeze(), latter.clone().squeeze(), 1, stride, flag_cur)
 
             ## GET INDEXES THAT MAXIMIZE COSINE SIMILARITY
             _, indexes = torch.max(cosine, dim=1)
 
             # SET  TRANSITION MATRIX
-            mask_indexes = (ctx.flag == 1).nonzero()
-            non_mask_indexes = (ctx.flag == 0).nonzero()[indexes]
+            mask_indexes = (flag_cur == 1).nonzero()
+            non_mask_indexes = (flag_cur == 0).nonzero()[indexes]
             ctx.ind_lst[idx][mask_indexes, non_mask_indexes] = 1
 
             # GET FINAL SHIFT FEATURE
@@ -68,10 +67,10 @@ class InnerShiftTripleFunction(torch.autograd.Function):
                 shift_offset = ctx.shift_offsets.narrow(0, idx*mask_nums, mask_nums)
                 # reconstruct the original shift_map.
                 shift_offsets_map = torch.zeros(1, ctx.h, ctx.w, 2).type_as(input)
-                shift_offsets_map[:, (ctx.flag == 1).nonzero().squeeze() // ctx.w, (ctx.flag == 1).nonzero().squeeze() % ctx.w, :] = \
+                shift_offsets_map[:, (flag_cur == 1).nonzero().squeeze() // ctx.w, (flag_cur == 1).nonzero().squeeze() % ctx.w, :] = \
                                                                                                 shift_offset.unsqueeze(0)
                 # It is indicating the pixels(non-masked) that will shift the the masked region.
-                flow_src = util.highlight_flow(shift_offsets_map, ctx.flag.unsqueeze(0))
+                flow_src = util.highlight_flow(shift_offsets_map, flag_cur.unsqueeze(0))
                 ctx.flow_srcs[idx] = flow_src
 
         return torch.cat((former_all, latter_all, shift_masked_all), 1)
