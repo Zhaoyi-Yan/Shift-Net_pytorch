@@ -8,7 +8,7 @@ class BaseOptions():
         self.initialized = False
 
     def initialize(self, parser):
-        parser.add_argument('--dataroot', default='./datasets/Paris/train', help='path to images (should have subfolders trainA, trainB, valA, valB, etc)')
+        parser.add_argument('--dataroot', default='./datasets/Paris/train', help='path to training/testing images')
         parser.add_argument('--batchSize', type=int, default=1, help='input batch size')
         parser.add_argument('--loadSize', type=int, default=350, help='scale images to this size')
         parser.add_argument('--fineSize', type=int, default=256, help='then crop to this size')
@@ -63,6 +63,7 @@ class BaseOptions():
                                                                             're_avg_gan (Relativistic average Standard GAN), ')
         parser.add_argument('--gan_weight', type=float, default=0.2, help='the weight of gan loss')
         # New added
+        parser.add_argument('--offline_loading_mask', type=int, default=0, help='whether to load mask offline randomly')
         parser.add_argument('--mask_weight_G', type=float, default=400.0, help='the weight of mask part in ouput of G, you can try different mask_weight')
         parser.add_argument('--discounting', type=int, default=1, help='the loss type of mask part, whether using discounting l1 loss or normal l1')
         parser.add_argument('--use_spectral_norm_D', type=int, default=1, help='whether to add spectral norm to D, it helps improve results')

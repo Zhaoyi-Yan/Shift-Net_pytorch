@@ -3,6 +3,7 @@ import os.path
 import random
 import torchvision.transforms as transforms
 import torch
+import random
 from data.base_dataset import BaseDataset
 from data.image_folder import make_dataset
 from PIL import Image
@@ -10,9 +11,11 @@ from PIL import Image
 class AlignedDataset(BaseDataset):
     def initialize(self, opt):
         self.opt = opt
-        self.root = opt.dataroot
-        self.dir_A = opt.dataroot#os.path.join(opt.dataroot, opt.phase)
+        self.dir_A = opt.dataroot
         self.A_paths = sorted(make_dataset(self.dir_A))
+        if self.opt.offline_loading_mask:
+            self.mask_folder = self.opt.training_mask_folder if self.opt.isTrain else self.opt.testing_mask_folder
+            self.mask_paths = sorted(make_dataset(self.mask_folder))
 
         assert(opt.resize_or_crop == 'resize_and_crop')
 
@@ -52,7 +55,19 @@ class AlignedDataset(BaseDataset):
 
         # let B directly equals A
         B = A.clone()
-        return {'A': A, 'B': B,
+
+        # Just zero the mask is fine if not offline_loading_mask.
+        mask = A.clone().zero_()
+        if self.opt.offline_loading_mask:
+            if self.opt.isTrain:
+                mask = Image.open(self.mask_paths[random.randint(0, len(self.mask_paths)-1)])
+            # When testing, we just load the mask with suffix '_mask' to make it easy to compare performance of different models.
+            else:
+                mask = Image.open(os.path.join(self.mask_folder, os.path.splitext(os.path.basename(A_path[0]))[0]+'_mask.png'))
+            mask = mask.resize((self.opt.fineSize, self.opt.fineSize), Image.NEAREST)
+            mask = transforms.ToTensor()(mask)
+        
+        return {'A': A, 'B': B, 'M': mask,
                 'A_paths': A_path}
 
     def __len__(self):

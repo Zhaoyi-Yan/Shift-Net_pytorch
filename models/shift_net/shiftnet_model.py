@@ -115,23 +115,27 @@ class ShiftNetModel(BaseModel):
         self.image_paths = input['A_paths']
         real_A = input['A'].to(self.device)
         real_B = input['B'].to(self.device)
+        # directly load mask offline
+        # TODO: make masks variant each image in a batch
+        self.mask_global = input['M'].to(self.device).byte()
+        self.mask_global = self.mask_global.narrow(0,0,1).narrow(1,0,1)
 
-        # Add mask to real_A
-        if self.opt.mask_type == 'center':
-            self.mask_global.zero_()
-            self.mask_global[:, :, int(self.opt.fineSize/4) + self.opt.overlap : int(self.opt.fineSize/2) + int(self.opt.fineSize/4) - self.opt.overlap,\
-                                int(self.opt.fineSize/4) + self.opt.overlap: int(self.opt.fineSize/2) + int(self.opt.fineSize/4) - self.opt.overlap] = 1
-            self.rand_t, self.rand_l = int(self.opt.fineSize/4) + self.opt.overlap, int(self.opt.fineSize/4) + self.opt.overlap
-        elif self.opt.mask_type == 'random':
-            self.mask_global = self.create_random_mask().type_as(self.mask_global).view_as(self.mask_global)
+        # create mask online
+        if not self.opt.offline_loading_mask:
+            if self.opt.mask_type == 'center':
+                self.mask_global.zero_()
+                self.mask_global[:, :, int(self.opt.fineSize/4) + self.opt.overlap : int(self.opt.fineSize/2) + int(self.opt.fineSize/4) - self.opt.overlap,\
+                                    int(self.opt.fineSize/4) + self.opt.overlap: int(self.opt.fineSize/2) + int(self.opt.fineSize/4) - self.opt.overlap] = 1
+                self.rand_t, self.rand_l = int(self.opt.fineSize/4) + self.opt.overlap, int(self.opt.fineSize/4) + self.opt.overlap
+            elif self.opt.mask_type == 'random':
+                self.mask_global = self.create_random_mask().type_as(self.mask_global).view_as(self.mask_global)
+            else:
+                raise ValueError("Mask_type [%s] not recognized." % self.opt.mask_type)
+        # For loading mask offline, we also need to change 'opt.mask_type' and 'opt.mask_sub_type'
+        # to avoid forgetting such settings.
         else:
-            raise ValueError("Mask_type [%s] not recognized." % self.opt.mask_type)
-        
-        # For masking inputs with offline random masks.
-        if not self.opt.isTrain and self.opt.offline_testing:
-            self.mask_global = Image.open(os.path.join('masks', os.path.splitext(os.path.basename(self.image_paths[0]))[0]+'_mask.png'))
-            self.mask_global = transforms.ToTensor()(self.mask_global).unsqueeze(0).type_as(real_A).byte()
-            
+            self.opt.mask_type = 'random'
+            self.opt.mask_sub_type = 'island'
 
         self.set_latent_mask(self.mask_global)
 
