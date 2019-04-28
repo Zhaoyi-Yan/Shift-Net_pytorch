@@ -33,7 +33,7 @@ class InnerResPatchSoftShiftTriple(nn.Module):
 
     def set_mask(self, mask_global):
         mask = util.cal_feat_mask(mask_global, self.layer_to_last)
-        self.mask = mask # 1*1*H*W (DO NOT Squeeze here!)
+        self.mask = mask
         return self.mask
 
     # If mask changes, then need to set cal_fix_flag true each iteration.

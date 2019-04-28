@@ -6,7 +6,7 @@ import os
 from PIL import Image
 import glob
 
-mask_folder = 'masks'
+mask_folder = 'masks/testing_masks'
 test_folder = './datasets/Paris/test'
 util.mkdir(mask_folder)
 
@@ -18,6 +18,7 @@ print(f)
 for fl in f:
     mask = torch.zeros(opt.fineSize, opt.fineSize)
     if opt.mask_sub_type == 'fractal':
+        assert 1==2, "It is broken now..."
         mask = util.create_walking_mask()  # create an initial random mask.
 
     elif opt.mask_sub_type == 'rect':

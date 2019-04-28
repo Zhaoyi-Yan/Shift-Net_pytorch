@@ -17,6 +17,7 @@ class ShiftNetModel(BaseModel):
     def create_random_mask(self):
         if self.opt.mask_type == 'random':
             if self.opt.mask_sub_type == 'fractal':
+                assert 1==2, "It is broken somehow, use another mask_sub_type please"
                 mask = util.create_walking_mask()  # create an initial random mask.
 
             elif self.opt.mask_sub_type == 'rect':
@@ -48,7 +49,7 @@ class ShiftNetModel(BaseModel):
 
 
         # batchsize should be 1 for mask_global
-        self.mask_global = torch.ByteTensor(1, 1, \
+        self.mask_global = torch.ByteTensor(self.opt.batchSize, 1, \
                                  opt.fineSize, opt.fineSize)
 
         # Here we need to set an artificial mask_global(center hole is ok.)
@@ -116,9 +117,8 @@ class ShiftNetModel(BaseModel):
         real_A = input['A'].to(self.device)
         real_B = input['B'].to(self.device)
         # directly load mask offline
-        # TODO: make masks variant each image in a batch
         self.mask_global = input['M'].to(self.device).byte()
-        self.mask_global = self.mask_global.narrow(0,0,1).narrow(1,0,1)
+        self.mask_global = self.mask_global.narrow(1,0,1)
 
         # create mask online
         if not self.opt.offline_loading_mask:
@@ -128,7 +128,10 @@ class ShiftNetModel(BaseModel):
                                     int(self.opt.fineSize/4) + self.opt.overlap: int(self.opt.fineSize/2) + int(self.opt.fineSize/4) - self.opt.overlap] = 1
                 self.rand_t, self.rand_l = int(self.opt.fineSize/4) + self.opt.overlap, int(self.opt.fineSize/4) + self.opt.overlap
             elif self.opt.mask_type == 'random':
-                self.mask_global = self.create_random_mask().type_as(self.mask_global).view_as(self.mask_global)
+                self.mask_global = self.create_random_mask().type_as(self.mask_global).view(1, *self.mask_global.size()[-3:])
+                # As generating random masks online are computation-heavy
+                # So just generate one ranodm mask for a batch images.
+                self.mask_global = self.mask_global.expand(self.opt.batchSize, *self.mask_global.size()[-3:])
             else:
                 raise ValueError("Mask_type [%s] not recognized." % self.opt.mask_type)
         # For loading mask offline, we also need to change 'opt.mask_type' and 'opt.mask_sub_type'

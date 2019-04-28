@@ -18,7 +18,7 @@ class InnerShiftTriple(nn.Module):
 
     def set_mask(self, mask_global):
         mask = util.cal_feat_mask(mask_global, self.layer_to_last)
-        self.mask = mask.squeeze()
+        self.mask = mask
         return self.mask
 
     # If mask changes, then need to set cal_fix_flag true each iteration.
@@ -27,7 +27,7 @@ class InnerShiftTriple(nn.Module):
         _, self.c, self.h, self.w = input.size()
         self.flag = util.cal_flag_given_mask_thred(self.mask, self.shift_sz, self.stride, self.mask_thred)
 
-        final_out = InnerShiftTripleFunction.apply(input, self.mask, self.shift_sz, self.stride, self.triple_weight, self.flag, self.show_flow)
+        final_out = InnerShiftTripleFunction.apply(input, self.shift_sz, self.stride, self.triple_weight, self.flag, self.show_flow)
         if self.show_flow:
             self.flow_srcs = InnerShiftTripleFunction.get_flow_src()
         return final_out
