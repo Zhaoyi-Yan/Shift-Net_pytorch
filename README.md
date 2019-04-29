@@ -31,21 +31,27 @@ cd Shift-Net_pytorch
 
 ```
 
-### tain and test
+## Train models
 - Download your own inpainting datasets.
 
 - Train a model:
 Please read this paragraph carefully before running the code.
 
-By now, 5 kinds of shift-nets are proposed.
-
-Usually, we train and test a model with `center` mask.
-
-**Mention: For now, the best performance of `center mask inpainiting` can be achieved if you train this line:**.
+Usually, we train/test `navie shift-net` with `center` mask.
 
 ```bash
-python train.py --batchsize=1 --use_spectral_norm_D=1 --which_model_netD='basic' --mask_type='center'
+python train.py --batchsize=1 --use_spectral_norm_D=1 --which_model_netD='basic' --mask_type='center' --which_model_netG='unet_shift_triple' --model='shiftnet' --shift_sz=1 --mask_thred=1
 ```
+We offer you with 4 variants, in which **res patch soft shift-net** is recommended. It delivers **better performance** than the `navie shift-net` with light extra computation, and is able to handle with **both universial inpainting and face inpainting**.
+
+For `res patch soft shift-net`:
+```bash
+python train.py --batchSize=1 --which_model_netG='res_patch_soft_unet_shift_triple' --model='res_patch_soft_shiftnet' --shift_sz=3 --mask_thred=4
+```
+For some datasets, such as `CelebA`, some images are smaller than `256*256`, so you need add `--fineSize=256` when training, **it is important**.
+
+- To view training results and loss plots, run `python -m visdom.server` and click the URL http://localhost:8097. The checkpoints will be saved in `./log` by default.
+
 
 **DO NOT** set batchsize larger than 1 for `square` mask training, the performance degrades a lot(I don't know why...)
 
@@ -55,12 +61,9 @@ For training random mask, you need to train the model by setting
 `mask_type='random'` and also `mask_sub_type='rect'` or `mask_sub_type='island'`.
 
 
-For `navie shift-net`:
-```bash
-python train.py --which_model_netG='unet_shift_triple' --model='shiftnet' --shift_sz=1 --mask_thred=1
-```
+### Extra variants
 
-**These 4 models are just experimental**
+**These 3 models are just for fun**
 
 For `res navie shift-net`:
 ```bash
@@ -77,18 +80,13 @@ For `patch soft shift-net`:
 python train.py --which_model_netG='patch_soft_unet_shift_triple' --model='patch_soft_shiftnet' --shift_sz=3 --mask_thred=4
 ```
 
-For `res patch soft shift-net`:
-```bash
-python train.py --which_model_netG='res_patch_soft_unet_shift_triple' --model='res_patch_soft_shiftnet' --shift_sz=3 --mask_thred=4
-```
 DO NOT change the shift_sz and mask_thred. Otherwise, it errors with a high probability.
 
-For `patch soft shift-net` or `res patch soft shift-net`. You may set `fuse=1` to see whether it delivers better results.
+For `patch soft shift-net` or `res patch soft shift-net`. You may set `fuse=1` to see whether it delivers better results(Mention, you need keep the same setting between training and testing).
 
 
-- To view training results and loss plots, run `python -m visdom.server` and click the URL http://localhost:8097. The checkpoints will be saved in `./log` by default.
 
-- Test the model
+## Test the model
 
 **Keep the same settings as those during training phase to avoid errors or bad performance**
 
@@ -97,6 +95,8 @@ For example, if you train `patch soft shift-net`, then the following testing com
 python test.py --fuse=1/0 --which_model_netG='patch_soft_unet_shift_triple' --model='patch_soft_shiftnet' --shift_sz=3 --mask_thred=4 
 ```
 The test results will be saved to a html file here: `./results/`.
+
+
 
 ## Masks can be loaded offline or generated online
 It now supports both online-generating and offline-loading for training and testing.
@@ -107,6 +107,7 @@ The prepared masks should be put in the folder `--training_mask_folder` and `--t
 For each batch, then:
  - Generating online: masks are the same for each image in a batch.(To save computation)
  - Loading offline: masks are loaded randomly for each image in a batch.
+
 ### Masks when testing
 For now, we assume that each mask has the name of corresponding image + a suffix of '_mask.png'.
 We design in this way as it is eaier for comparion between different models.
@@ -146,7 +147,8 @@ If you find it a little hard to read the code, you may read [Guides](https://git
 - [x] Finish optimizing soft-shift.
 - [x] Add mask varaint in a batch.
 - [x] Support Online-generating/Offline-loading prepared masks for training/testing.
-- [ ] Add VGG loss and TV loss.
+- [x] Add VGG loss and TV loss
+- [ ] Try different network architecture. As current UNet suffers from many problems.
 - [ ] Fix performance degradance when batchsize is larger than 1.
 
 
