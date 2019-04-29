@@ -27,7 +27,6 @@ class InnerShiftTripleFunction(torch.autograd.Function):
         latter_all = input.narrow(1, c//2, c//2) ### encoder feature
         shift_masked_all = torch.Tensor(former_all.size()).type_as(former_all).zero_() # addition feature
 
-
         ctx.flag = ctx.flag.to(input).long()
 
         # None batch version
