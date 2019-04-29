@@ -1,6 +1,3 @@
-# VGG_loss_and_tv
-This branch aims add vgg loss and tv loss
-
 # Architecutre
 <img src="architecture.png" width="1000"/> 
 
