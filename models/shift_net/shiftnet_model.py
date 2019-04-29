@@ -81,7 +81,7 @@ class ShiftNetModel(BaseModel):
                                           opt.which_model_netD,
                                           opt.n_layers_D, opt.norm, use_sigmoid, opt.use_spectral_norm_D, opt.init_type, self.gpu_ids, opt.init_gain)
 
-        # add style extractor(not competible for multi-gpu ?)
+        # add style extractor
         self.vgg16_extractor = util.VGG16FeatureExtractor().to(self.gpu_ids[0])
         self.vgg16_extractor = torch.nn.DataParallel(self.vgg16_extractor, self.gpu_ids)
 
