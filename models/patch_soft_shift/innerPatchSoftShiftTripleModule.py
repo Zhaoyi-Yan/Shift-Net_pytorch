@@ -25,9 +25,7 @@ class InnerPatchSoftShiftTripleModule(nn.Module):
         latter_all = input.narrow(1, self.c//2, self.c//2) ### encoder feature
         shift_masked_all = torch.Tensor(former_all.size()).type_as(former_all) # addition feature
 
-        # TODO: let `cal_feat_mask` return a floatTensor, not a byteTensor.
-        if torch.cuda.is_available:
-            self.mask = self.mask.float().cuda()
+        self.mask = self.mask.to(input)
 
         # extract patches from latter.
         latter_all_pad = F.pad(latter_all, [shift_sz//2, shift_sz//2, shift_sz//2, shift_sz//2], 'constant', 0)
@@ -38,17 +36,18 @@ class InnerPatchSoftShiftTripleModule(nn.Module):
         # Mention: mask here must be 1*1*H*W
         m_pad = F.pad(self.mask, (shift_sz//2, shift_sz//2, shift_sz//2, shift_sz//2), 'constant', 0)
         m = m_pad.unfold(2, shift_sz, stride).unfold(3, shift_sz, stride)
-        m = m.contiguous().view(1, -1, shift_sz, shift_sz)
+        m = m.contiguous().view(self.bz, 1, -1, shift_sz, shift_sz)
 
         # This two line of code can replace `cal_flag_given_mask_thred`
-        m = torch.mean(torch.mean(m, dim=2, keepdim=True), dim=3, keepdim=True)
+        m = torch.mean(torch.mean(m, dim=3, keepdim=True), dim=4, keepdim=True)
         # mm: the masked reigon is filled with 0, nonmasked region is filled with 1.
-        mm = m.le(self.mask_thred/(1.*shift_sz**2)).float() # 1*(32*32)*1*1
+        mm = m.le(self.mask_thred/(1.*shift_sz**2)).float() # bz*1*(32*32)*1*1
 
         fuse_weight = torch.eye(shift_sz).view(1, 1, shift_sz, shift_sz).type_as(input)
 
         self.shift_offsets = []
         for idx in range(self.bz):
+            mm_cur = mm[idx]
             # latter_win = latter_all_windows.narrow(0, idx, 1)[0]
             latter_win = latter_all_windows.narrow(0, idx, 1)[0]
             former = former_all.narrow(0, idx, 1)
@@ -77,16 +76,16 @@ class InnerPatchSoftShiftTripleModule(nn.Module):
 
             # firstly, wash away the masked reigon.
             # multiply `mm` means (:, index_masked, :, :) will be 0.
-            y_i = y_i * mm
+            y_i = y_i * mm_cur
 
             # Then apply softmax to the nonmasked region.
             cosine = F.softmax(y_i*10, dim=1)
 
             # Finally, dummy parameters of masked reigon are filtered out.
-            cosine = cosine * mm
+            cosine = cosine * mm_cur
 
             # paste
-            shift_i = F.conv_transpose2d(cosine, latter_win, stride=1, padding=1)/9.
+            shift_i = F.conv_transpose2d(cosine, latter_win, stride=1, padding=shift_sz//2)/9.
             shift_masked_all[idx] = shift_i
 
             # Addition: show shift map

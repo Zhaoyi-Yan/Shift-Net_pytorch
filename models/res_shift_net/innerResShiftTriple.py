@@ -37,8 +37,7 @@ class InnerResShiftTriple(nn.Module):
         #print(input.shape)
         _, self.c, self.h, self.w = input.size()
         self.flag = util.cal_flag_given_mask_thred(self.mask, self.shift_sz, self.stride, self.mask_thred)
-
-        shift_out = InnerShiftTripleFunction.apply(input, self.mask, self.shift_sz, self.stride, self.triple_weight, self.flag, self.show_flow)
+        shift_out = InnerShiftTripleFunction.apply(input, self.shift_sz, self.stride, self.triple_weight, self.flag, self.show_flow)
 
         c_out = shift_out.size(1)
         # get F_c, F_s, F_shift

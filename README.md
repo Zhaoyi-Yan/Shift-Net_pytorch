@@ -101,12 +101,29 @@ python test.py --fuse=1/0 --which_model_netG='patch_soft_unet_shift_triple' --mo
 ```
 The test results will be saved to a html file here: `./results/`.
 
+## Masks can be loaded offline or generated online
+It now supports both online-generating and offline-loading for training and testing.
+We generate masks online by default, however, set `--offline_loading_mask=1` when you want to train/test with your own prepared masks.
+The prepared masks should be put in the folder `--training_mask_folder` and `--testing_mask_folder`.
+
+### Masks when training
+For each batch, then:
+ - Generating online: masks are the same for each image in a batch.(To save computation)
+ - Loading offline: masks are loaded randomly for each image in a batch.
+### Masks when testing
+For now, we assume that each mask has the name of corresponding image + a suffix of '_mask.png'.
+We design in this way as it is eaier for comparion between different models.
+You can generate masks yourself under the section **Testing models on given masks**.
+
+If you want to test images with offline raomdom-loaded masks, you may do yourself.
+It should be easy for you to write by yourself.
+
 ### Testing models on given masks
 You should firstly generate masks by running `generate_masks.py`, we assume that only `mask_type=random`, then it makes sense to generate masks by yourself.
 Make sure that you should **keep the same setting with what you train the model** when generating masks.
 It means that you when you train the model with `mask_type='random'` and `mask_sub_type='island'`, then keep the same setting when generating masks using this `generate_masks.py`.
 It generates masks with the names by adding a suffix of `_mask.png` to corresponding names of testing images.
-Then set `offline_testing=1` when testing, the program will read corresponding masks when testing.
+Then set `offline_loading_mask=1` when testing, the program will read corresponding masks when testing.
 
 ## Performance degrades when batchsize > 1
 -^_^, I trying to solve it...
@@ -119,9 +136,8 @@ If you find it a little hard to read the code, you may read [Guides](https://git
 
 
 ## New things that I want to add
-- [x] Make U-Net handle with inputs of any sizes. (By resizing the size of features of decoder to fit that of the corresponding features of decoder.
-- [x] Update the code for pytorch >= 0.4.
-- [x] Clean the code and delete useless comments.
+- [x] Make U-Net handle with inputs of any sizes.
+- [x] Update the code for pytorch >= 1.0.
 - [x] Guides of our code, we hope it helps you understand our code more easily.
 - [x] Add more GANs, like spectural norm and relativelistic GAN.
 - [x] Boost the efficiency of shift layer.
@@ -130,9 +146,12 @@ If you find it a little hard to read the code, you may read [Guides](https://git
 - [x] Extensions of Shift-Net. Still active in absorbing new features.
 - [x] Fix bug in guidance loss when adopting it in multi-gpu.
 - [x] Add composit L1 loss between mask loss and non-mask loss
-- [x] Finish optimizing soft-shift
+- [x] Finish optimizing soft-shift.
+- [x] Add mask varaint in a batch.
+- [x] Support Online-generating/Offline-loading prepared masks for training/testing.
+- [ ] Add VGG loss and TV loss.
 - [ ] Fix performance degradance when batchsize is larger than 1.
-- [ ] Add random batch of masks
+
 
 ## Citation
 If you find this work useful or gives you some insights, please cite:
