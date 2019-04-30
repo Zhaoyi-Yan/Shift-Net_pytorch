@@ -86,9 +86,11 @@ class UnetSkipConnectionBlock(nn.Module):
             return torch.cat([x_latter, x], 1)  # cat in the C channel
 
 
-class SR_C(nn.Module):
+# Out is the the output of 2x RGB images.
+# content_feat is the content feature of original size.
+class SR_C_one(nn.Module):
     def __init__(self, input_nc, output_nc, norm_layer=nn.BatchNorm2d):
-        super(SR_C, self).__init__()
+        super(SR_C_one, self).__init__()
         self.c1 = nn.Conv2d(input_nc, 64, kernel_size=3, stride=1, padding=1)
         res_bs = []
         for i in range(16):
@@ -101,8 +103,8 @@ class SR_C(nn.Module):
         # 4x upscale
         self.c3 = nn.Conv2d(64, 256, kernel_size=3, stride=1, padding=1)
         self.pixel_up1 = nn.PixelShuffle(2)
-        self.c4 = nn.Conv2d(64, 256, kernel_size=3, stride=1, padding=1)
-        self.pixel_up2 = nn.PixelShuffle(2)
+        # self.c4 = nn.Conv2d(64, 256, kernel_size=3, stride=1, padding=1)
+        # self.pixel_up2 = nn.PixelShuffle(2)
 
         self.c_f = nn.Conv2d(64, 3, kernel_size=1, stride=1, padding=1)
         self.out_act = nn.Tanh()
@@ -115,7 +117,7 @@ class SR_C(nn.Module):
 
         content_feat = out
         out = F.relu_(self.pixel_up1(self.c3(out)))
-        out = F.relu_(self.pixel_up2(self.c4(out)))
+        # out = F.relu_(self.pixel_up2(self.c4(out)))
         out_f = self.out_act(self.c_f(out))
 
         return out_f, content_feat
@@ -123,11 +125,12 @@ class SR_C(nn.Module):
 
 # Texture block
 #
-#
+#   maps: texture feature maps after texture swapping
 class SR_T(nn.Module):
     def __init__(self, input_nc, output_nc, norm_layer=nn.BatchNorm2d, num_res_blocks=16):
         super(SR_T, self).__init__()
         self.num_res_blocks = num_res_blocks
+
         self.c1 = nn.Conv2d(input_nc, 64, kernel_size=3, stride=1, padding=1)
         res_bs = []
         for i in range(self.num_res_blocks):
@@ -141,43 +144,60 @@ class SR_T(nn.Module):
         self.c3 = nn.Conv2d(64, 256, kernel_size=3, stride=1, padding=1)
         self.pixel_up1 = nn.PixelShuffle(2)
 
-    def forward(self, input):
-        map_all = torch.cat((map_in, map_ref), dim=1)
+    # The input should be features coming from SR_C
+    def forward(self, input, maps):
+        # change me later
+        map_ref = maps[0]
+        map_all = torch.cat((input, map_ref), dim=1)
+        # constructing residual info
         out = self.c1(map_all)
         out = self.res_bs(out)
-
         out = self.c2_norm(self.c2(out))
-        out = out + map_in
+
+        # add residual info
+        out = out + input
         # upscale 2
-        out = F.relu_(self.pixel_up1(self.c3(input)))
+        out = F.relu_(self.pixel_up1(self.c3(out)))
 
 # Fusion block: Fuse content and texture maps
+# Use me twice if necessary
+# Input should be the features of SR_T
 class SR_F(nn.Module):
     def __init__(self, input_nc, output_nc, norm_layer=nn.BatchNorm2d, num_res_blocks=16):
         super(SR_F, self).__init__()
         self.num_res_blocks = num_res_blocks
         self.c1 = nn.Conv2d(input_nc, 64, kernel_size=3, stride=1, padding=1)
         res_bs = []
-        for i in range(self.num_res_blocks):
+        for i in range(self.num_res_blocks // 2):
             res_bs += [ResnetBlock(64, 3, 'zero', norm_layer, use_spectral_norm=False, use_bias=True)]
         self.res_bs = nn.Sequential(*res_bs)
 
         self.c2 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1)
         self.c2_norm = norm_layer
 
-        # upscale 2
-        self.c3 = nn.Conv2d(64, 256, kernel_size=3, stride=1, padding=1)
-        self.pixel_up1 = nn.PixelShuffle(2)
+        # Directly reduce the dim
+        self.c3 = nn.Conv2d(64, 32, kernel_size=3, stride=1, padding=1)
+        self.c_f = nn.Conv2d(32, 3, kernel_size=1, stride=1, padding=1)
+        self.out_act = nn.Tanh()
+        
+    # using maps[1]
+    def forward(self, input, maps):
+        map_ref = maps[0]
+        map_all = torch.cat((input, map_ref), dim=1)
 
-    def forward(self, input):
-        map_all = torch.cat((map_in, map_ref), dim=1)
+        # constructing residual info
         out = self.c1(map_all)
         out = self.res_bs(out)
-
         out = self.c2_norm(self.c2(out))
-        out = out + map_in
+
+        out = out + input
         # upscale 2
-        out = F.relu_(self.pixel_up1(self.c3(input)))
+        out = self.out_act(self.c_f(F.relu_(self.c3(out))))
+
+        return out
+
+
+
 
 
 # It is an easy type of UNet, intead of constructing UNet with UnetSkipConnectionBlocks.
