@@ -69,8 +69,11 @@ class ShiftNetModel(BaseModel):
         else:
             input_nc = opt.input_nc
 
-        self.netG, self.ng_innerCos_list, self.ng_shift_list = networks.define_G(input_nc, opt.output_nc, opt.ngf,
-                                      opt.which_model_netG, opt, self.mask_global, opt.norm, opt.use_spectral_norm_G, opt.init_type, self.gpu_ids, opt.init_gain)
+        # load original 64*64 model
+        self.netG = networks.define_G(input_nc, opt.output_nc, opt.ngf,
+                                             opt.which_model_netG, opt, self.mask_global, opt.norm, opt.use_spectral_norm_G, opt.init_type, self.gpu_ids, opt.init_gain)
+
+        self.netG_SR = networks.define_G_SR(input_nc, opt.output_nc, opt.ngf, opt.which_model_netG_SR, opt, opt.init_type, self.gpu_ids, opt.init_gain)
 
         if self.isTrain:
             use_sigmoid = False
@@ -106,11 +109,11 @@ class ShiftNetModel(BaseModel):
                                     lr=opt.lr, betas=(opt.beta1, 0.9))
                 self.optimizer_D = torch.optim.Adam(self.netD.parameters(),
                                                     lr=opt.lr, betas=(opt.beta1, 0.9))
-            else:
-                self.optimizer_G = torch.optim.Adam(self.netG.parameters(),
-                                                    lr=opt.lr, betas=(opt.beta1, 0.999))
-                self.optimizer_D = torch.optim.Adam(self.netD.parameters(),
-                                                    lr=opt.lr, betas=(opt.beta1, 0.999))
+            # else:
+            #     self.optimizer_G = torch.optim.Adam(self.netG.parameters(),
+            #                                         lr=opt.lr, betas=(opt.beta1, 0.999))
+            #     self.optimizer_D = torch.optim.Adam(self.netD.parameters(),
+            #                                         lr=opt.lr, betas=(opt.beta1, 0.999))
             self.optimizers.append(self.optimizer_G)
             self.optimizers.append(self.optimizer_D)
             for optimizer in self.optimizers:
@@ -129,27 +132,15 @@ class ShiftNetModel(BaseModel):
         self.mask_global = input['M'].to(self.device).byte()
         self.mask_global = self.mask_global.narrow(1,0,1)
 
-        # create mask online
-        if not self.opt.offline_loading_mask:
-            if self.opt.mask_type == 'center':
-                self.mask_global.zero_()
-                self.mask_global[:, :, int(self.opt.fineSize/4) + self.opt.overlap : int(self.opt.fineSize/2) + int(self.opt.fineSize/4) - self.opt.overlap,\
-                                    int(self.opt.fineSize/4) + self.opt.overlap: int(self.opt.fineSize/2) + int(self.opt.fineSize/4) - self.opt.overlap] = 1
-                self.rand_t, self.rand_l = int(self.opt.fineSize/4) + self.opt.overlap, int(self.opt.fineSize/4) + self.opt.overlap
-            elif self.opt.mask_type == 'random':
-                self.mask_global = self.create_random_mask().type_as(self.mask_global).view(1, *self.mask_global.size()[-3:])
-                # As generating random masks online are computation-heavy
-                # So just generate one ranodm mask for a batch images.
-                self.mask_global = self.mask_global.expand(self.opt.batchSize, *self.mask_global.size()[-3:])
-            else:
-                raise ValueError("Mask_type [%s] not recognized." % self.opt.mask_type)
-        # For loading mask offline, we also need to change 'opt.mask_type' and 'opt.mask_sub_type'
-        # to avoid forgetting such settings.
-        else:
-            self.opt.mask_type = 'random'
-            self.opt.mask_sub_type = 'island'
+        assert self.opt.mask_type == 'center', "Only center mask is implemented"
 
-        self.set_latent_mask(self.mask_global)
+        if self.opt.mask_type == 'center':
+            self.mask_global.zero_()
+            self.mask_global[:, :, int(self.opt.fineSize/4) + self.opt.overlap : int(self.opt.fineSize/2) + int(self.opt.fineSize/4) - self.opt.overlap,\
+                                int(self.opt.fineSize/4) + self.opt.overlap: int(self.opt.fineSize/2) + int(self.opt.fineSize/4) - self.opt.overlap] = 1
+            self.rand_t, self.rand_l = int(self.opt.fineSize/4) + self.opt.overlap, int(self.opt.fineSize/4) + self.opt.overlap
+
+        # self.set_latent_mask(self.mask_global)
 
         real_A.narrow(1,0,1).masked_fill_(self.mask_global, 0.)#2*123.0/255.0 - 1.0
         real_A.narrow(1,1,1).masked_fill_(self.mask_global, 0.)#2*104.0/255.0 - 1.0
@@ -164,11 +155,11 @@ class ShiftNetModel(BaseModel):
         self.real_B = real_B
     
 
-    def set_latent_mask(self, mask_global):
-        for ng_shift in self.ng_shift_list: # ITERATE OVER THE LIST OF ng_shift_list
-            ng_shift.set_mask(mask_global)
-        for ng_innerCos in self.ng_innerCos_list: # ITERATE OVER THE LIST OF ng_innerCos_list:
-            ng_innerCos.set_mask(mask_global)
+    # def set_latent_mask(self, mask_global):
+    #     for ng_shift in self.ng_shift_list: # ITERATE OVER THE LIST OF ng_shift_list
+    #         ng_shift.set_mask(mask_global)
+    #     for ng_innerCos in self.ng_innerCos_list: # ITERATE OVER THE LIST OF ng_innerCos_list:
+    #         ng_innerCos.set_mask(mask_global)
 
     def set_gt_latent(self):
         if not self.opt.skip:

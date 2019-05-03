@@ -3,7 +3,6 @@ from torch.nn import init
 from torch.optim import lr_scheduler
 from torchvision import models
 
-
 from .modules import *
 
 ###############################################################################
@@ -96,17 +95,21 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, opt, mask_global, norm=
     elif which_model_netG == 'unet_shift_triple':
         netG = UnetGeneratorShiftTriple(input_nc, output_nc, 8, opt, innerCos_list, shift_list, mask_global, \
                                                          ngf, norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
-    elif which_model_netG == 'res_unet_shift_triple':
-        netG = ResUnetGeneratorShiftTriple(input_nc, output_nc, 8, opt, innerCos_list, shift_list, mask_global, \
+    # shift to the 2-to-last for 128
+    elif which_model_netG == 'unet_shift_triple_128_1':
+        netG = UnetGeneratorShiftTriple_1(input_nc, output_nc, 7, opt, innerCos_list, shift_list, mask_global, \
                                                          ngf, norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
-    elif which_model_netG == 'soft_unet_shift_triple':
-        netG = SoftUnetGeneratorShiftTriple(input_nc, output_nc, 8, opt, innerCos_list, shift_list, mask_global, \
+    # shift to the 4-to-last for 128
+    elif which_model_netG == 'unet_shift_triple_128_2':
+        netG = UnetGeneratorShiftTriple_2(input_nc, output_nc, 7, opt, innerCos_list, shift_list, mask_global, \
                                                          ngf, norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
-    elif which_model_netG == 'patch_soft_unet_shift_triple':
-        netG = PatchSoftUnetGeneratorShiftTriple(input_nc, output_nc, 8, opt, innerCos_list, shift_list, mask_global, \
+    # shift to the 2-to-last for 64
+    elif which_model_netG == 'unet_shift_triple_64_1':
+        netG = UnetGeneratorShiftTriple_1(input_nc, output_nc, 6, opt, innerCos_list, shift_list, mask_global, \
                                                          ngf, norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
-    elif which_model_netG == 'res_patch_soft_unet_shift_triple':
-        netG = ResPatchSoftUnetGeneratorShiftTriple(input_nc, output_nc, 8, opt, innerCos_list, shift_list, mask_global, \
+    # shift to the 4-to-last for 64
+    elif which_model_netG == 'unet_shift_triple_64_2':
+        netG = UnetGeneratorShiftTriple_2(input_nc, output_nc, 6, opt, innerCos_list, shift_list, mask_global, \
                                                          ngf, norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
     else:
         raise NotImplementedError('Generator model name [%s] is not recognized' % which_model_netG)
@@ -121,6 +124,30 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, opt, mask_global, norm=
     print(netG)
 
     return init_net(netG, init_type, init_gain, gpu_ids), innerCos_list, shift_list
+
+# Note: Adding SN to G tends to give inferior results. Need more checking.
+def define_G_SR(input_nc, output_nc, ngf, which_model_netG_SR, opt, init_type='normal', gpu_ids=[], init_gain=0.02):
+    model_sr = None
+
+    print('input_nc {}'.format(input_nc))
+    print('output_nc {}'.format(output_nc))
+    print('which_model_netG_SR {}'.format(which_model_netG_SR))
+
+    if which_model_netG_SR == '128_up_1':
+        pass
+    elif which_model_netG_SR == '128_up_2':
+        pass
+    elif which_model_netG_SR == '64_up_1':
+        model_sr = m64_UP_1(input_nc, output_nc, norm_layer=nn.BatchNorm2d, num_res_blocks=16)
+    elif which_model_netG_SR == '64_up_2':
+        pass
+    else:
+        raise NotImplementedError('Generator model name [%s] is not recognized' % which_model_netG_SR)
+
+    print('model_sr:')
+    print(model_sr)
+
+    return init_net(model_sr, init_type, init_gain, gpu_ids)
 
 
 def define_D(input_nc, ndf, which_model_netD,
