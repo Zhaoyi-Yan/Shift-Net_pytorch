@@ -48,7 +48,7 @@ For `res patch soft shift-net`:
 ```bash
 python train.py --batchSize=1 --which_model_netG='res_patch_soft_unet_shift_triple' --model='res_patch_soft_shiftnet' --shift_sz=3 --mask_thred=4
 ```
-For some datasets, such as `CelebA`, some images are smaller than `256*256`, so you need add `--fineSize=256` when training, **it is important**.
+For some datasets, such as `CelebA`, some images are smaller than `256*256`, so you need add `--loadSize=256` when training, **it is important**.
 
 - To view training results and loss plots, run `python -m visdom.server` and click the URL http://localhost:8097. The checkpoints will be saved in `./log` by default.
 
