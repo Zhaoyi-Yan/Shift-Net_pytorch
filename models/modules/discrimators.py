@@ -2,7 +2,7 @@ import functools
 import torch.nn as nn
 from .denset_net import *
 
-from .modules import *
+from .modules import ResnetBlock, spectral_norm
 ################################### This is for D ###################################
 # Defines the PatchGAN discriminator with the specified arguments.
 class NLayerDiscriminator(nn.Module):
@@ -65,3 +65,30 @@ class DenseNetDiscrimator(nn.Module):
             return self.sigmoid(self.model(input))
         else:
             return self.model(input)
+
+# For SR models
+class sr_D(nn.Module):
+    def __init__(self, norm_layer=nn.BatchNorm2d, use_spectral_norm=True):
+        super(sr_D, self).__init__()
+        blocks = []
+        df_dim = 32
+        for i in range(5):
+            n_channels = df_dim * 2 ** i
+            blocks += [
+                spectral_norm(nn.Conv2d(3, n_channels, kernel_size=3, stride=1, padding=1), use_spectral_norm),
+                norm_layer(n_channels), nn.LeakyReLU(negative_slope=0.2, inplace=True),
+                spectral_norm(nn.Conv2d(n_channels, n_channels, kernel_size=3, stride=2, padding=1), use_spectral_norm),
+                norm_layer(n_channels), nn.LeakyReLU(negative_slope=0.2, inplace=True)
+                ]
+        
+        self.net_blocks = nn.Sequential(*blocks)
+        self.l_1 = nn.Linear(in_features=512, out_features=1024)
+        self.l_2 = nn.Linear(in_features=1024, out_features=1)
+        
+    def forward(self, input):
+        out = self.net_blocks(input)
+        print(out.size())
+        out = out.view(-1)
+        out = F.sigmoid(self.l_2(F.leaky_relu_(self.l_1(out))))
+        return out
+

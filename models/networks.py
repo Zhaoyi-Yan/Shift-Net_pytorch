@@ -149,6 +149,19 @@ def define_G_SR(input_nc, output_nc, ngf, which_model_netG_SR, opt, init_type='n
 
     return init_net(model_sr, init_type, init_gain, gpu_ids)
 
+def define_D_SR( which_model_netD_SR, norm='batch', use_spectral_norm=False, init_type='normal', gpu_ids=[], init_gain=0.02):
+    netD_sr = None
+    norm_layer = get_norm_layer(norm_type=norm)
+
+    if which_model_netD_SR == 'sr_D':
+        netD_sr = sr_D(norm_layer=norm_layer, use_spectral_norm=use_spectral_norm)
+    else:
+        print('Discriminator model name [%s] is not recognized' %
+              which_model_netD_SR)
+
+    print('NetD_SR:')
+    print(netD_sr)
+    return init_net(netD_sr, init_type, init_gain, gpu_ids)
 
 def define_D(input_nc, ndf, which_model_netD,
              n_layers_D=3, norm='batch', use_sigmoid=False, use_spectral_norm=False, init_type='normal', gpu_ids=[], init_gain=0.02):

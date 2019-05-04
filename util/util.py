@@ -488,6 +488,31 @@ class VGG16FeatureExtractor(nn.Module):
             results.append(func(results[-1]))
         return results[1:]
 
+###################################################
+############## For SR ##########################
+class VGG19FeatureExtractor(nn.Module):
+    def __init__(self):
+        super(VGG19FeatureExtractor, self).__init__()
+        vgg19 = models.vgg19(pretrained=True)
+
+        self.enc_1 = nn.Sequential(*vgg19.features[:2])
+        self.enc_2 = nn.Sequential(*vgg19.features[2:7])
+        self.enc_3 = nn.Sequential(*vgg19.features[7:12])
+
+        # fix the encoder
+        for i in range(3):
+            for param in getattr(self, 'enc_{:d}'.format(i + 1)).parameters():
+                param.requires_grad = False
+
+    def forward(self, image):
+
+        results = [image]
+        for i in range(3):
+            func = getattr(self, 'enc_{:d}'.format(i + 1))
+            results.append(func(results[-1]))
+        return results[1:]
+
+
 def total_variation_loss(image):
     # shift one pixel and get difference (for both x and y direction)
     loss = torch.mean(torch.abs(image[:, :, :, :-1] - image[:, :, :, 1:])) + \
