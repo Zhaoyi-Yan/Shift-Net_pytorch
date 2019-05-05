@@ -9,6 +9,20 @@ It is because the code is still in active development, making pretrained models 
 
 Just pull the latest code and train by following the instructions.
 
+# I just train a model for center face inpainting.
+I select the first 2k images in CelebaHQ_256 for testing, the rest are for training.
+```
+python train.py --loadSize=256 --batchSize=1 --name='celeb256' --which_model_netG='unet_shift_triple' --niter=30 --datarooot='./datasets/celeba-256/train'
+```
+Mention: `loadSize` should be `256` for face datasets.
+
+<img src="./imgs/0_real_A.png" width="210"/> <img src="./imgs/0_fake_B.png" width="210"/><img src="./imgs/0_real_B.png" width="210"/>
+<img src="./imgs/1_real_A.png" width="210"/> <img src="./imgs/1_fake_B.png" width="210"/><img src="./imgs/1_real_B.png" width="210"/>
+<img src="./imgs/11_real_A.png" width="210"/> <img src="./imgs/11_fake_B.png" width="210"/><img src="./imgs/11_real_B.png" width="210"/>
+<img src="./imgs/14_real_A.png" width="210"/> <img src="./imgs/14_fake_B.png" width="210"/><img src="./imgs/14_real_B.png" width="210"/>
+
+For testing, please read the documnent carefully.
+
 ## Prerequisites
 - Linux or Windows.
 - Python 2 or Python 3.
