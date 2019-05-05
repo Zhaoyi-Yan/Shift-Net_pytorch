@@ -102,40 +102,40 @@ class PartialConv(nn.Module):
 
 
 class ResnetBlock(nn.Module):
-    def __init__(self, dim, kernel_size, padding_type, norm_layer, use_spectral_norm, use_bias):
-        super(ResnetBlock, self).__init__()
-        self.conv_block = self.build_conv_block(dim, kernel_size, padding_type, norm_layer, use_spectral_norm, use_bias)
+	def __init__(self, dim, kernel_size, padding_type, norm_layer, use_spectral_norm, use_bias):
+		super(ResnetBlock, self).__init__()
+		self.conv_block = self.build_conv_block(dim, kernel_size, padding_type, norm_layer, use_spectral_norm, use_bias)
 
-    def build_conv_block(self, dim, kernel_size, padding_type, norm_layer, use_spectral_norm, use_bias):
-        conv_block = []
-        p = 0
-        if padding_type == 'reflect':
-            conv_block += [nn.ReflectionPad2d(1)]
-        elif padding_type == 'replicate':
-            conv_block += [nn.ReplicationPad2d(1)]
-        elif padding_type == 'zero':
-            p = 1
-        else:
-            raise NotImplementedError('padding [%s] is not implemented' % padding_type)
+	def build_conv_block(self, dim, kernel_size, padding_type, norm_layer, use_spectral_norm, use_bias):
+		conv_block = []
+		p = 0
+		if padding_type == 'reflect':
+			conv_block += [nn.ReflectionPad2d(1)]
+		elif padding_type == 'replicate':
+			conv_block += [nn.ReplicationPad2d(1)]
+		elif padding_type == 'zero':
+			p = 1
+		else:
+			raise NotImplementedError('padding [%s] is not implemented' % padding_type)
 
-        conv_block += [spectral_norm(nn.Conv2d(dim, dim, kernel_size=kernel_size, padding=p, bias=use_bias),use_spectral_norm),
-                       norm_layer(dim),
-                       nn.ReLU(True)]
+		conv_block += [spectral_norm(nn.Conv2d(dim, dim, kernel_size=kernel_size, padding=p, bias=use_bias),use_spectral_norm),
+						norm_layer(dim),
+						nn.ReLU(True)]
 
-        p = 0
-        if padding_type == 'reflect':
-            conv_block += [nn.ReflectionPad2d(1)]
-        elif padding_type == 'replicate':
-            conv_block += [nn.ReplicationPad2d(1)]
-        elif padding_type == 'zero':
-            p = 1
-        else:
-            raise NotImplementedError('padding [%s] is not implemented' % padding_type)
-        conv_block += [spectral_norm(nn.Conv2d(dim, dim, kernel_size=kernel_size, padding=p, bias=use_bias), use_spectral_norm),
-    	               norm_layer(dim)]
+		p = 0
+		if padding_type == 'reflect':
+			conv_block += [nn.ReflectionPad2d(1)]
+		elif padding_type == 'replicate':
+			conv_block += [nn.ReplicationPad2d(1)]
+		elif padding_type == 'zero':
+			p = 1
+		else:
+			raise NotImplementedError('padding [%s] is not implemented' % padding_type)
+		conv_block += [spectral_norm(nn.Conv2d(dim, dim, kernel_size=kernel_size, padding=p, bias=use_bias), use_spectral_norm),
+						norm_layer(dim)]
+						
+		return nn.Sequential(*conv_block)
 
-        return nn.Sequential(*conv_block)
-
-    def forward(self, x):
-        out = x + self.conv_block(x)
+	def forward(self, x):
+		out = x + self.conv_block(x)
 		return out

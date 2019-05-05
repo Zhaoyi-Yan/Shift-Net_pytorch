@@ -1,7 +1,7 @@
 import numpy as np
-from util.NonparametricShift import Modified_NonparametricShift
+from .NonparametricShift import Modified_NonparametricShift
 import torch
-import util.util as util
+import util as util
 import time
 
 
