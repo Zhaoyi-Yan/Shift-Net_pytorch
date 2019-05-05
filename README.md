@@ -16,10 +16,60 @@ python train.py --loadSize=256 --batchSize=1 --name='celeb256' --which_model_net
 ```
 Mention: `loadSize` should be `256` for face datasets.
 
-<img src="./imgs/0_real_A.png" width="210"/> <img src="./imgs/0_fake_B.png" width="210"/><img src="./imgs/0_real_B.png" width="210"/>
-<img src="./imgs/1_real_A.png" width="210"/> <img src="./imgs/1_fake_B.png" width="210"/><img src="./imgs/1_real_B.png" width="210"/>
-<img src="./imgs/11_real_A.png" width="210"/> <img src="./imgs/11_fake_B.png" width="210"/><img src="./imgs/11_real_B.png" width="210"/>
-<img src="./imgs/14_real_A.png" width="210"/> <img src="./imgs/14_fake_B.png" width="210"/><img src="./imgs/14_real_B.png" width="210"/>
+
+ <table style="float:center">
+ <tr>
+  <th><B>Input</B></th> <th><B>Results</B></th> <th><B>Ground-truth</B></th>
+ </tr>
+ <tr>
+  <td>
+   <img src='./imgs/0_real_A.png' >
+  </td>
+  <td>
+  <img src='./imgs/0_fake_B.png'>
+  </td>
+  <td>
+   <img src='./imgs/0_real_B.png'>
+  </td>
+  </tr>
+
+  <tr>
+  <td>
+   <img src='./imgs/1_real_A.png' >
+  </td>
+  <td>
+  <img src='./imgs/1_fake_B.png'>
+  </td>
+  <td>
+   <img src='./imgs/1_real_B.png'>
+  </td>
+  </tr>
+
+  <tr>
+  <td>
+   <img src='./imgs/11_real_A.png' >
+  </td>
+  <td>
+  <img src='./imgs/11_fake_B.png'>
+  </td>
+  <td>
+   <img src='./imgs/11_real_B.png'>
+  </td>
+  </tr>
+
+  <tr>
+  <td>
+   <img src='./imgs/14_real_A.png' >
+  </td>
+  <td>
+  <img src='./imgs/14_fake_B.png'>
+  </td>
+  <td>
+   <img src='./imgs/14_real_B.png'>
+  </td>
+  </tr>
+
+ </table>
 
 For testing, please read the documnent carefully.
 
