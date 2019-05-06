@@ -73,6 +73,10 @@ Mention: `loadSize` should be `256` for face datasets.
 
 For testing, please read the documnent carefully.
 
+Pretrained model for face center inpainting are available:
+```bash
+bash download_models.sh
+```
 ## Prerequisites
 - Linux or Windows.
 - Python 2 or Python 3.
