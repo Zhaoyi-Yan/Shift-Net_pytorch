@@ -9,6 +9,74 @@ It is because the code is still in active development, making pretrained models 
 
 Just pull the latest code and train by following the instructions.
 
+# I just train a model for center face inpainting.
+I select the first 2k images in CelebaHQ_256 for testing, the rest are for training.
+```
+python train.py --loadSize=256 --batchSize=1 --name='celeb256' --which_model_netG='unet_shift_triple' --niter=30 --datarooot='./datasets/celeba-256/train'
+```
+Mention: `loadSize` should be `256` for face datasets.
+
+
+ <table style="float:center">
+ <tr>
+  <th><B>Input</B></th> <th><B>Results</B></th> <th><B>Ground-truth</B></th>
+ </tr>
+ <tr>
+  <td>
+   <img src='./imgs/0_real_A.png' >
+  </td>
+  <td>
+  <img src='./imgs/0_fake_B.png'>
+  </td>
+  <td>
+   <img src='./imgs/0_real_B.png'>
+  </td>
+  </tr>
+
+  <tr>
+  <td>
+   <img src='./imgs/1_real_A.png' >
+  </td>
+  <td>
+  <img src='./imgs/1_fake_B.png'>
+  </td>
+  <td>
+   <img src='./imgs/1_real_B.png'>
+  </td>
+  </tr>
+
+  <tr>
+  <td>
+   <img src='./imgs/11_real_A.png' >
+  </td>
+  <td>
+  <img src='./imgs/11_fake_B.png'>
+  </td>
+  <td>
+   <img src='./imgs/11_real_B.png'>
+  </td>
+  </tr>
+
+  <tr>
+  <td>
+   <img src='./imgs/14_real_A.png' >
+  </td>
+  <td>
+  <img src='./imgs/14_fake_B.png'>
+  </td>
+  <td>
+   <img src='./imgs/14_real_B.png'>
+  </td>
+  </tr>
+
+ </table>
+
+For testing, please read the documnent carefully.
+
+Pretrained model for face center inpainting are available:
+```bash
+bash download_models.sh
+```
 ## Prerequisites
 - Linux or Windows.
 - Python 2 or Python 3.
@@ -48,7 +116,7 @@ For `res patch soft shift-net`:
 ```bash
 python train.py --batchSize=1 --which_model_netG='res_patch_soft_unet_shift_triple' --model='res_patch_soft_shiftnet' --shift_sz=3 --mask_thred=4
 ```
-For some datasets, such as `CelebA`, some images are smaller than `256*256`, so you need add `--fineSize=256` when training, **it is important**.
+For some datasets, such as `CelebA`, some images are smaller than `256*256`, so you need add `--loadSize=256` when training, **it is important**.
 
 - To view training results and loss plots, run `python -m visdom.server` and click the URL http://localhost:8097. The checkpoints will be saved in `./log` by default.
 

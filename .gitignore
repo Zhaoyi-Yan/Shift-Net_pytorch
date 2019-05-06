@@ -1,5 +1,4 @@
 *.JPG
-*.png
 *.jpg
 *.txt
 datasets/
@@ -15,3 +14,5 @@ logs/
 .idea/
 *-checkpoint.py
 *.ipynb_checkpoints/
+masks/
+resized_paris/
