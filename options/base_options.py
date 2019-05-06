@@ -7,16 +7,31 @@ class BaseOptions():
     def __init__(self):
         self.initialized = False
 
+# For SR, loadSize = 256
+# lr: 1e-4
+# pretrain: 2 epochs(Only L_rec is applied)
+# Then all losses train for 20 epochs.
+# beta1 = 0.9
+# L_percep: 1e-4
+# L_rec: 1
+# L_adv: 1e-6
+# L_tex: 1e-4
+# LR_shecdual: exp
+#
+# Overlap: 0
+# lambda_A: 1
+# gan_type: WGAN_GP
     def initialize(self, parser):
         parser.add_argument('--dataroot', default='./datasets/Paris/train', help='path to training/testing images')
         parser.add_argument('--batchSize', type=int, default=1, help='input batch size')
-        parser.add_argument('--loadSize', type=int, default=350, help='scale images to this size')
+        parser.add_argument('--loadSize', type=int, default=256, help='scale images to this size')
         parser.add_argument('--fineSize', type=int, default=256, help='then crop to this size')
         parser.add_argument('--input_nc', type=int, default=3, help='# of input image channels')
         parser.add_argument('--output_nc', type=int, default=3, help='# of output image channels')
         parser.add_argument('--ngf', type=int, default=64, help='# of gen filters in first conv layer')
         parser.add_argument('--ndf', type=int, default=64, help='# of discrim filters in first conv layer')
         parser.add_argument('--which_model_netD', type=str, default='basic', help='selects model to use for netD, [basic|densenet]')
+        parser.add_argument('--which_model_netD_SR', type=str, default='basic', help='selects model to use for netD_SR, [basic]')
         parser.add_argument('--which_model_netG', type=str, default='unet_shift_triple_64_1', help='selects model to use for netG [unet_shift_triple_128_1 \
                                                                 unet_shift_triple_128_2, unet_shift_triple_64_1, unet_shift_triple_64_2]')
         parser.add_argument('--which_model_netG_SR', type=str, default='64_1_up', help='selects model to use for netG [128_1_up, 128_2_up, 64_1_up, 64_2_up]')
@@ -45,11 +60,11 @@ class BaseOptions():
                             help='the type of mask you want to apply, \'center\' or \'random\'')
         parser.add_argument('--mask_sub_type', type=str, default='island',
                             help='the type of mask you want to apply, \'rect \' or \'fractal \' or \'island \'')
-        parser.add_argument('--lambda_A', type=int, default=100, help='weight on L1 term in objective')
+        parser.add_argument('--lambda_A', type=int, default=1, help='weight on L1 term in objective')
         parser.add_argument('--stride', type=int, default=1, help='should be dense, 1 is a good option.')
         parser.add_argument('--shift_sz', type=int, default=1, help='shift_sz>1 only for \'soft_shift_patch\'.')
         parser.add_argument('--mask_thred', type=int, default=1, help='number to decide whether a patch is masked')
-        parser.add_argument('--overlap', type=int, default=4, help='the overlap for center mask')
+        parser.add_argument('--overlap', type=int, default=0, help='the overlap for center mask')
         parser.add_argument('--bottleneck', type=int, default=512, help='neurals of fc')
         parser.add_argument('--gp_lambda', type=float, default=10.0, help='gradient penalty coefficient')
         parser.add_argument('--constrain', type=str, default='MSE', help='guidance loss type')
@@ -57,25 +72,21 @@ class BaseOptions():
         parser.add_argument('--init_gain', type=float, default=0.02, help='scaling factor for normal, xavier and orthogonal.')
         parser.add_argument('--skip', type=int, default=0, help='Define whether the guidance layer is skipped. Useful when using multiGPUs.')
         parser.add_argument('--fuse', type=int, default=0, help='Fuse may encourage large patches shifting when using \'patch_soft_shift\'')
-        parser.add_argument('--gan_type', type=str, default='vanilla', help='wgan_gp, '
+        parser.add_argument('--gan_type', type=str, default='wgan_gp', help='wgan_gp, '
                                                                             'lsgan, '
                                                                             'vanilla, '
                                                                             're_s_gan (Relativistic Standard GAN), '
                                                                             're_avg_gan (Relativistic average Standard GAN), ')
-        parser.add_argument('--gan_weight', type=float, default=0.2, help='the weight of gan loss')
+        parser.add_argument('--gan_weight', type=float, default=1e-6, help='the weight of gan loss')
         # New added
-        parser.add_argument('--style_weight', type=float, default=10.0, help='the weight of style loss')
-        parser.add_argument('--content_weight', type=float, default=1.0, help='the weight of content loss')
+        parser.add_argument('--style_weight', type=float, default=1e-4, help='the weight of style loss')
+        parser.add_argument('--content_weight', type=float, default=1e-4, help='the weight of content loss')
         parser.add_argument('--tv_weight', type=float, default=0.0, help='the weight of tv loss, you can set a small value, such as 0.1/0.01')
         parser.add_argument('--offline_loading_mask', type=int, default=0, help='whether to load mask offline randomly')
-        parser.add_argument('--mask_weight_G', type=float, default=400.0, help='the weight of mask part in ouput of G, you can try different mask_weight')
-        parser.add_argument('--discounting', type=int, default=1, help='the loss type of mask part, whether using discounting l1 loss or normal l1')
         parser.add_argument('--use_spectral_norm_D', type=int, default=1, help='whether to add spectral norm to D, it helps improve results')
         parser.add_argument('--use_spectral_norm_G', type=int, default=0, help='whether to add spectral norm in G. Seems very bad when adding SN to G')
         parser.add_argument('--only_lastest', type=int, default=0,
                             help='If True, it will save only the lastest weights')
-        parser.add_argument('--add_mask2input', type=int, default=1,
-                            help='If True, It will add the mask as a fourth dimension over input space')
 
         self.initialized = True
         return parser

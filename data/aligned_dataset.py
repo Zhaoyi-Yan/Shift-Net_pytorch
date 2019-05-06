@@ -2,12 +2,15 @@
 import os.path
 import random
 import torchvision.transforms as transforms
+import torch.nn.functional as F
 import torch
 import random
 from data.base_dataset import BaseDataset
 from data.image_folder import make_dataset
 from PIL import Image
 
+# For SR let fineSize=256. Then input should be 64*64.
+# Using resized_paris(256*256) as training data.
 class AlignedDataset(BaseDataset):
     def initialize(self, opt):
         self.opt = opt
@@ -28,46 +31,18 @@ class AlignedDataset(BaseDataset):
     def __getitem__(self, index):
         A_path = self.A_paths[index]
         A = Image.open(A_path).convert('RGB')
-        w, h = A.size
-
-        if w < h:
-            ht_1 = self.opt.loadSize * h // w
-            wd_1 = self.opt.loadSize
-            A = A.resize((wd_1, ht_1), Image.BICUBIC)
-        else:
-            wd_1 = self.opt.loadSize * w // h
-            ht_1 = self.opt.loadSize
-            A = A.resize((wd_1, ht_1), Image.BICUBIC)
 
         A = self.transform(A)
-        h = A.size(1)
-        w = A.size(2)
-        w_offset = random.randint(0, max(0, w - self.opt.fineSize - 1))
-        h_offset = random.randint(0, max(0, h - self.opt.fineSize - 1))
 
-        A = A[:, h_offset:h_offset + self.opt.fineSize,
-               w_offset:w_offset + self.opt.fineSize]
 
-        if (not self.opt.no_flip) and random.random() < 0.5:
-            idx = [i for i in range(A.size(2) - 1, -1, -1)] # size(2)-1, size(2)-2, ... , 0
-            idx = torch.LongTensor(idx)
-            A = A.index_select(2, idx)
-
-        # let B directly equals A
+        # B is the ground-truth
         B = A.clone()
 
-        # Just zero the mask is fine if not offline_loading_mask.
-        mask = A.clone().zero_()
-        if self.opt.offline_loading_mask:
-            if self.opt.isTrain:
-                mask = Image.open(self.mask_paths[random.randint(0, len(self.mask_paths)-1)])
-            # When testing, we just load the mask with suffix '_mask' to make it easy to compare performance of different models.
-            else:
-                mask = Image.open(os.path.join(self.mask_folder, os.path.splitext(os.path.basename(A_path[0]))[0]+'_mask.png'))
-            mask = mask.resize((self.opt.fineSize, self.opt.fineSize), Image.NEAREST)
-            mask = transforms.ToTensor()(mask)
+        # Then resized A to the input size.
+        A = F.interpolate(A, (64, 64), mode='bilinear')
         
-        return {'A': A, 'B': B, 'M': mask,
+        
+        return {'A': A, 'B': B, #'M': mask,
                 'A_paths': A_path}
 
     def __len__(self):
