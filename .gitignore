@@ -16,3 +16,4 @@ logs/
 *.ipynb_checkpoints/
 masks/
 resized_paris/
+*.pt

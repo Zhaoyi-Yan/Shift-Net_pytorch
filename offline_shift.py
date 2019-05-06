@@ -18,10 +18,13 @@ import util.shift_op_soft as shift_op_soft
 # python offline_shift.py --name='64_64_1_no_overlap' --which_epoch=30   --which_model_netG='unet_shift_triple_64_1'
 
 shifted_folder = 'shifted/64_1/train'
-resized_folder = 'resized_paris/train'
+resized_folder = 'datasets/resized_paris/train'
+fake_B_folder = 'fakeB/64_1/train'
 # img_folder = './datasets/Paris/train'
 util.mkdir(shifted_folder)
 util.mkdir(resized_folder)
+util.mkdir(fake_B_folder)
+
 
 opt = TrainOptions().parse()
 
@@ -124,40 +127,44 @@ for fl in f:
     A_trans = A_trans.to(opt.gpu_ids[0])
     A_trans_gt = A_trans_gt.to(opt.gpu_ids[0])
 
-
+    # fake_B can also be stored offline
     fake_B = netG(A_little_trans)
-    # Then cut this patch out and upscale x4.
-    mask_patch = fake_B[:, :, int(opt.fineSize/4) + opt.overlap : int(opt.fineSize/2) + int(opt.fineSize/4) - opt.overlap,\
-                            int(opt.fineSize/4) + opt.overlap: int(opt.fineSize/2) + int(opt.fineSize/4) - opt.overlap]
-
-    # then upscale x 4
-    # when fineSize is 128, then upscale x 2.
-    # then the mask size is 128*128
-    mask_patch_upscaled = F.interpolate(mask_patch, scale_factor=4, mode='bilinear')
-
-    # then paste it to the image of 256*256
-    A_trans[:, :, int(256/4) + opt.overlap : int(256/2) + int(256/4) - opt.overlap,\
-            int(256/4) + opt.overlap: int(256/2) + int(256/4) - opt.overlap] = mask_patch_upscaled
+    print('Generating fake_B for images: '+ os.path.basename(fl))
+    torch.save(fake_B, os.path.join(fake_B_folder, os.path.splitext(os.path.basename(fl))[0]+'_fakeB.pt'))
 
 
-    # We only need to use the mask_in_latent part in A_feat.
-    A_feat = vgg19_extractor(A_trans)
-    A_feat_gt = vgg19_extractor_gt(A_trans_gt)
+    # # Then cut this patch out and upscale x4.
+    # mask_patch = fake_B[:, :, int(opt.fineSize/4) + opt.overlap : int(opt.fineSize/2) + int(opt.fineSize/4) - opt.overlap,\
+    #                         int(opt.fineSize/4) + opt.overlap: int(opt.fineSize/2) + int(opt.fineSize/4) - opt.overlap]
 
-    # For each feature, get the enhance one.
-    # relu1_1, relu2_1, relu3_1 (the same size, 1/2, 1/4)
-    # only maske_in_latent part are useful
-    for i in range(3):
-        if i == 0:
-            A_feat_gt[i] *= mask_large.float().to(A_feat[i])
-            A_feat[i] = A_feat_gt[i]
-            continue
-        # calculate the mask in latent space.
-        mask_in_latent = util.cal_feat_mask(mask_large, i)
-        flag = util.cal_flag_given_mask_thred(mask_in_latent, patch_size=1, stride=1, mask_thred=1)
-        shifted = shift_op.shift_offline(A_feat[i], shift_sz=1, stride=1, flag=flag)
-        A_feat[i] = shifted
+    # # then upscale x 4
+    # # when fineSize is 128, then upscale x 2.
+    # # then the mask size is 128*128
+    # mask_patch_upscaled = F.interpolate(mask_patch, scale_factor=4, mode='bilinear')
 
-    print('Generating feat for images: '+ os.path.basename(fl))
-    torch.save(A_feat, os.path.join(shifted_folder, os.path.splitext(os.path.basename(fl))[0]+'.pt'))
+    # # then paste it to the image of 256*256
+    # A_trans[:, :, int(256/4) + opt.overlap : int(256/2) + int(256/4) - opt.overlap,\
+    #         int(256/4) + opt.overlap: int(256/2) + int(256/4) - opt.overlap] = mask_patch_upscaled
+
+
+    # # We only need to use the mask_in_latent part in A_feat.
+    # A_feat = vgg19_extractor(A_trans)
+    # A_feat_gt = vgg19_extractor_gt(A_trans_gt)
+
+    # # For each feature, get the enhance one.
+    # # relu1_1, relu2_1, relu3_1 (the same size, 1/2, 1/4)
+    # # only maske_in_latent part are useful
+    # for i in range(3):
+    #     if i == 0:
+    #         A_feat_gt[i] *= mask_large.float().to(A_feat[i])
+    #         A_feat[i] = A_feat_gt[i]
+    #         continue
+    #     # calculate the mask in latent space.
+    #     mask_in_latent = util.cal_feat_mask(mask_large, i)
+    #     flag = util.cal_flag_given_mask_thred(mask_in_latent, patch_size=1, stride=1, mask_thred=1)
+    #     shifted = shift_op.shift_offline(A_feat[i], shift_sz=1, stride=1, flag=flag)
+    #     A_feat[i] = shifted
+
+    # print('Generating feat for images: '+ os.path.basename(fl))
+    # torch.save(A_feat, os.path.join(shifted_folder, os.path.splitext(os.path.basename(fl))[0]+'.pt'))
 
