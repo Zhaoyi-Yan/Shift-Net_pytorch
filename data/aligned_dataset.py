@@ -7,6 +7,7 @@ import torch
 import random
 from data.base_dataset import BaseDataset
 from data.image_folder import make_dataset
+import copy
 from PIL import Image
 
 # For SR let fineSize=256. Then input should be 64*64.
@@ -31,15 +32,12 @@ class AlignedDataset(BaseDataset):
     def __getitem__(self, index):
         A_path = self.A_paths[index]
         A = Image.open(A_path).convert('RGB')
+        B = copy.deepcopy(A)
 
+        A = A.resize((64, 64), Image.BICUBIC)
         A = self.transform(A)
+        B = self.transform(B)
 
-
-        # B is the ground-truth
-        B = A.clone()
-
-        # Then resized A to the input size.
-        A = F.interpolate(A, (64, 64), mode='bilinear')
         
         
         return {'A': A, 'B': B, #'M': mask,

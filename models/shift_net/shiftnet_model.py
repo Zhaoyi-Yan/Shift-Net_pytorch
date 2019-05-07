@@ -105,8 +105,13 @@ class ShiftNetModel(BaseModel):
 
     def set_input(self, input):
         self.image_paths = input['A_paths']
+
+        # 64*64
         real_A = input['A'].to(self.device)
+        # 256*256
         real_B = input['B'].to(self.device)
+        # load here ?
+        self.shifted_feat = input[]
 
         assert self.opt.mask_type == 'center', "Only center mask is implemented"
 
@@ -115,14 +120,23 @@ class ShiftNetModel(BaseModel):
             self.mask_global.zero_()
             self.mask_global[:, :, int(self.opt.fineSize/4) + self.opt.overlap : int(self.opt.fineSize/2) + int(self.opt.fineSize/4) - self.opt.overlap,\
                                 int(self.opt.fineSize/4) + self.opt.overlap: int(self.opt.fineSize/2) + int(self.opt.fineSize/4) - self.opt.overlap] = 1
-            self.rand_t, self.rand_l = int(self.opt.fineSize/4) + self.opt.overlap, int(self.opt.fineSize/4) + self.opt.overlap
 
         self.real_A = real_A
         self.real_B = real_B
 
 
     def forward(self):
-        self.fake_B = self.netG_SR(self.real_A)
+        # crop the shifted features out.
+        # For different features, crop the corresponding features out.
+        # Need to find a better way to figure it out.
+        self.shifted_feat[0] = self.shifted_feat[0][:, :, int(256/4) : int(256/2) + int(256/4), \
+                            int(256/4) : int(256/2) + int(256/4)]
+        self.shifted_feat[1] = self.shifted_feat[0][:, :, int(128/4) : int(128/2) + int(128/4), \
+                            int(128/4) : int(128/2) + int(128/4)]
+        self.shifted_feat[2] = self.shifted_feat[0][:, :, int(64/4) : int(64/2) + int(64/4), \
+                            int(64/4) : int(64/2) + int(64/4)]
+
+        self.fake_B = self.netG_SR(self.real_A, self.shifted_feat)
 
     def get_image_paths(self):
         return self.image_paths
@@ -131,15 +145,6 @@ class ShiftNetModel(BaseModel):
         fake_B = self.fake_B
         # Real
         real_B = self.real_B # GroundTruth
-
-        # Has been verfied, for square mask, let D discrinate masked patch, improves the results.
-        if self.opt.mask_type == 'center' or self.opt.mask_sub_type == 'rect': 
-            # Using the cropped fake_B as the input of D.
-            fake_B = self.fake_B[:, :, self.rand_t:self.rand_t+self.opt.fineSize//2-2*self.opt.overlap, \
-                                            self.rand_l:self.rand_l+self.opt.fineSize//2-2*self.opt.overlap]
-
-            real_B = self.real_B[:, :, self.rand_t:self.rand_t+self.opt.fineSize//2-2*self.opt.overlap, \
-                                            self.rand_l:self.rand_l+self.opt.fineSize//2-2*self.opt.overlap]  
 
         self.pred_fake = self.netD_SR(fake_B.detach())
         self.pred_real = self.netD_SR(real_B)
@@ -156,12 +161,12 @@ class ShiftNetModel(BaseModel):
     def backward_G(self):
         # First, G(A) should fake the discriminator
         fake_B = self.fake_B
+        real_B = self.real_B
 
         pred_fake = self.netD_SR(fake_B)
 
         self.loss_G_GAN = -torch.mean(pred_fake) * self.opt.gan_weight
 
-        # If we change the mask as 'center with random position', then we can replacing loss_G_L1_m with 'Discounted L1'.
         self.loss_G_L1 = 0
         self.loss_G_L1 += self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_A
 
