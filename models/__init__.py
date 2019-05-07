@@ -25,11 +25,6 @@ def create_model(opt):
         assert (opt.dataset_mode == 'aligned' or opt.dataset_mode == 'aligned_resized')
         from models.res_patch_soft_shift.res_patch_soft_shiftnet_model import ResPatchSoftShiftNetModel
         model = ResPatchSoftShiftNetModel()
-
-    elif opt.model == 'test':
-        assert(opt.dataset_mode == 'single')
-        from .test_model import TestModel
-        model = TestModel()
     else:
         raise ValueError("Model [%s] not recognized." % opt.model)
     model.initialize(opt)

@@ -58,7 +58,6 @@ class ShiftNetModel(BaseModel):
                                 int(self.opt.fineSize/4) + self.opt.overlap: int(self.opt.fineSize/2) + int(self.opt.fineSize/4) - self.opt.overlap] = 1
 
         if len(opt.gpu_ids) > 0:
-            self.use_gpu = True
             self.mask_global = self.mask_global.to(self.device)
 
         # load/define networks

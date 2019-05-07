@@ -16,3 +16,5 @@ logs/
 *.ipynb_checkpoints/
 masks/
 resized_paris/
+fakeB/
+shifted/

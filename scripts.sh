@@ -1,1 +1,0 @@
-python train.py --dataroot /mnt/hdd2/AIM/DAGM/Class3 --checkpoints_dir /mnt/hdd2/AIM/checkpoints/ --name 14_12_2018_Class3_0 --gpu_ids 1
