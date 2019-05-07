@@ -17,9 +17,9 @@ import util.shift_op_soft as shift_op_soft
 
 # python offline_shift.py --name='64_64_1_no_overlap' --which_epoch=30   --which_model_netG='unet_shift_triple_64_1'
 
-shifted_folder = 'shifted/64_1/train'
-resized_folder = 'datasets/resized_paris/train'
-fake_B_folder = 'fakeB/64_1/train'
+shifted_folder = 'shifted/64_2/test'
+resized_folder = 'datasets/resized_paris/test'
+fake_B_folder = 'fakeB/64_2/test'
 # img_folder = './datasets/Paris/train'
 util.mkdir(shifted_folder)
 util.mkdir(resized_folder)
