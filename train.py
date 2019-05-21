@@ -30,7 +30,6 @@ if __name__ == "__main__":
             epoch_iter += opt.batchSize
 
             model.set_input(data) # it not only sets the input data with mask, but also sets the latent mask.
-            model.set_gt_latent()
 
             # Additonal, should set it before 'optimize_parameters()'.
             if total_steps % opt.display_freq == 0:
