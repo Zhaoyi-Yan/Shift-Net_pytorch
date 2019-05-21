@@ -16,17 +16,17 @@ class InnerCos(nn.Module):
         # Init a dummy value is fine.
         self.target = torch.tensor(1.0)
 
-   def set_mask(self, mask_global):
+    def set_mask(self, mask_global):
         mask_all = util.cal_feat_mask(mask_global, self.layer_to_last)
         self.mask_all = mask_all.float()
 
 	
-   def _split_mask(self, cur_bsize):
+    def _split_mask(self, cur_bsize):
         # get the visible indexes of gpus and assign correct mask to set of images
         cur_device = torch.cuda.current_device()
         self.cur_mask = self.mask_all[cur_device*cur_bsize:(cur_device+1)*cur_bsize, :, :, :]
 
-   def forward(self, in_data):
+    def forward(self, in_data):
         self.bz, self.c, _, _ = in_data.size()
         self._split_mask(self.bz)
         self.cur_mask = self.cur_mask.to(in_data)
