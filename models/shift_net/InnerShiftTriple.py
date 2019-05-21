@@ -17,16 +17,18 @@ class InnerShiftTriple(nn.Module):
 
 
     def set_mask(self, mask_global):
-        mask = util.cal_feat_mask(mask_global, self.layer_to_last)
-        self.mask = mask
-        return self.mask
+        self.mask_all = util.cal_feat_mask(mask_global, self.layer_to_last)
+
+    def _split_mask(self, cur_bsize):
+        # get the visible indexes of gpus and assign correct mask to set of images
+        cur_device = torch.cuda.current_device()
+        self.cur_mask = self.mask_all[cur_device*cur_bsize:(cur_device+1)*cur_bsize, :, :, :]
 
     # If mask changes, then need to set cal_fix_flag true each iteration.
     def forward(self, input):
-        #print(input.shape)
-        _, self.c, self.h, self.w = input.size()
-        self.flag = util.cal_flag_given_mask_thred(self.mask, self.shift_sz, self.stride, self.mask_thred)
-
+        self.bz, self.c, self.h, self.w = input.size()
+        self._split_mask(self.bz)
+        self.flag = util.cal_flag_given_mask_thred(self.cur_mask, self.shift_sz, self.stride, self.mask_thred)
         final_out = InnerShiftTripleFunction.apply(input, self.shift_sz, self.stride, self.triple_weight, self.flag, self.show_flow)
         if self.show_flow:
             self.flow_srcs = InnerShiftTripleFunction.get_flow_src()

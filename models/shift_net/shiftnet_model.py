@@ -181,6 +181,7 @@ class ShiftNetModel(BaseModel):
 
 
     def forward(self):
+        self.set_gt_latent()
         self.fake_B = self.netG(self.real_A)
 
     # Just assume one shift layer.
