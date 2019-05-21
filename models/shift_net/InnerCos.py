@@ -16,18 +16,25 @@ class InnerCos(nn.Module):
         # Init a dummy value is fine.
         self.target = torch.tensor(1.0)
 
-    def set_mask(self, mask_global):
-        mask = util.cal_feat_mask(mask_global, self.layer_to_last)
-        self.mask = mask.float()
+   def set_mask(self, mask_global):
+        mask_all = util.cal_feat_mask(mask_global, self.layer_to_last)
+        self.mask_all = mask_all.float()
 
-    def forward(self, in_data):
-        self.bs, self.c, _, _ = in_data.size()
-        self.mask = self.mask.to(in_data)
+	
+    def _split_mask(self, cur_bsize):
+        # get the visible indexes of gpus and assign correct mask to set of images
+        cur_device = torch.cuda.current_device()
+        self.cur_mask = self.mask_all[cur_device*cur_bsize:(cur_device+1)*cur_bsize, :, :, :]
+
+   def forward(self, in_data):
+        self.bz, self.c, _, _ = in_data.size()
+        self._split_mask(self.bz)
+        self.cur_mask = self.cur_mask.to(in_data)
         if not self.skip:
             # It works like this:
             # Each iteration contains 2 forward, In the first forward, we input GT, just to get the target.
             # In the second forward, we input corrupted image, then back-propagate the network, the guidance loss works as expected.
-            self.output = InnerCosFunction.apply(in_data, self.criterion, self.strength, self.target, self.mask)
+            self.output = InnerCosFunction.apply(in_data, self.criterion, self.strength, self.target, self.cur_mask)
             self.target = in_data.narrow(1, self.c // 2, self.c // 2).detach() # the latter part
         else:
             self.output = in_data
