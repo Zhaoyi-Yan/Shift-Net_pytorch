@@ -21,7 +21,7 @@ class InnerCos(nn.Module):
         self.mask_all = mask_all.float()
 
 	
-    def _split_mask(self, cur_bsize):
+   def _split_mask(self, cur_bsize):
         # get the visible indexes of gpus and assign correct mask to set of images
         cur_device = torch.cuda.current_device()
         self.cur_mask = self.mask_all[cur_device*cur_bsize:(cur_device+1)*cur_bsize, :, :, :]
