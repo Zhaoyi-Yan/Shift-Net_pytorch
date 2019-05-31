@@ -14,7 +14,7 @@ I select the first 2k images in CelebaHQ_256 for testing, the rest are for train
 ```
 python train.py --loadSize=256 --batchSize=1 --name='celeb256' --which_model_netG='unet_shift_triple' --niter=30 --datarooot='./datasets/celeba-256/train'
 ```
-Mention: `loadSize` should be `256` for face datasets.
+Mention: **`loadSize` should be `256` for face datasets, meaning direct resize the input image to `256x256`.**
 
 
  <table style="float:center">
@@ -110,7 +110,7 @@ Usually, we train/test `navie shift-net` with `center` mask.
 ```bash
 python train.py --batchsize=1 --use_spectral_norm_D=1 --which_model_netD='basic' --mask_type='center' --which_model_netG='unet_shift_triple' --model='shiftnet' --shift_sz=1 --mask_thred=1
 ```
-We offer you with 4 variants, in which **res patch soft shift-net** is recommended. It delivers **better performance** than the `navie shift-net` with light extra computation, and is able to handle with **both universial inpainting and face inpainting**.
+We offer you with 4 variants:
 
 For `res patch soft shift-net`:
 ```bash
@@ -191,11 +191,8 @@ It means that you when you train the model with `mask_type='random'` and `mask_s
 It generates masks with the names by adding a suffix of `_mask.png` to corresponding names of testing images.
 Then set `offline_loading_mask=1` when testing, the program will read corresponding masks when testing.
 
-## Performance degrades when batchsize > 1
--^_^, I trying to solve it...
-A very strange thing is that if the `batchSize>1`, then the performance degrades.
-I wonder whether it is due to some incompatibility of IN with UNet.
-I will try to solve this problem.
+## Using Switchable Norm instead of Instance/Batch Norm
+For fixed mask training, `Switchable Norm` delivers better stableness when batchSize > 1. **Please use switchable norm when you want to training with batchsize is large, much more stable than instance norm or batchnorm!**
 
 ## Kindly remindier
 If you find it a little hard to read the code, you may read [Guides](https://github.com/Zhaoyi-Yan/Shift-Net_pytorch/blob/master/guides.md).
@@ -216,8 +213,8 @@ If you find it a little hard to read the code, you may read [Guides](https://git
 - [x] Add mask varaint in a batch.
 - [x] Support Online-generating/Offline-loading prepared masks for training/testing.
 - [x] Add VGG loss and TV loss
+- [x] Fix performance degradance when batchsize is larger than 1.
 - [ ] Try different network architecture. As current UNet suffers from many problems.
-- [ ] Fix performance degradance when batchsize is larger than 1.
 
 
 ## Citation
