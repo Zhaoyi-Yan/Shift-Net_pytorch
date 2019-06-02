@@ -76,6 +76,7 @@ class InnerShiftTripleFunction(torch.autograd.Function):
         #        ctx.shift_offsets.append(shift_offset)
 
         if ctx.show_flow:
+            assert 1==2, "I do not want maintance the functionality of `show flow`... ^_^"
             ctx.shift_offsets = torch.cat(ctx.shift_offsets, dim=0).float() # make it cudaFloatTensor
             # Assume mask is the same for each image in a batch.
             mask_nums = ctx.shift_offsets.size(0)//ctx.bz
