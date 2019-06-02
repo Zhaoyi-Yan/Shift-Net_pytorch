@@ -1,46 +1,82 @@
 import torch
 import util.util as util
-from util.NonparametricShift import Modified_NonparametricShift
+from util.NonparametricShift import Modified_NonparametricShift, Batch_NonShift
 from torch.nn import functional as F
 import numpy as numpy
 import matplotlib.pyplot as plt
 
-bz = 1
-c = 2 # at least 2
+bz = 2
+c = 3 # at least 2
 w = 16
 h = 16
 
 feature_size = [bz, c, w, h]
 
-former = torch.rand(c*h*w).mul_(50).reshape(c, h, w).int().float()
-latter = torch.rand(c*h*w).mul_(50).reshape(c, h, w).int().float()
+former = torch.rand(bz*c*h*w).mul_(50).reshape(bz, c, h, w).int().float()
+latter = torch.rand(bz*c*h*w).mul_(50).reshape(bz, c, h, w).int().float()
 
 
-flag = torch.zeros(h,w).byte()
-flag[h//4:h//2+1, h//4:h//2+1] = 1
-flag = flag.view(h*w)
+flag = torch.zeros(bz, h, w).byte()
+flag[:, h//4:h//2+1, h//4:h//2+1] = 1
+flag = flag.view(bz, h*w)
 
-ind_lst = torch.FloatTensor(h*w, h*w).zero_()
+ind_lst = torch.FloatTensor(bz, h*w, h*w).zero_()
 shift_offsets = []
 
-Nonparm = Modified_NonparametricShift()
-cosine, latter_windows, i_2, i_3, i_1, i_4 = Nonparm.cosine_similarity(former, latter, 1, 1, flag)
+#Nonparm = Modified_NonparametricShift()
+bNonparm = Batch_NonShift()
+cosine, latter_windows, i_2, i_3, i_1 = bNonparm.cosine_similarity(former.clone(), latter.clone(), 1, 1, flag)
+print(cosine.size())
+print(latter_windows.size())
 ## GET INDEXES THAT MAXIMIZE COSINE SIMILARITY
 
-_, indexes = torch.max(cosine, dim=1)
+_, indexes = torch.max(cosine, dim=2)
+print('indexes dim')
+print(indexes.size())
 
 
 # SET  TRANSITION MATRIX
 mask_indexes = (flag == 1).nonzero()
-non_mask_indexes = (flag == 0).nonzero()[indexes]
-ind_lst[mask_indexes, non_mask_indexes] = 1
+mask_indexes = mask_indexes[:,1] # remove indexes that indicates the batch dim
+mask_indexes = mask_indexes.view(bz, -1)
 
-for mi, nmi in zip(mask_indexes, non_mask_indexes):
-    print('The %d\t-th pixel shifts to %d\t-th coordinate' %(nmi, mi))
+# Also remove indexes of batch
+tmp = (flag==0).nonzero()[:,1]
+tmp = tmp.view(bz, -1)
+print('tmp size')
+print(tmp.size())
+
+idx_tmp = indexes + torch.arange(indexes.size(0)).view(-1,1) * tmp.size(1)
+non_mask_indexes = tmp.view(-1)[idx_tmp]
+
+# Original method
+non_mask_indexes_2 = []
+for i in range(bz):
+    non_mask_indexes_tmp = tmp[i][indexes[i]]
+    non_mask_indexes_2.append(non_mask_indexes_tmp)
+
+non_mask_indexes_2 = torch.stack(non_mask_indexes_2, dim=0)
+
+print('These two methods should be the same, as the error is 0!')
+print(torch.sum(non_mask_indexes-non_mask_indexes_2))
+
+ind_lst2 = ind_lst.clone()
+for i in range(bz):
+    ind_lst[i][mask_indexes[i], non_mask_indexes[i]] = 1
+
+print(ind_lst.sum())
+print(ind_lst)
+
+for i in range(bz):
+    for mi, nmi in zip(mask_indexes[i], non_mask_indexes[i]):
+        print('The %d\t-th pixel in the %d-th tensor will shift to %d\t-th coordinate' %(nmi, i, mi))
+        print('~~~')
 
 # GET FINAL SHIFT FEATURE
-shift_masked_all = Nonparm._paste(latter_windows, ind_lst, i_2, i_3, i_1, i_4)
+shift_masked_all = bNonparm._paste(latter_windows, ind_lst, i_2, i_3, i_1)
+print(shift_masked_all.size())
 
+assert 1==2
 # print('flag')
 # print(flag.reshape(h,w))
 # print('ind_lst')
