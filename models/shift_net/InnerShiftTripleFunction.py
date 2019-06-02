@@ -10,7 +10,6 @@ class InnerShiftTripleFunction(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, input, shift_sz, stride, triple_w, flag, show_flow):
-        #print('[INFO] GET INTO FORWARD')
         InnerShiftTripleFunction.ctx = ctx
         assert input.dim() == 4, "Input Dim has to be 4"
         ctx.triple_w = triple_w
@@ -59,7 +58,7 @@ class InnerShiftTripleFunction(torch.autograd.Function):
         #    former = former_all.narrow(0, idx, 1) ### decoder feature
 
         #    #GET COSINE, RESHAPED LATTER AND ITS INDEXES
-        #    cosine, latter_windows, i_2, i_3, i_1, i_4 = Nonparm.cosine_similarity(former.clone().squeeze(), latter.clone().squeeze(), 1, stride, flag_cur)
+        #    cosine, latter_windows, i_2, i_3, i_1 = Nonparm.cosine_similarity(former.clone().squeeze(), latter.clone().squeeze(), 1, stride, flag_cur)
 
         #   ## GET INDEXES THAT MAXIMIZE COSINE SIMILARITY
         #    _, indexes = torch.max(cosine, dim=1)
@@ -70,7 +69,7 @@ class InnerShiftTripleFunction(torch.autograd.Function):
         #    ctx.ind_lst[idx][mask_indexes, non_mask_indexes] = 1
 
         #    # GET FINAL SHIFT FEATURE
-        #    shift_masked_all[idx] = Nonparm._paste(latter_windows, ctx.ind_lst[idx], i_2, i_3, i_1, i_4)
+        #    shift_masked_all[idx] = Nonparm._paste(latter_windows, ctx.ind_lst[idx], i_2, i_3, i_1)
 
         #    if ctx.show_flow:
         #        shift_offset = torch.stack([non_mask_indexes.squeeze() // ctx.w, non_mask_indexes.squeeze() % ctx.w], dim=-1)

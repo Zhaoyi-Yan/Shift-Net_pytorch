@@ -21,7 +21,7 @@ class Modified_NonparametricShift(object):
         former_windows = self._unfold(former, patch_size, stride)
         former = self._filter(former_windows, flag, 1)
 
-        latter_windows, i_2, i_3, i_1, i_4 = self._unfold(latter, patch_size, stride, with_indexes=True)
+        latter_windows, i_2, i_3, i_1 = self._unfold(latter, patch_size, stride, with_indexes=True)
         latter = self._filter(latter_windows, flag, 0)
 
         num = torch.einsum('ik,jk->ij', [former, latter])
@@ -29,13 +29,12 @@ class Modified_NonparametricShift(object):
         norm_former = torch.einsum("ij,ij->i", [former, former])
         den = torch.sqrt(torch.einsum('i,j->ij', [norm_former, norm_latter]))
         if not with_former:
-            return num / den, latter_windows, i_2, i_3, i_1, i_4
+            return num / den, latter_windows, i_2, i_3, i_1
         else:
-            return num / den, latter_windows, former_windows, i_2, i_3, i_1, i_4
+            return num / den, latter_windows, former_windows, i_2, i_3, i_1
 
 
-    # TODO:i_4 is useless, remove it.
-    def _paste(self, input_windows, transition_matrix, i_2, i_3, i_1, i_4):
+    def _paste(self, input_windows, transition_matrix, i_2, i_3, i_1):
         ## TRANSPOSE FEATURES NEW FEATURES
         input_windows = torch.mm(transition_matrix, input_windows)
 
@@ -52,12 +51,11 @@ class Modified_NonparametricShift(object):
         dH, dW = stride, stride
         input_windows = img.unfold(1, kH, dH).unfold(2, kW, dW)
 
-        i_1, i_2, i_3, i_4, i_5 = input_windows.size(0), input_windows.size(1), input_windows.size(
-            2), input_windows.size(3), input_windows.size(4)
+        i_1, i_2, i_3, i_4, i_5 = input_windows.size()
 
         if with_indexes:
             input_windows = input_windows.permute(1, 2, 0, 3, 4).contiguous().view(i_2 * i_3, i_1)
-            return input_windows, i_2, i_3, i_1, i_4
+            return input_windows, i_2, i_3, i_1
         else:
             input_windows = input_windows.permute(1, 2, 0, 3, 4).contiguous().view(i_2 * i_3, i_1, i_4, i_5)
             return input_windows
