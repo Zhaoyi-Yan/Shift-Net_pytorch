@@ -1,5 +1,5 @@
 import numpy as np
-from util.NonparametricShift import Modified_NonparametricShift
+from util.NonparametricShift import Modified_NonparametricShift, Batch_NonShift
 import torch
 import util.util as util
 import time
@@ -30,34 +30,53 @@ class InnerShiftTripleFunction(torch.autograd.Function):
         ctx.flag = ctx.flag.to(input).long()
 
         # None batch version
-        Nonparm = Modified_NonparametricShift()
+        bNonparm = Batch_NonShift()
         ctx.shift_offsets = []
 
-        for idx in range(ctx.bz):
-            flag_cur = ctx.flag[idx]
-            latter = latter_all.narrow(0, idx, 1) ### encoder feature
-            former = former_all.narrow(0, idx, 1) ### decoder feature
+        # batch version
+        cosine, latter_windows, i_2, i_3, i_1 = bNonparm.cosine_similarity(former_all.clone(), latter_all.clone(), 1, stride, flag)
 
-            #GET COSINE, RESHAPED LATTER AND ITS INDEXES
-            cosine, latter_windows, i_2, i_3, i_1, i_4 = Nonparm.cosine_similarity(former.clone().squeeze(), latter.clone().squeeze(), 1, stride, flag_cur)
+        _, indexes = torch.max(cosine, dim=2)
 
-            ## GET INDEXES THAT MAXIMIZE COSINE SIMILARITY
-            _, indexes = torch.max(cosine, dim=1)
+        mask_indexes = (flag==1).nonzero()[:, 1].view(ctx.bz, -1)
 
-            # SET  TRANSITION MATRIX
-            mask_indexes = (flag_cur == 1).nonzero()
-            non_mask_indexes = (flag_cur == 0).nonzero()[indexes]
-            ctx.ind_lst[idx][mask_indexes, non_mask_indexes] = 1
+        # These three lines of code work similarly with `non_mask_indexes_tmp[indexes]`
+        # However, pytorch advance indexing dose not support multi-dimensional indexing.
+        non_mask_indexes_tmp = (flag==0).nonzero()[:,1].view(ctx.bz, -1)
+        idx_tmp = indexes + torch.arange(indexes.size(0)).view(-1,1).type_as(indexes) * non_mask_indexes_tmp.size(1)
+        non_mask_indexes = non_mask_indexes_tmp.view(-1)[idx_tmp]
 
-            # GET FINAL SHIFT FEATURE
-            shift_masked_all[idx] = Nonparm._paste(latter_windows, ctx.ind_lst[idx], i_2, i_3, i_1, i_4)
+        # Update: batch op if someone think up an approach
+        for i in range(ctx.bz):
+            ctx.ind_lst[i][mask_indexes[i], non_mask_indexes[i]] = 1
 
-            if ctx.show_flow:
-                shift_offset = torch.stack([non_mask_indexes.squeeze() // ctx.w, non_mask_indexes.squeeze() % ctx.w], dim=-1)
-                ctx.shift_offsets.append(shift_offset)
+        shift_masked_all = bNonparm._paste(latter_windows, ctx.ind_lst, i_2, i_3, i_1)
+
+
+        #for idx in range(ctx.bz):
+        #    flag_cur = ctx.flag[idx]
+        #    latter = latter_all.narrow(0, idx, 1) ### encoder feature
+        #    former = former_all.narrow(0, idx, 1) ### decoder feature
+
+        #    #GET COSINE, RESHAPED LATTER AND ITS INDEXES
+        #    cosine, latter_windows, i_2, i_3, i_1, i_4 = Nonparm.cosine_similarity(former.clone().squeeze(), latter.clone().squeeze(), 1, stride, flag_cur)
+
+        #   ## GET INDEXES THAT MAXIMIZE COSINE SIMILARITY
+        #    _, indexes = torch.max(cosine, dim=1)
+
+        #    # SET  TRANSITION MATRIX
+        #    mask_indexes = (flag_cur == 1).nonzero()
+        #    non_mask_indexes = (flag_cur == 0).nonzero()[indexes]
+        #    ctx.ind_lst[idx][mask_indexes, non_mask_indexes] = 1
+
+        #    # GET FINAL SHIFT FEATURE
+        #    shift_masked_all[idx] = Nonparm._paste(latter_windows, ctx.ind_lst[idx], i_2, i_3, i_1, i_4)
+
+        #    if ctx.show_flow:
+        #        shift_offset = torch.stack([non_mask_indexes.squeeze() // ctx.w, non_mask_indexes.squeeze() % ctx.w], dim=-1)
+        #        ctx.shift_offsets.append(shift_offset)
 
         if ctx.show_flow:
-            # Note: Here we assume that each mask is the same for the same batch image.
             ctx.shift_offsets = torch.cat(ctx.shift_offsets, dim=0).float() # make it cudaFloatTensor
             # Assume mask is the same for each image in a batch.
             mask_nums = ctx.shift_offsets.size(0)//ctx.bz
@@ -75,7 +94,7 @@ class InnerShiftTripleFunction(torch.autograd.Function):
 
         return torch.cat((former_all, latter_all, shift_masked_all), 1)
 
-        
+
     @staticmethod
     def get_flow_src():
         return InnerShiftTripleFunction.ctx.flow_srcs
@@ -87,35 +106,40 @@ class InnerShiftTripleFunction(torch.autograd.Function):
         c = grad_output.size(1)
 
         # # the former and the latter are keep original. Only the thrid part is shifted.
+        # C: content, pixels in masked region of the former part.
+        # S: style, pixels in the non-masked region of the latter part.
+        # N: the shifted feature, the new feature that will be used as the third part of features maps.
+        # W_mat: ind_lst[idx], shift matrix.
+        # Note: **only the masked region in N has values**.
+
+        # The gradient of shift feature should be added back to the latter part(to be precise: S).
+        # `ind_lst[idx][i,j] = 1` means that the i_th pixel will **be replaced** by j_th pixel in the forward.
+        #  When applying `S mm W_mat`, then S will be transfer to N.
+        #  (pixels in non-masked region of the latter part will be shift to the masked region in the third part.)
+        #  However, we need to transfer back the gradient of the third part to S.
+        #  This means the graident in S will **`be replaced`(to be precise, enhanced)** by N.
         grad_former_all = grad_output[:, 0:c//3, :, :]
         grad_latter_all = grad_output[:, c//3: c*2//3, :, :].clone()
         grad_shifted_all = grad_output[:, c*2//3:c, :, :].clone()
 
-        for idx in range(ctx.bz):
+        W_mat_t = ind_lst.permute(0, 2, 1).contiguous()
+        grad = grad_shifted_all.clone().view(ctx.bz, c//3, -1).permute(0, 2, 1)
+        grad_shifted_weighted = torch.bmm(W_mat_t, grad)
+        grad_shifted_weighted = grad_shifted_weighted.permute(0, 2, 1).contiguous().view(ctx.bz, c//3, ctx.h, ctx.w)
+        grad_latter_all = torch.add(grad_latter_all, grad_shifted_weighted.mul(ctx.triple_w))
 
-            # C: content, pixels in masked region of the former part.
-            # S: style, pixels in the non-masked region of the latter part.
-            # N: the shifted feature, the new feature that will be used as the third part of features maps.
-            # W_mat: ind_lst[idx], shift matrix.
-            # Note: **only the masked region in N has values**.
+       # ----- 'Non_batch version here' --------------------
+       # for idx in range(ctx.bz):
+       #     # So we need to transpose `W_mat`
+       #     W_mat_t = ind_lst[idx].t()
 
-            # The gradient of shift feature should be added back to the latter part(to be precise: S).
-            # `ind_lst[idx][i,j] = 1` means that the i_th pixel will **be replaced** by j_th pixel in the forward.
-            # When applying `S mm W_mat`, then S will be transfer to N. 
-            # (pixels in non-masked region of the latter part will be shift to the masked region in the third part.)
-            # However, we need to transfer back the gradient of the third part to S.
-            # This means the graident in S will **`be replaced`(to be precise, enhanced)** by N.
-            
-            # So we need to transpose `W_mat`
-            W_mat_t = ind_lst[idx].t()
+       #     grad = grad_shifted_all[idx].view(c//3, -1).t()
 
-            grad = grad_shifted_all[idx].view(c//3, -1).t()
+       #     grad_shifted_weighted = torch.mm(W_mat_t, grad)
 
-            grad_shifted_weighted = torch.mm(W_mat_t, grad)
-
-            # Then transpose it back
-            grad_shifted_weighted = grad_shifted_weighted.t().contiguous().view(1, c//3, ctx.h, ctx.w)
-            grad_latter_all[idx] = torch.add(grad_latter_all[idx], grad_shifted_weighted.mul(ctx.triple_w))
+       #     # Then transpose it back
+       #     grad_shifted_weighted = grad_shifted_weighted.t().contiguous().view(1, c//3, ctx.h, ctx.w)
+       #     grad_latter_all[idx] = torch.add(grad_latter_all[idx], grad_shifted_weighted.mul(ctx.triple_w))
 
         # note the input channel and the output channel are all c, as no mask input for now.
         grad_input = torch.cat([grad_former_all, grad_latter_all], 1)
