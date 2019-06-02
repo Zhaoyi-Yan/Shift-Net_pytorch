@@ -123,7 +123,7 @@ class InnerShiftTripleFunction(torch.autograd.Function):
         grad_shifted_all = grad_output[:, c*2//3:c, :, :].clone()
 
         W_mat_t = ind_lst.permute(0, 2, 1).contiguous()
-        grad = grad_shifted_all.clone().view(ctx.bz, c//3, -1).permute(0, 2, 1)
+        grad = grad_shifted_all.view(ctx.bz, c//3, -1).permute(0, 2, 1)
         grad_shifted_weighted = torch.bmm(W_mat_t, grad)
         grad_shifted_weighted = grad_shifted_weighted.permute(0, 2, 1).contiguous().view(ctx.bz, c//3, ctx.h, ctx.w)
         grad_latter_all = torch.add(grad_latter_all, grad_shifted_weighted.mul(ctx.triple_w))
