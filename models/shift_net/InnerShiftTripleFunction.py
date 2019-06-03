@@ -41,13 +41,15 @@ class InnerShiftTripleFunction(torch.autograd.Function):
 
         non_mask_indexes = (flag==0).nonzero()[:, 1].view(ctx.bz, -1).gather(1, indexes)
 
-        # Update: batch op if someone think up an approach
-        for i in range(ctx.bz):
-            ctx.ind_lst[i][mask_indexes[i], non_mask_indexes[i]] = 1
+        idx_b = torch.arange(ctx.bz).long().unsqueeze(1).expand(ctx.bz, mask_indexes.size(1))
+        # set the elemnets of indexed by [mask_indexes, non_mask_indexes] to 1.
+        # It is a batch version
+        ctx.ind_lst[(idx_b, mask_indexes, non_mask_indexes)] = 1
 
         shift_masked_all = bNonparm._paste(latter_windows, ctx.ind_lst, i_2, i_3, i_1)
 
 
+        # --- Non-batch version ----
         #for idx in range(ctx.bz):
         #    flag_cur = ctx.flag[idx]
         #    latter = latter_all.narrow(0, idx, 1) ### encoder feature
