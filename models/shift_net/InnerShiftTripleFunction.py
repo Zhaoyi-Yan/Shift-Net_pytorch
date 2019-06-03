@@ -39,11 +39,7 @@ class InnerShiftTripleFunction(torch.autograd.Function):
 
         mask_indexes = (flag==1).nonzero()[:, 1].view(ctx.bz, -1)
 
-        # These three lines of code work similarly with `non_mask_indexes_tmp[indexes]`
-        # However, pytorch advance indexing dose not support multi-dimensional indexing.
-        non_mask_indexes_tmp = (flag==0).nonzero()[:,1].view(ctx.bz, -1)
-        idx_tmp = indexes + torch.arange(indexes.size(0)).view(-1,1).type_as(indexes) * non_mask_indexes_tmp.size(1)
-        non_mask_indexes = non_mask_indexes_tmp.view(-1)[idx_tmp]
+        non_mask_indexes = (flag==0).nonzero()[:, 1].view(ctx.bz, -1).gather(1, indexes)
 
         # Update: batch op if someone think up an approach
         for i in range(ctx.bz):
