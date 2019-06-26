@@ -59,8 +59,7 @@ class BaseOptions():
         parser.add_argument('--gan_type', type=str, default='vanilla', help='wgan_gp, '
                                                                             'lsgan, '
                                                                             'vanilla, '
-                                                                            're_s_gan (Relativistic Standard GAN), '
-                                                                            're_avg_gan (Relativistic average Standard GAN), ')
+                                                                            're_s_gan (Relativistic Standard GAN), ')
         parser.add_argument('--gan_weight', type=float, default=0.2, help='the weight of gan loss')
         # New added
         parser.add_argument('--style_weight', type=float, default=10.0, help='the weight of style loss')
