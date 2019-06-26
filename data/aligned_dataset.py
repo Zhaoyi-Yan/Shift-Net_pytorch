@@ -59,11 +59,7 @@ class AlignedDataset(BaseDataset):
         # Just zero the mask is fine if not offline_loading_mask.
         mask = A.clone().zero_()
         if self.opt.offline_loading_mask:
-            if self.opt.isTrain:
-                mask = Image.open(self.mask_paths[random.randint(0, len(self.mask_paths)-1)])
-            # When testing, we just load the mask with suffix '_mask' to make it easy to compare performance of different models.
-            else:
-                mask = Image.open(os.path.join(self.mask_folder, os.path.splitext(os.path.basename(A_path[0]))[0]+'_mask.png'))
+            mask = Image.open(self.mask_paths[random.randint(0, len(self.mask_paths)-1)])
             mask = mask.resize((self.opt.fineSize, self.opt.fineSize), Image.NEAREST)
             mask = transforms.ToTensor()(mask)
         
