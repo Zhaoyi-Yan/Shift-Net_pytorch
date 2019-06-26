@@ -45,29 +45,6 @@ Mention: **`loadSize` should be `256` for face datasets, meaning direct resize t
   </td>
   </tr>
 
-  <tr>
-  <td>
-   <img src='./imgs/11_real_A.png' >
-  </td>
-  <td>
-  <img src='./imgs/11_fake_B.png'>
-  </td>
-  <td>
-   <img src='./imgs/11_real_B.png'>
-  </td>
-  </tr>
-
-  <tr>
-  <td>
-   <img src='./imgs/14_real_A.png' >
-  </td>
-  <td>
-  <img src='./imgs/14_fake_B.png'>
-  </td>
-  <td>
-   <img src='./imgs/14_real_B.png'>
-  </td>
-  </tr>
 
  </table>
 
@@ -165,31 +142,33 @@ python test.py --fuse=1/0 --which_model_netG='patch_soft_unet_shift_triple' --mo
 The test results will be saved to a html file here: `./results/`.
 
 
+## Masks
+Usually, **Keep the same setting of masks of between training and testing.**
+It is because the performance is highly-related to the masks your applied in training.
+The consistency of training and testing masks are crucial to get good performance.
 
-## Masks can be loaded offline or generated online
+| training | testing |
+| ----     | ----    |
+| center-mask | center-mask |
+| random-square| All |
+| random | All|
+| your own masks| your own masks|
+
+It means that if you taining a model with `center-mask`, then test it usin
+### Training by online-generating marks
+We offer three types of online-generating masks: `center-mask, random_square and random_mask`.
+If you want to train on your own masks silimar like **partial conv**, ref to **Training on your own masks**.
+
+
+### Training on your own masks
 It now supports both online-generating and offline-loading for training and testing.
 We generate masks online by default, however, set `--offline_loading_mask=1` when you want to train/test with your own prepared masks.
-The prepared masks should be put in the folder `--training_mask_folder` and `--testing_mask_folder`.
+**The prepared masks should be put in the folder `--training_mask_folder` and `--testing_mask_folder`.**
 
 ### Masks when training
 For each batch, then:
  - Generating online: masks are the same for each image in a batch.(To save computation)
  - Loading offline: masks are loaded randomly for each image in a batch.
-
-### Masks when testing
-For now, we assume that each mask has the name of corresponding image + a suffix of '_mask.png'.
-We design in this way as it is eaier for comparion between different models.
-You can generate masks yourself under the section **Testing models on given masks**.
-
-If you want to test images with offline raomdom-loaded masks, you may do yourself.
-It should be easy for you to write by yourself.
-
-### Testing models on given masks
-You should firstly generate masks by running `generate_masks.py`, we assume that only `mask_type=random`, then it makes sense to generate masks by yourself.
-Make sure that you should **keep the same setting with what you train the model** when generating masks.
-It means that you when you train the model with `mask_type='random'` and `mask_sub_type='island'`, then keep the same setting when generating masks using this `generate_masks.py`.
-It generates masks with the names by adding a suffix of `_mask.png` to corresponding names of testing images.
-Then set `offline_loading_mask=1` when testing, the program will read corresponding masks when testing.
 
 ## Using Switchable Norm instead of Instance/Batch Norm
 For fixed mask training, `Switchable Norm` delivers better stableness when batchSize > 1. **Please use switchable norm when you want to training with batchsize is large, much more stable than instance norm or batchnorm!**
