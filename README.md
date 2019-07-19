@@ -12,8 +12,8 @@ Just pull the latest code and train by following the instructions.
 # Trained models
 | Mask | Paris | CelebaHQ_256 |
 | ----     | ----    | ---- |
-| center-mask(**partial conv**) | ok | ok |
-| random mask| ok | ok |
+| center-mask | ok | ok |
+| random mask(from **partial conv**)| ok | ok |
 
 For CelebaHQ_256 dataset:
 I select the first 2k images in CelebaHQ_256 for testing, the rest are for training.
