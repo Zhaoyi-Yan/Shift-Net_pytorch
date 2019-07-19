@@ -4,12 +4,11 @@
 # Shift layer
 <img src="shift_layer.png" width="800"/> 
 
-# Why no pretrain models ?
-It is because the code is still in active development, making pretrained models broken from time to time.
-
-Just pull the latest code and train by following the instructions.
-
 # Trained models
+Usually, I would like to suggest you just pull the latest code and train by following the instructions.
+
+However, for now, several models has been trained and will be uploaded in days.
+
 | Mask | Paris | CelebaHQ_256 |
 | ----     | ----    | ---- |
 | center-mask | ok | ok |
