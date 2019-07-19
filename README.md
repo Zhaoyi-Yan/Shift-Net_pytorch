@@ -9,7 +9,13 @@ It is because the code is still in active development, making pretrained models 
 
 Just pull the latest code and train by following the instructions.
 
-# I just train a model for center face inpainting.
+# Trained models
+| Mask | Paris | CelebaHQ_256 |
+| ----     | ----    | ---- |
+| center-mask(**partial conv**) | ok | ok |
+| random mask| ok | ok |
+
+For CelebaHQ_256 dataset:
 I select the first 2k images in CelebaHQ_256 for testing, the rest are for training.
 ```
 python train.py --loadSize=256 --batchSize=1 --name='celeb256' --which_model_netG='unet_shift_triple' --niter=30 --datarooot='./datasets/celeba-256/train'
