@@ -4,14 +4,36 @@
 # Shift layer
 <img src="shift_layer.png" width="800"/> 
 
+## Prerequisites
+- Linux or Windows.
+- Python 2 or Python 3.
+- CPU or NVIDIA GPU + CUDA CuDNN.
+- Tested on pytorch >= 1.0
+
+## Getting Started
+### Installation
+- Install PyTorch and dependencies from http://pytorch.org/
+- Install python libraries [visdom](https://github.com/facebookresearch/visdom) and [dominate](https://github.com/Knio/dominate).
+
+```bash
+pip install visdom
+pip install dominate
+```
+- Clone this repo:
+```bash
+git clone https://github.com/Zhaoyi-Yan/Shift-Net_pytorch
+cd Shift-Net_pytorch
+
+```
+
 # Trained models
 Usually, I would like to suggest you just pull the latest code and train by following the instructions.
 
-However, for now, several models has been trained and will be uploaded in days.
+However, for now, several models has been trained and have be uploaded.
 
 | Mask | Paris | CelebaHQ_256 |
 | ----     | ----    | ---- |
-| center-mask | ok | ok |
+| center-mask | Not ok | ok |
 | random mask(from **partial conv**)| ok | ok |
 
 For CelebaHQ_256 dataset:
@@ -58,28 +80,18 @@ For testing, please read the documnent carefully.
 Pretrained model for face center inpainting are available:
 ```bash
 bash download_models.sh
+# 
+python test.py --which_model_netG='unet_shift_triple' --model='shiftnet' --name=''
 ```
-## Prerequisites
-- Linux or Windows.
-- Python 2 or Python 3.
-- CPU or NVIDIA GPU + CUDA CuDNN.
-- Tested on pytorch >= 1.0
-
-## Getting Started
-### Installation
-- Install PyTorch and dependencies from http://pytorch.org/
-- Install python libraries [visdom](https://github.com/facebookresearch/visdom) and [dominate](https://github.com/Knio/dominate).
-
-```bash
-pip install visdom
-pip install dominate
+Then rename `face_random_mask_20_30` to `30_net_G`, and put it in the folder `./log/face_random_mask_20_30`(if not existed, create it)
+Then test the model:
 ```
-- Clone this repo:
-```bash
-git clone https://github.com/Zhaoyi-Yan/Shift-Net_pytorch
-cd Shift-Net_pytorch
-
+python test.py --which_epoch=30 --name='face_random_mask_20_30' --offline_loading_mask=1 --testing_mask_folder='masks' --dataroot='./datasets/celeba-256/test' --norm='instance'
 ```
+For `paris_random_mask_20_30`, I think you know how to evaluate it.
+For models trained with center mask, make sure `--mask_type='center' --offline_loading_mask=0`.
+
+Mention, your own masks should be prepared in advance.
 
 ## Train models
 - Download your own inpainting datasets.
@@ -87,33 +99,33 @@ cd Shift-Net_pytorch
 - Train a model:
 Please read this paragraph carefully before running the code.
 
-Usually, we train/test `navie shift-net` with `center` mask.
+Usually, we train/test `navie shift-net` with `center` mask. 
 
 ```bash
-python train.py --batchsize=1 --use_spectral_norm_D=1 --which_model_netD='basic' --mask_type='center' --which_model_netG='unet_shift_triple' --model='shiftnet' --shift_sz=1 --mask_thred=1
+python train.py --batchsize=1 --use_spectral_norm_D=1 --which_model_netD='basic' --mask_type='center' --which_model_netG='unet_shift_triple' --model='shiftnet' --shift_sz=1 --mask_thred=1 
 ```
-We offer you with 4 variants:
 
-For `res patch soft shift-net`:
-```bash
-python train.py --batchSize=1 --which_model_netG='res_patch_soft_unet_shift_triple' --model='res_patch_soft_shiftnet' --shift_sz=3 --mask_thred=4
-```
 For some datasets, such as `CelebA`, some images are smaller than `256*256`, so you need add `--loadSize=256` when training, **it is important**.
 
 - To view training results and loss plots, run `python -m visdom.server` and click the URL http://localhost:8097. The checkpoints will be saved in `./log` by default.
 
 
 **DO NOT** set batchsize larger than 1 for `square` mask training, the performance degrades a lot(I don't know why...)
+For `random mask`(`mask_sub_type` is NOT `rect`  or your own random masks), the training batchsize can be larger than 1 without hurt of performance.
 
-For `random mask`(`mask_sub_type` is NOT `rect`), the batchsize can be larger than 1 without hurt of performance.
+Random mask training(both online and offline) are also supported. 
 
-For training random mask, you need to train the model by setting
-`mask_type='random'` and also `mask_sub_type='rect'` or `mask_sub_type='island'`.
+Personly, I would like to suggest you to loading the masks offline(similar as **partial conv**). Please refer to section **Masks**.
 
 
 ### Extra variants
 
-**These 3 models are just for fun**
+**These 4 models are just for fun**
+
+For `res patch soft shift-net`:
+```bash
+python train.py --batchSize=1 --which_model_netG='res_patch_soft_unet_shift_triple' --model='res_patch_soft_shiftnet' --shift_sz=3 --mask_thred=4
+```
 
 For `res navie shift-net`:
 ```bash
