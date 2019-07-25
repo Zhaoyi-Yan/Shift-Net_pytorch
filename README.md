@@ -43,6 +43,9 @@ python train.py --loadSize=256 --batchSize=1 --name='celeb256' --which_model_net
 ```
 Mention: **`loadSize` should be `256` for face datasets, meaning direct resize the input image to `256x256`.**
 
+The following some results on celebaHQ-256 and Paris.
+
+Specially, for training models of random masks, we adopt the masks of **partial conv**(only the masks of which the ratio of masked region is 20~30% are used.)
 
  <table style="float:center">
  <tr>
@@ -50,27 +53,75 @@ Mention: **`loadSize` should be `256` for face datasets, meaning direct resize t
  </tr>
  <tr>
   <td>
-   <img src='./imgs/0_real_A.png' >
+   <img src='./imgs/face_center/0_real_A.png' >
   </td>
   <td>
-  <img src='./imgs/0_fake_B.png'>
+  <img src='./imgs/face_center/0_fake_B.png'>
   </td>
   <td>
-   <img src='./imgs/0_real_B.png'>
+   <img src='./imgs/face_center/0_real_B.png'>
   </td>
   </tr>
 
   <tr>
   <td>
-   <img src='./imgs/1_real_A.png' >
+   <img src='./imgs/face_center/1_real_A.png' >
   </td>
   <td>
-  <img src='./imgs/1_fake_B.png'>
+  <img src='./imgs/face_center/1_fake_B.png'>
   </td>
   <td>
-   <img src='./imgs/1_real_B.png'>
+   <img src='./imgs/face_center/1_real_B.png'>
   </td>
   </tr>
+
+  <tr>
+  <td>
+   <img src='./imgs/paris_center/048_im_real_A.png' >
+  </td>
+  <td>
+  <img src='./imgs/paris_center/048_im_fake_B.png'>
+  </td>
+  <td>
+   <img src='./imgs/paris_center/048_im_real_B.png'>
+  </td>
+  </tr>
+
+<tr>
+  <td>
+   <img src='./imgs/paris_center/004_im_real_A.png' >
+  </td>
+  <td>
+  <img src='./imgs/paris_center/004_im_fake_B.png'>
+  </td>
+  <td>
+   <img src='./imgs/paris_center/004_im_real_B.png'>
+  </td>
+  </tr>
+
+<tr>
+  <td>
+   <img src='./imgs/paris_random/006_im_real_A.png' >
+  </td>
+  <td>
+  <img src='./imgs/paris_random/006_im_real_A.png'>
+  </td>
+  <td>
+   <img src='./imgs/paris_random/006_im_real_A.png'>
+  </td>
+  </tr>
+
+<tr>
+  <td>
+   <img src='./imgs/paris_random/073_im_real_A.png' >
+  </td>
+  <td>
+  <img src='./imgs/paris_random/073_im_real_A.png'>
+  </td>
+  <td>
+   <img src='./imgs/paris_random/073_im_real_A.png'>
+  </td>
+</tr>
 
 
  </table>
@@ -210,6 +261,7 @@ If you find it a little hard to read the code, you may read [Guides](https://git
 - [x] Support Online-generating/Offline-loading prepared masks for training/testing.
 - [x] Add VGG loss and TV loss
 - [x] Fix performance degradance when batchsize is larger than 1.
+- [ ] Add gated conv(before 8.10)
 - [ ] Try different network architecture. As current UNet suffers from many problems.
 
 
