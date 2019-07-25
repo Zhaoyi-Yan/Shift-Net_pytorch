@@ -29,11 +29,11 @@ cd Shift-Net_pytorch
 # Trained models
 Usually, I would like to suggest you just pull the latest code and train by following the instructions.
 
-However, for now, several models has been trained and have be uploaded.
+However, for now, several models have been trained and uploaded.
 
 | Mask | Paris | CelebaHQ_256 |
 | ----     | ----    | ---- |
-| center-mask | Not ok | ok |
+| center-mask | ok | ok |
 | random mask(from **partial conv**)| ok | ok |
 
 For CelebaHQ_256 dataset:
