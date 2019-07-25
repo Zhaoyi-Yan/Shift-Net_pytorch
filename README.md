@@ -104,10 +104,10 @@ Specially, for training models of random masks, we adopt the masks of **partial 
    <img src='./imgs/paris_random/006_im_real_A.png' >
   </td>
   <td>
-  <img src='./imgs/paris_random/006_im_real_A.png'>
+  <img src='./imgs/paris_random/006_im_fake_B.png'>
   </td>
   <td>
-   <img src='./imgs/paris_random/006_im_real_A.png'>
+   <img src='./imgs/paris_random/006_im_real_B.png'>
   </td>
   </tr>
 
@@ -116,10 +116,10 @@ Specially, for training models of random masks, we adopt the masks of **partial 
    <img src='./imgs/paris_random/073_im_real_A.png' >
   </td>
   <td>
-  <img src='./imgs/paris_random/073_im_real_A.png'>
+  <img src='./imgs/paris_random/073_im_fake_B.png'>
   </td>
   <td>
-   <img src='./imgs/paris_random/073_im_real_A.png'>
+   <img src='./imgs/paris_random/073_im_real_B.png'>
   </td>
 </tr>
 
