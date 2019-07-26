@@ -131,18 +131,21 @@ For testing, please read the documnent carefully.
 Pretrained model for face center inpainting are available:
 ```bash
 bash download_models.sh
-# 
-python test.py --which_model_netG='unet_shift_triple' --model='shiftnet' --name=''
 ```
-Then rename `face_random_mask_20_30` to `30_net_G`, and put it in the folder `./log/face_random_mask_20_30`(if not existed, create it)
+Rename `face_center_mask.pth` to `30_net_G.pth`, and put it in the folder `./log/face_center_mask_20_30`(if not existed, create it)
+```bash
+python test.py --which_model_netG='unet_shift_triple' --model='shiftnet' --name='face_center_mask_20_30' --which_epoch=30
+```
+Similarity, for paris random inpainting, rename `paris_random_mask_20_30.pth` to `30_net_G.pth`, and put it in the folder `./log/paris_random_mask_20_30`(if not existed, create it)
 Then test the model:
 ```
-python test.py --which_epoch=30 --name='face_random_mask_20_30' --offline_loading_mask=1 --testing_mask_folder='masks' --dataroot='./datasets/celeba-256/test' --norm='instance'
+python test.py --which_epoch=30 --name='paris_random_mask_20_30' --offline_loading_mask=1 --testing_mask_folder='masks' --dataroot='./datasets/celeba-256/test' --norm='instance'
 ```
-For `paris_random_mask_20_30`, I think you know how to evaluate it.
+Mention, your own masks should be prepared in the folder `testing_mask_folder` in advance.
+
+For other models, I think you know how to evaluate them.
 For models trained with center mask, make sure `--mask_type='center' --offline_loading_mask=0`.
 
-Mention, your own masks should be prepared in advance.
 
 ## Train models
 - Download your own inpainting datasets.
@@ -167,37 +170,6 @@ For `random mask`(`mask_sub_type` is NOT `rect`  or your own random masks), the 
 Random mask training(both online and offline) are also supported. 
 
 Personly, I would like to suggest you to loading the masks offline(similar as **partial conv**). Please refer to section **Masks**.
-
-
-### Extra variants
-
-**These 4 models are just for fun**
-
-For `res patch soft shift-net`:
-```bash
-python train.py --batchSize=1 --which_model_netG='res_patch_soft_unet_shift_triple' --model='res_patch_soft_shiftnet' --shift_sz=3 --mask_thred=4
-```
-
-For `res navie shift-net`:
-```bash
-python train.py --which_model_netG='res_unet_shift_triple' --model='res_shiftnet' --shift_sz=1 --mask_thred=1
-```
-
-For `pixel soft shift-net`:
-```bash
-python train.py --which_model_netG='soft_unet_shift_triple' --model='soft_shiftnet' --shift_sz=1 --mask_thred=1
-```
-
-For `patch soft shift-net`:
-```bash
-python train.py --which_model_netG='patch_soft_unet_shift_triple' --model='patch_soft_shiftnet' --shift_sz=3 --mask_thred=4
-```
-
-DO NOT change the shift_sz and mask_thred. Otherwise, it errors with a high probability.
-
-For `patch soft shift-net` or `res patch soft shift-net`. You may set `fuse=1` to see whether it delivers better results(Mention, you need keep the same setting between training and testing).
-
-
 
 ## Test the model
 
@@ -243,6 +215,34 @@ For fixed mask training, `Switchable Norm` delivers better stableness when batch
 
 ## Kindly remindier
 If you find it a little hard to read the code, you may read [Guides](https://github.com/Zhaoyi-Yan/Shift-Net_pytorch/blob/master/guides.md).
+
+### Extra variants
+
+**These 4 models are just for fun**
+
+For `res patch soft shift-net`:
+```bash
+python train.py --batchSize=1 --which_model_netG='res_patch_soft_unet_shift_triple' --model='res_patch_soft_shiftnet' --shift_sz=3 --mask_thred=4
+```
+
+For `res navie shift-net`:
+```bash
+python train.py --which_model_netG='res_unet_shift_triple' --model='res_shiftnet' --shift_sz=1 --mask_thred=1
+```
+
+For `pixel soft shift-net`:
+```bash
+python train.py --which_model_netG='soft_unet_shift_triple' --model='soft_shiftnet' --shift_sz=1 --mask_thred=1
+```
+
+For `patch soft shift-net`:
+```bash
+python train.py --which_model_netG='patch_soft_unet_shift_triple' --model='patch_soft_shiftnet' --shift_sz=3 --mask_thred=4
+```
+
+DO NOT change the shift_sz and mask_thred. Otherwise, it errors with a high probability.
+
+For `patch soft shift-net` or `res patch soft shift-net`. You may set `fuse=1` to see whether it delivers better results(Mention, you need keep the same setting between training and testing).
 
 
 ## New things that I want to add
