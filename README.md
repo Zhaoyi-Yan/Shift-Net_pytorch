@@ -267,7 +267,8 @@ For `patch soft shift-net` or `res patch soft shift-net`. You may set `fuse=1` t
 
 ## Somethings extra I have tried
 **Gated Conv**: I have tried gated conv(by replacing the normal convs of UNet with gated conv, expect the innermost/outermost layer).
-However, I get no benifits. Will try again when I am free.
+However, I get no benifits. Maybe I should try replacing all layers with gated conv. I will try again when I am free.
+
 **Non local block**: I added, but seems worse. Maybe I haven't add the blocks on the proper postion. (It makes the training time increase a lot. So I am not in favor of it.)
 
 
