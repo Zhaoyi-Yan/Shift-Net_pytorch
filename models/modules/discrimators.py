@@ -17,7 +17,7 @@ class NLayerDiscriminator(nn.Module):
         padw = 1
         sequence = [
             spectral_norm(nn.Conv2d(input_nc, ndf, kernel_size=kw, stride=2, padding=padw), use_spectral_norm),
-            nn.LeakyReLU(0.2)
+            nn.LeakyReLU(0.2, True)
         ]
 
         nf_mult = 1
@@ -29,7 +29,7 @@ class NLayerDiscriminator(nn.Module):
                 spectral_norm(nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult,
                           kernel_size=kw, stride=2, padding=padw, bias=use_bias), use_spectral_norm),
                 norm_layer(ndf * nf_mult),
-                nn.LeakyReLU(0.2)
+                nn.LeakyReLU(0.2, True)
             ]
 
         nf_mult_prev = nf_mult
@@ -38,7 +38,7 @@ class NLayerDiscriminator(nn.Module):
             spectral_norm(nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult,
                       kernel_size=kw, stride=1, padding=padw, bias=use_bias), use_spectral_norm),
             norm_layer(ndf * nf_mult),
-            nn.LeakyReLU(0.2)
+            nn.LeakyReLU(0.2, True)
         ]
         sequence += [spectral_norm(nn.Conv2d(ndf * nf_mult, 1, kernel_size=kw, stride=1, padding=padw), use_spectral_norm)]
 
