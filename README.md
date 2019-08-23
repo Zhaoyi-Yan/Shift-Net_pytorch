@@ -261,6 +261,7 @@ For `patch soft shift-net` or `res patch soft shift-net`. You may set `fuse=1` t
 - [x] Support Online-generating/Offline-loading prepared masks for training/testing.
 - [x] Add VGG loss and TV loss
 - [x] Fix performance degradance when batchsize is larger than 1.
+- [ ] Make it compatible for Pytorch 1.2
 - [ ] Training with mixed type of masks.
 - [ ] Add gated conv.
 - [ ] Try different network architecture. As current UNet suffers from many problems.
@@ -270,7 +271,6 @@ For `patch soft shift-net` or `res patch soft shift-net`. You may set `fuse=1` t
 However, I get no benifits. Maybe I should try replacing all layers with gated conv. I will try again when I am free.
 
 **Non local block**: I added, but seems worse. Maybe I haven't add the blocks on the proper postion. (It makes the training time increase a lot. So I am not in favor of it.)
-
 
 ## Citation
 If you find this work useful or gives you some insights, please cite:
