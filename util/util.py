@@ -154,7 +154,7 @@ def create_gMask(gMask_opts, limit_cnt=1):
     while wastedIter <= limit_cnt:
         x = random.randint(1, MAX_SIZE-fineSize)
         y = random.randint(1, MAX_SIZE-fineSize)
-        mask = pattern[y:y+fineSize, x:x+fineSize] # need check
+        mask = pattern[y:y+fineSize, x:x+fineSize]
         area = mask.sum()*100./(fineSize*fineSize)
         if area>20 and area<maxPartition:
             break
@@ -225,8 +225,7 @@ def cal_flag_given_mask_thred(mask, patch_size, stride, mask_thred):
     m = mask.unfold(2, patch_size, stride).unfold(3, patch_size, stride)
     m = m.contiguous().view(b, 1, -1, patch_size, patch_size)
     m = torch.mean(torch.mean(m, dim=3, keepdim=True), dim=4, keepdim=True)
-    # Adding eps=1e-4 is important here.
-    mm = m.gt(mask_thred/(1.*patch_size**2 + 1e-4)).long()
+    mm = m.ge(mask_thred/(1.*patch_size**2)).long()
     flag = mm.view(b, -1)
 
     # Obsolete Method
