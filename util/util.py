@@ -212,7 +212,8 @@ def cal_feat_mask(inMask, nlayers):
 
     return inMask
 
-# It is only for patch_size=1 for now.
+# It is only for patch_size=1 for now, although it also works correctly for patchsize > 1.
+# For patch_size > 1, we adopt another implementation in `patch_soft_shift/innerPatchSoftShiftTripleModule.py` to get masked region.
 # return: flag indicating where the mask is using 1s.
 #         flag size: bz*(h*w)
 def cal_flag_given_mask_thred(mask, patch_size, stride, mask_thred):
@@ -220,8 +221,7 @@ def cal_flag_given_mask_thred(mask, patch_size, stride, mask_thred):
     assert mask.size(1) == 1, "the size of the dim=1 must be 1"
     mask = mask.float()
     b = mask.size(0)
-    # This line of code is for further development of supporting patch_size > 1.
-    # mask = F.pad(mask, (patch_size//2, patch_size//2, patch_size//2, patch_size//2), 'constant', 0)
+    mask = F.pad(mask, (patch_size//2, patch_size//2, patch_size//2, patch_size//2), 'constant', 0)
     m = mask.unfold(2, patch_size, stride).unfold(3, patch_size, stride)
     m = m.contiguous().view(b, 1, -1, patch_size, patch_size)
     m = torch.mean(torch.mean(m, dim=3, keepdim=True), dim=4, keepdim=True)
