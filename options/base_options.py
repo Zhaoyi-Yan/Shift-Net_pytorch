@@ -54,7 +54,7 @@ class BaseOptions():
         parser.add_argument('--constrain', type=str, default='MSE', help='guidance loss type')
         parser.add_argument('--strength', type=float, default=1, help='the weight of guidance loss')
         parser.add_argument('--init_gain', type=float, default=0.02, help='scaling factor for normal, xavier and orthogonal.')
-        parser.add_argument('--skip', type=int, default=0, help='Define whether the guidance layer is skipped. Useful when using multiGPUs.')
+        parser.add_argument('--skip', type=int, default=0, help='Whether skip guidance loss, if skipped performance degrades with dozens of percents faster')
         parser.add_argument('--fuse', type=int, default=0, help='Fuse may encourage large patches shifting when using \'patch_soft_shift\'')
         parser.add_argument('--gan_type', type=str, default='vanilla', help='wgan_gp, '
                                                                             'lsgan, '
