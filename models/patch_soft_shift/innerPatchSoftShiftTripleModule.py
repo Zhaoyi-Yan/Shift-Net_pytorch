@@ -38,9 +38,11 @@ class InnerPatchSoftShiftTripleModule(nn.Module):
         m = m_pad.unfold(2, shift_sz, stride).unfold(3, shift_sz, stride)
         m = m.contiguous().view(self.bz, 1, -1, shift_sz, shift_sz)
 
-        # This two line of code can replace `cal_flag_given_mask_thred`
+        # It implements the similar functionality as `cal_flag_given_mask_thred`.
+        # However, it differs what `mm` means.
+        # Here mm: the masked reigon is filled with 0, nonmasked region is filled with 1.
+        # While mm in `cal_flag_given_mask_thred`, it is opposite.
         m = torch.mean(torch.mean(m, dim=3, keepdim=True), dim=4, keepdim=True)
-        # mm: the masked reigon is filled with 0, nonmasked region is filled with 1.
         mm = m.le(self.mask_thred/(1.*shift_sz**2)).float() # bz*1*(32*32)*1*1
 
         fuse_weight = torch.eye(shift_sz).view(1, 1, shift_sz, shift_sz).type_as(input)
