@@ -218,7 +218,7 @@ If you find it a little hard to read the code, you may read [Guides](https://git
 
 ### Extra variants
 
-**These 4 models are just for fun**
+**These 3 models are just for fun**
 
 For `res patch soft shift-net`:
 ```bash
@@ -228,11 +228,6 @@ python train.py --batchSize=1 --which_model_netG='res_patch_soft_unet_shift_trip
 For `res navie shift-net`:
 ```bash
 python train.py --which_model_netG='res_unet_shift_triple' --model='res_shiftnet' --shift_sz=1 --mask_thred=1
-```
-
-For `pixel soft shift-net`:
-```bash
-python train.py --which_model_netG='soft_unet_shift_triple' --model='soft_shiftnet' --shift_sz=1 --mask_thred=1
 ```
 
 For `patch soft shift-net`:
@@ -264,7 +259,7 @@ For `patch soft shift-net` or `res patch soft shift-net`. You may set `fuse=1` t
 - [ ] Make it compatible for Pytorch 1.2
 - [ ] Training with mixed type of masks.
 - [ ] Add gated conv.
-- [ ] Try different network architecture. As current UNet suffers from many problems.
+- [ ] Try different network architecture.
 
 ## Somethings extra I have tried
 **Gated Conv**: I have tried gated conv(by replacing the normal convs of UNet with gated conv, expect the innermost/outermost layer).
