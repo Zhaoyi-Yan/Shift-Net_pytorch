@@ -8,7 +8,7 @@
 - Linux or Windows.
 - Python 2 or Python 3.
 - CPU or NVIDIA GPU + CUDA CuDNN.
-- Tested on pytorch >= 1.0
+- Tested on pytorch >= **1.2**
 
 ## Getting Started
 ### Installation
@@ -256,7 +256,7 @@ For `patch soft shift-net` or `res patch soft shift-net`. You may set `fuse=1` t
 - [x] Support Online-generating/Offline-loading prepared masks for training/testing.
 - [x] Add VGG loss and TV loss
 - [x] Fix performance degradance when batchsize is larger than 1.
-- [ ] Make it compatible for Pytorch 1.2
+- [x] Make it compatible for Pytorch 1.2
 - [ ] Training with mixed type of masks.
 - [ ] Add gated conv.
 - [ ] Try different network architecture.

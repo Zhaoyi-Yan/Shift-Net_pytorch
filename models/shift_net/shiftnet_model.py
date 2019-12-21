@@ -49,8 +49,8 @@ class ShiftNetModel(BaseModel):
 
 
         # batchsize should be 1 for mask_global
-        self.mask_global = torch.ByteTensor(self.opt.batchSize, 1, \
-                                 opt.fineSize, opt.fineSize)
+        self.mask_global = torch.zeros((self.opt.batchSize, 1, \
+                                 opt.fineSize, opt.fineSize), dtype=torch.bool)
 
         # Here we need to set an artificial mask_global(center hole is ok.)
         self.mask_global.zero_()
@@ -126,7 +126,7 @@ class ShiftNetModel(BaseModel):
         real_B = input['B'].to(self.device)
         # directly load mask offline
         self.mask_global = input['M'].to(self.device).byte()
-        self.mask_global = self.mask_global.narrow(1,0,1)
+        self.mask_global = self.mask_global.narrow(1,0,1).bool()
 
         # create mask online
         if not self.opt.offline_loading_mask:
