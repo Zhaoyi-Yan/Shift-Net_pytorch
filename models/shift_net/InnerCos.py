@@ -29,9 +29,9 @@ class InnerCos(nn.Module):
 
     def forward(self, in_data):
         self.bz, self.c, _, _ = in_data.size()
-	if self.device != 'cpu':
+        if self.device != 'cpu':
             self._split_mask(self.bz)
-	else:
+        else:
             self.cur_mask = self.mask_all
         self.cur_mask = self.cur_mask.to(in_data)
         if not self.skip:
