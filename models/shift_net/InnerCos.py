@@ -5,7 +5,7 @@ import util.util as util
 from .InnerCosFunction import InnerCosFunction
 
 class InnerCos(nn.Module):
-    def __init__(self, crit='MSE', strength=1, skip=0, layer_to_last=3):
+    def __init__(self, crit='MSE', strength=1, skip=0, layer_to_last=3, device='gpu'):
         super(InnerCos, self).__init__()
         self.crit = crit
         self.criterion = torch.nn.MSELoss() if self.crit == 'MSE' else torch.nn.L1Loss()
@@ -13,6 +13,7 @@ class InnerCos(nn.Module):
         # To define whether this layer is skipped.
         self.skip = skip
         self.layer_to_last = layer_to_last
+        self.device = device
         # Init a dummy value is fine.
         self.target = torch.tensor(1.0)
 
@@ -28,7 +29,10 @@ class InnerCos(nn.Module):
 
     def forward(self, in_data):
         self.bz, self.c, _, _ = in_data.size()
-        self._split_mask(self.bz)
+	if self.device != 'cpu':
+            self._split_mask(self.bz)
+	else:
+            self.cur_mask = self.mask_all
         self.cur_mask = self.cur_mask.to(in_data)
         if not self.skip:
             # It works like this:
