@@ -1,3 +1,8 @@
+# News
+I will release some code (originally for Shift-Net v2, yet I am afraid I do not write the paper any more...) that helps improving performance for **irregular face inpainting** a lot!
+
+Code will be released before April 1, 2020.
+
 # Architecutre
 <img src="architecture.png" width="1000"/> 
 
