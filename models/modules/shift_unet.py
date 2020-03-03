@@ -74,17 +74,18 @@ class UnetSkipConnectionShiftBlock(nn.Module):
         uprelu = nn.ReLU(True)
         upnorm = norm_layer(outer_nc)
 
+        device = 'cpu' if len(opt.gpu_ids) == 0 else 'gpu'
         # As the downconv layer is outer_nc in and inner_nc out.
         # So the shift define like this:
         shift = InnerShiftTriple(opt.shift_sz, opt.stride, opt.mask_thred,
-                                            opt.triple_weight, layer_to_last=layer_to_last)
+                                            opt.triple_weight, layer_to_last=layer_to_last, device=device)
 
         shift.set_mask(mask_global)
         shift_list.append(shift)
 
         # Add latent constraint
         # Then add the constraint to the constrain layer list!
-        innerCos = InnerCos(strength=opt.strength, skip=opt.skip, layer_to_last=layer_to_last)
+        innerCos = InnerCos(strength=opt.strength, skip=opt.skip, layer_to_last=layer_to_last, device=device)
         innerCos.set_mask(mask_global)  # Here we need to set mask for innerCos layer too.
         innerCos_list.append(innerCos)
 
@@ -186,17 +187,18 @@ class ResUnetSkipConnectionBlock(nn.Module):
         uprelu = nn.ReLU(True)
         upnorm = norm_layer(outer_nc)
 
+        device = 'cpu' if len(opt.gpu_ids) == 0 else 'gpu'
         # As the downconv layer is outer_nc in and inner_nc out.
         # So the shift define like this:
         shift = InnerResShiftTriple(inner_nc, opt.shift_sz, opt.stride, opt.mask_thred,
-                                            opt.triple_weight, layer_to_last=layer_to_last)
+                                            opt.triple_weight, layer_to_last=layer_to_last, device=device)
 
         shift.set_mask(mask_global)
         shift_list.append(shift)
 
         # Add latent constraint
         # Then add the constraint to the constrain layer list!
-        innerCos = InnerCos(strength=opt.strength, skip=opt.skip, layer_to_last=layer_to_last)
+        innerCos = InnerCos(strength=opt.strength, skip=opt.skip, layer_to_last=layer_to_last, device=device)
         innerCos.set_mask(mask_global)  # Here we need to set mask for innerCos layer too.
         innerCos_list.append(innerCos)
 
@@ -298,17 +300,18 @@ class PatchSoftUnetSkipConnectionShiftTriple(nn.Module):
         uprelu = nn.ReLU(True)
         upnorm = norm_layer(outer_nc)
 
+        device = 'cpu' if len(opt.gpu_ids) == 0 else 'gpu'
         # As the downconv layer is outer_nc in and inner_nc out.
         # So the shift define like this:
         shift = InnerPatchSoftShiftTriple(opt.shift_sz, opt.stride, opt.mask_thred,
-                                            opt.triple_weight, opt.fuse, layer_to_last=layer_to_last)
+                                            opt.triple_weight, opt.fuse, layer_to_last=layer_to_last, device=device)
 
         shift.set_mask(mask_global)
         shift_list.append(shift)
 
         # Add latent constraint
         # Then add the constraint to the constrain layer list!
-        innerCos = InnerCos(strength=opt.strength, skip=opt.skip, layer_to_last=layer_to_last)
+        innerCos = InnerCos(strength=opt.strength, skip=opt.skip, layer_to_last=layer_to_last, device=device)
         innerCos.set_mask(mask_global)  # Here we need to set mask for innerCos layer too.
         innerCos_list.append(innerCos)
 
@@ -411,17 +414,18 @@ class ResPatchSoftUnetSkipConnectionShiftTriple(nn.Module):
         uprelu = nn.ReLU(True)
         upnorm = norm_layer(outer_nc)
 
+        device = 'cpu' if len(opt.gpu_ids) == 0 else 'gpu'
         # As the downconv layer is outer_nc in and inner_nc out.
         # So the shift define like this:
         shift = InnerResPatchSoftShiftTriple(inner_nc, opt.shift_sz, opt.stride, opt.mask_thred,
-                                            opt.triple_weight, opt.fuse, layer_to_last=layer_to_last)
+                                            opt.triple_weight, opt.fuse, layer_to_last=layer_to_last, device=device)
 
         shift.set_mask(mask_global)
         shift_list.append(shift)
 
         # Add latent constraint
         # Then add the constraint to the constrain layer list!
-        innerCos = InnerCos(strength=opt.strength, skip=opt.skip, layer_to_last=layer_to_last)
+        innerCos = InnerCos(strength=opt.strength, skip=opt.skip, layer_to_last=layer_to_last, device=device)
         innerCos.set_mask(mask_global)  # Here we need to set mask for innerCos layer too.
         innerCos_list.append(innerCos)
 
