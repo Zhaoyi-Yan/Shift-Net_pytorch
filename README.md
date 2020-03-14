@@ -78,6 +78,30 @@ Specially, for training models of random masks, we adopt the masks of **partial 
    <img src='./imgs/face_center/111_real_B.png'>
   </td>
   </tr>
+  
+  <tr>
+  <td>
+   <img src='./imgs/face_random/0_real_A.png' >
+  </td>
+  <td>
+  <img src='./imgs/face_random/0_fake_B.png'>
+  </td>
+  <td>
+   <img src='./imgs/face_random/0_real_B.png'>
+  </td>
+  </tr>
+  
+  <tr>
+  <td>
+   <img src='./imgs/face_random/1_real_A.png' >
+  </td>
+  <td>
+  <img src='./imgs/face_random/1_fake_B.png'>
+  </td>
+  <td>
+   <img src='./imgs/face_random/1_real_B.png'>
+  </td>
+  </tr>
 
   <tr>
   <td>
