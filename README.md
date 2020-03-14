@@ -1,7 +1,6 @@
 # News
-I will release some code (originally for Shift-Net v2, yet I am afraid I do not write the paper any more...) that helps improving performance for **irregular face inpainting** a lot!
-
-Code will be released before April 1, 2020.
+I realse a new training strategy that helps deal with random mask training by reducing color shifting at the cost of about 30% training time increase. It is quite useful when adopting in face inpainiting.
+Set `which_model_netG='face_unet_shift_triple'` to carry out the strategy.
 
 # Architecutre
 <img src="architecture.png" width="1000"/> 
