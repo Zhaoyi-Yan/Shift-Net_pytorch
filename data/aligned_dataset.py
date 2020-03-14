@@ -49,12 +49,12 @@ class AlignedDataset(BaseDataset):
                w_offset:w_offset + self.opt.fineSize]
 
         if (not self.opt.no_flip) and random.random() < 0.5:
-            idx = [i for i in range(A.size(2) - 1, -1, -1)] # size(2)-1, size(2)-2, ... , 0
-            idx = torch.LongTensor(idx)
-            A = A.index_select(2, idx)
+            A = torch.flip(A, [2])
 
-        # let B directly equals A
+        # let B directly equals to A
         B = A.clone()
+        A_flip = torch.flip(A, [2])
+        B_flip = A_flip.clone()
 
         # Just zero the mask is fine if not offline_loading_mask.
         mask = A.clone().zero_()
@@ -66,7 +66,7 @@ class AlignedDataset(BaseDataset):
             mask = mask.resize((self.opt.fineSize, self.opt.fineSize), Image.NEAREST)
             mask = transforms.ToTensor()(mask)
         
-        return {'A': A, 'B': B, 'M': mask,
+        return {'A': A, 'B': B, 'A_F': A_flip, 'B_F': B_flip, 'M': mask,
                 'A_paths': A_path}
 
     def __len__(self):

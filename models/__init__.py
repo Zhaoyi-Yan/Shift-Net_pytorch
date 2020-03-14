@@ -20,6 +20,11 @@ def create_model(opt):
         assert (opt.dataset_mode == 'aligned' or opt.dataset_mode == 'aligned_resized')
         from models.res_patch_soft_shift.res_patch_soft_shiftnet_model import ResPatchSoftShiftNetModel
         model = ResPatchSoftShiftNetModel()
+
+    elif opt.model == 'face_shiftnet':
+        assert (opt.dataset_mode == 'aligned' or opt.dataset_mode == 'aligned_resized')
+        from models.face_shift_net.face_shiftnet_model import FaceShiftNetModel
+        model = FaceShiftNetModel()
     else:
         raise ValueError("Model [%s] not recognized." % opt.model)
     model.initialize(opt)
