@@ -193,12 +193,13 @@ class FaceUnetGenerator(nn.Module):
         self.d8_dc = spectral_norm(nn.ConvTranspose2d(ngf*2, output_nc, kernel_size=4, stride=2, padding=1), use_spectral_norm)
 
         # construct shift and innerCos
+        device = 'cpu' if len(opt.gpu_ids) == 0 else 'gpu'
         self.shift = InnerFaceShiftTriple(opt.shift_sz, opt.stride, opt.mask_thred,
-                                            opt.triple_weight, layer_to_last=3)
+                                            opt.triple_weight, layer_to_last=3, device=device)
         self.shift.set_mask(mask_global)
         shift_list.append(self.shift)
 
-        self.innerCos = InnerCos(strength=opt.strength, skip=opt.skip, layer_to_last=3)
+        self.innerCos = InnerCos(strength=opt.strength, skip=opt.skip, layer_to_last=3, device=device)
         self.innerCos.set_mask(mask_global)  # Here we need to set mask for innerCos layer too.
         innerCos_list.append(self.innerCos)
         
