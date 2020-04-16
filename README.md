@@ -1,8 +1,12 @@
 # News
 I realse a new training strategy that helps deal with random mask training by reducing color shifting at the cost of about 30% training time increase. It is quite useful when adopting in face inpainiting.
-Set `which_model_netG='face_unet_shift_triple'` to carry out the strategy.
+Set `--which_model_netG='face_unet_shift_triple'` and `--model='face_shiftnet'` and `--batchSize=1`to carry out the strategy.
 
-Note: the shift in face_flip training strategy is not fully-parallel compared with original shift. I do not have the time to optimize it, you can optimize on your own refering to the original shift.
+Note: When you use `face_flip training strategy`, it suffers some minor drawbacks:
+1. It is not fully-parallel compared with original shift.
+2. It can only be trained with 'cpu' or a single gpu, the batchSize must be 1, or it occurs an error.
+
+If you want to conquer these drawbacks, you can optimize it by referring to original shift. It is not difficult I think. However, I do not have time to do it.
 
 # Architecutre
 <img src="architecture.png" width="1000"/> 
@@ -45,7 +49,7 @@ However, for now, several models have been trained and uploaded.
 For CelebaHQ_256 dataset:
 I select the first 2k images in CelebaHQ_256 for testing, the rest are for training.
 ```
-python train.py --loadSize=256 --batchSize=1 --which_model_netG='face_unet_shift_triple' --name='celeb256' --which_model_netG='unet_shift_triple' --niter=30 --datarooot='./datasets/celeba-256/train'
+python train.py --loadSize=256 --batchSize=1 --model='face_shiftnet' --name='celeb256' --which_model_netG='face_unet_shift_triple' --niter=30 --datarooot='./datasets/celeba-256/train'
 ```
 Mention: **`loadSize` should be `256` for face datasets, meaning direct resize the input image to `256x256`.**
 
@@ -167,7 +171,7 @@ Rename `face_center_mask.pth` to `30_net_G.pth`, and put it in the folder `./log
 python test.py --which_model_netG='unet_shift_triple' --model='shiftnet' --name='face_center_mask_20_30' --which_epoch=30
 ```
 
-For face random inpainting, it is trained with `which_model_netG='face_unet_shift_triple'`. Rename `face_flip_random.pth` to `30_net_G.pth` and set `which_model_netG='face_unet_shift_triple'` when testing.
+For face random inpainting, it is trained with `--which_model_netG='face_unet_shift_triple'` and `--model='face_shiftnet'`. Rename `face_flip_random.pth` to `30_net_G.pth` and set `which_model_netG='face_unet_shift_triple'` and `--model='face_shiftnet'` when testing.
 
 Similarity, for paris random inpainting, rename `paris_random_mask_20_30.pth` to `30_net_G.pth`, and put it in the folder `./log/paris_random_mask_20_30`(if not existed, create it)
 Then test the model:

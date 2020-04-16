@@ -6,6 +6,9 @@ import torch.nn.functional as F
 from models.shift_net.InnerShiftTriple import InnerShiftTriple
 from models.shift_net.InnerCos import InnerCos
 
+# for face shift
+from models.face_shift_net.InnerFaceShiftTriple import InnerFaceShiftTriple
+
 # For res shift
 from models.res_shift_net.innerResShiftTriple import InnerResShiftTriple
 
@@ -131,6 +134,105 @@ class UnetSkipConnectionShiftBlock(nn.Module):
             if h != x_latter.size(2) or w != x_latter.size(3):
                 x_latter = F.interpolate(x_latter, (h, w), mode='bilinear')
             return torch.cat([x_latter, x], 1)  # cat in the C channel
+
+################################### ***************************  #####################################
+###################################         Face Shift_net       #####################################
+################################### ***************************  #####################################
+class FaceUnetGenerator(nn.Module):
+    def __init__(self, input_nc, output_nc, innerCos_list, shift_list, mask_global, opt, ngf=64,
+                 norm_layer=nn.BatchNorm2d, use_spectral_norm=False):
+        super(FaceUnetGenerator, self).__init__()
+
+        # Encoder layers
+        self.e1_c = spectral_norm(nn.Conv2d(input_nc, ngf, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+
+        self.e2_c = spectral_norm(nn.Conv2d(ngf, ngf*2, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        self.e2_norm = norm_layer(ngf*2)
+
+        self.e3_c = spectral_norm(nn.Conv2d(ngf*2, ngf*4, kernel_size=6, stride=2, padding=2), use_spectral_norm)
+        self.e3_norm = norm_layer(ngf*4)
+
+        self.e4_c = spectral_norm(nn.Conv2d(ngf*4, ngf*8, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        self.e4_norm = norm_layer(ngf*8)
+
+        self.e5_c = spectral_norm(nn.Conv2d(ngf*8, ngf*8, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        self.e5_norm = norm_layer(ngf*8)
+
+        self.e6_c = spectral_norm(nn.Conv2d(ngf*8, ngf*8, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        self.e6_norm = norm_layer(ngf*8)
+
+        self.e7_c = spectral_norm(nn.Conv2d(ngf*8, ngf*8, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        self.e7_norm = norm_layer(ngf*8)
+
+        self.e8_c = spectral_norm(nn.Conv2d(ngf*8, ngf*8, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+
+
+        # Deocder layers
+        self.d1_dc = spectral_norm(nn.ConvTranspose2d(ngf*8, ngf*8, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        self.d1_norm = norm_layer(ngf*8)
+
+        self.d2_dc = spectral_norm(nn.ConvTranspose2d(ngf*8*2 , ngf*8, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        self.d2_norm = norm_layer(ngf*8)
+
+        self.d3_dc = spectral_norm(nn.ConvTranspose2d(ngf*8*2, ngf*8, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        self.d3_norm = norm_layer(ngf*8)
+
+        self.d4_dc = spectral_norm(nn.ConvTranspose2d(ngf*8*2, ngf*8, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        self.d4_norm = norm_layer(ngf*8)
+
+        self.d5_dc = spectral_norm(nn.ConvTranspose2d(ngf*8*2, ngf*4, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        self.d5_norm = norm_layer(ngf*4)
+
+        # shift before this layer
+        self.d6_dc = spectral_norm(nn.ConvTranspose2d(ngf*4*3, ngf*2, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        self.d6_norm = norm_layer(ngf*2)
+
+        self.d7_dc = spectral_norm(nn.ConvTranspose2d(ngf*2*2, ngf, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+        self.d7_norm = norm_layer(ngf)
+
+        self.d8_dc = spectral_norm(nn.ConvTranspose2d(ngf*2, output_nc, kernel_size=4, stride=2, padding=1), use_spectral_norm)
+
+        # construct shift and innerCos
+        device = 'cpu' if len(opt.gpu_ids) == 0 else 'gpu'
+        self.shift = InnerFaceShiftTriple(opt.shift_sz, opt.stride, opt.mask_thred,
+                                            opt.triple_weight, layer_to_last=3, device=device)
+        self.shift.set_mask(mask_global)
+        shift_list.append(self.shift)
+
+        self.innerCos = InnerCos(strength=opt.strength, skip=opt.skip, layer_to_last=3, device=device)
+        self.innerCos.set_mask(mask_global)  # Here we need to set mask for innerCos layer too.
+        innerCos_list.append(self.innerCos)
+        
+    # In this case, we have very flexible unet construction mode.
+    def forward(self, input, flip_feat=None):
+        # Encoder
+        # No norm on the first layer
+        e1 = self.e1_c(input)
+        e2 = self.e2_norm(self.e2_c(F.leaky_relu_(e1, negative_slope=0.2)))
+        e3 = self.e3_norm(self.e3_c(F.leaky_relu_(e2, negative_slope=0.2)))
+        e4 = self.e4_norm(self.e4_c(F.leaky_relu_(e3, negative_slope=0.2)))
+        e5 = self.e5_norm(self.e5_c(F.leaky_relu_(e4, negative_slope=0.2)))
+        e6 = self.e6_norm(self.e6_c(F.leaky_relu_(e5, negative_slope=0.2)))
+
+        e7 = self.e7_norm(self.e7_c(F.leaky_relu_(e6, negative_slope=0.2)))
+        # No norm on the inner_most layer
+        e8 = self.e8_c(F.leaky_relu_(e7, negative_slope=0.2))
+
+        # Decoder
+        d1 = self.d1_norm(self.d1_dc(F.relu_(e8)))
+        d2 = self.d2_norm(self.d2_dc(F.relu_(torch.cat([d1, e7], dim=1))))
+        d3 = self.d3_norm(self.d3_dc(F.relu_(torch.cat([d2, e6], dim=1))))
+        d4 = self.d4_norm(self.d4_dc(F.relu_(torch.cat([d3, e5], dim=1))))
+        d5 = self.d5_norm(self.d5_dc(F.relu_(torch.cat([d4, e4], dim=1))))
+        tmp, innerFeat = self.shift(self.innerCos(F.relu_(torch.cat([d5, e3], dim=1))), flip_feat)
+        d6 = self.d6_norm(self.d6_dc(tmp))
+        d7 = self.d7_norm(self.d7_dc(F.relu_(torch.cat([d6, e2], dim=1))))
+        # No norm on the last layer
+        d8 = self.d8_dc(F.relu_(torch.cat([d7, e1], 1)))
+
+        d8 = torch.tanh(d8)
+
+        return d8, innerFeat
 
 ################################### ***************************  #####################################
 ###################################         Res Shift_net            #####################################
