@@ -1,8 +1,12 @@
 # News
 I realse a new training strategy that helps deal with random mask training by reducing color shifting at the cost of about 30% training time increase. It is quite useful when adopting in face inpainiting.
-Set `--which_model_netG='face_unet_shift_triple'` and `--model='face_shiftnet'` to carry out the strategy.
+Set `--which_model_netG='face_unet_shift_triple'` and `--model='face_shiftnet'` and `--batchSize=1`to carry out the strategy.
 
-Note: the shift in face_flip training strategy is not fully-parallel compared with original shift. I do not have the time to optimize it, you can optimize on your own refering to the original shift.
+Note: When you use `face_flip training strategy`, it suffers some minor drawbacks:
+1. It is not fully-parallel compared with original shift.
+2. It can only be trained with 'cpu' or a single gpu, the batchSize must be 1, or it occurs an error.
+
+If you want to conquer these drawbacks, you can optimize it by referring to original shift. It is not difficult I think. However, I do not have time to do it.
 
 # Architecutre
 <img src="architecture.png" width="1000"/> 
