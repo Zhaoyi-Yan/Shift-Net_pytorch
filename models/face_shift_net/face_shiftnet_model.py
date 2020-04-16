@@ -82,8 +82,11 @@ class FaceShiftNetModel(BaseModel):
                                           opt.n_layers_D, opt.norm, use_sigmoid, opt.use_spectral_norm_D, opt.init_type, self.gpu_ids, opt.init_gain)
 
         # add style extractor
-        self.vgg16_extractor = util.VGG16FeatureExtractor().to(self.gpu_ids[0])
-        self.vgg16_extractor = torch.nn.DataParallel(self.vgg16_extractor, self.gpu_ids)
+        self.vgg16_extractor = util.VGG16FeatureExtractor()
+        if len(opt.gpu_ids) > 0:
+            self.vgg16_extractor = self.vgg16_extractor.to(self.gpu_ids[0])
+            self.vgg16_extractor = torch.nn.DataParallel(self.vgg16_extractor, self.gpu_ids)
+
 
         if self.isTrain:
             self.old_lr = opt.lr
