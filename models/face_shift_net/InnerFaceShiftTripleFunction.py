@@ -51,8 +51,8 @@ class InnerFaceShiftTripleFunction(torch.autograd.Function):
                 former = former_all.narrow(0, idx, 1) ### decoder feature
 
                 #GET COSINE, RESHAPED LATTER AND ITS INDEXES
-                cosine, latter_windows, i_2, i_3, i_1, i_4 = Nonparm.cosine_similarity(former.clone().squeeze(), latter.clone().squeeze(), 1, stride, flag_cur)
-                cosine_flip, latter_windows_flip, _, _, _, _ = Nonparm.cosine_similarity(former.clone().squeeze(), flip_feat.clone().squeeze(), 1, stride, flag_cur_flip)
+                cosine, latter_windows, i_2, i_3, i_1 = Nonparm.cosine_similarity(former.clone().squeeze(), latter.clone().squeeze(), 1, stride, flag_cur)
+                cosine_flip, latter_windows_flip, _, _, _, = Nonparm.cosine_similarity(former.clone().squeeze(), flip_feat.clone().squeeze(), 1, stride, flag_cur_flip)
 
                 # compare which is the bigger one.
                 cosine_con = torch.cat([cosine, cosine_flip], dim=1)
