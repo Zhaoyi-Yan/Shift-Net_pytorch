@@ -51,7 +51,7 @@ class InnerFaceShiftTripleFunction(torch.autograd.Function):
                 former = former_all.narrow(0, idx, 1) ### decoder feature
 
                 #GET COSINE, RESHAPED LATTER AND ITS INDEXES
-                cosine, latter_windows, _, _, _ = Nonparm.cosine_similarity(former.clone().squeeze(), latter.clone().squeeze(), 1, stride, flag_cur)
+                cosine, latter_windows, i_2, i_3, i_1 = Nonparm.cosine_similarity(former.clone().squeeze(), latter.clone().squeeze(), 1, stride, flag_cur)
                 cosine_flip, latter_windows_flip, _, _, _ = Nonparm.cosine_similarity(former.clone().squeeze(), flip_feat.clone().squeeze(), 1, stride, flag_cur_flip)
 
                 # compare which is the bigger one.
@@ -85,8 +85,8 @@ class InnerFaceShiftTripleFunction(torch.autograd.Function):
 
 
                 # GET FINAL SHIFT FEATURE
-                ori_tmp = Nonparm._paste(latter_windows, ctx.ind_lst[idx], i_2, i_3, i_1, i_4)
-                ori_tmp_flip = Nonparm._paste(latter_windows_flip, ctx.ind_lst_flip[idx], i_2, i_3, i_1, i_4)
+                ori_tmp = Nonparm._paste(latter_windows, ctx.ind_lst[idx], i_2, i_3, i_1)
+                ori_tmp_flip = Nonparm._paste(latter_windows_flip, ctx.ind_lst_flip[idx], i_2, i_3, i_1)
 
                 # combine the two features by directly adding, it is ok.
                 shift_masked_all[idx] = ori_tmp + ori_tmp_flip
