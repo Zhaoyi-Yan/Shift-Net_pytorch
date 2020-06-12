@@ -2,40 +2,39 @@
 I release a new training strategy that helps deal with random mask training by reducing color shifting at the cost of about 30% training time increase. It is quite useful when adopting in face inpainiting.
 Set `--which_model_netG='face_unet_shift_triple'` and `--model='face_shiftnet'` and `--batchSize=1`to carry out the strategy.
 
+See some examples below, many approaches suffer from such `color shifting` when training with random masks on face datasets.
  <table style="float:center">
  <tr>
   <th><B>Input</B></th> <th><B> Navie Shift</B></th> <th><B> Flip Shift</B> <th><B>Ground-truth</B></th>
  </tr>
- 
-
 <tr>
   <td>
-   <img src='./imgs/face_center/compare/13_real_A.png' >
+   <img src='./imgs/compare/13_real_A.png' >
   </td>
   <td>
-  <img src='./imgs/face_center/compare/13_fake_B.png'>
+  <img src='./imgs/compare/13_fake_B.png'>
   </td>
   <td>
-  <img src='./imgs/face_center/compare/13_fake_B_flip.png'>
+  <img src='./imgs/compare/13_fake_B_flip.png'>
   </td>
   <td>
-   <img src='./imgs/face_center/compare/13_real_B.png'>
+   <img src='./imgs/compare/13_real_B.png'>
   </td>
  
  </tr>
  
  <tr>
    <td>
-   <img src='./imgs/face_center/compare/18_real_A.png' >
+   <img src='./imgs/compare/18_real_A.png' >
   </td>
   <td>
-  <img src='./imgs/face_center/compare/18_fake_B.png'>
+  <img src='./imgs/compare/18_fake_B.png'>
   </td>
   <td>
-  <img src='./imgs/face_center/compare/18_fake_B_flip.png'>
+  <img src='./imgs/compare/18_fake_B_flip.png'>
   </td>
   <td>
-   <img src='./imgs/face_center/compare/18_real_B.png'>
+   <img src='./imgs/compare/18_real_B.png'>
   </td>
  
  </tr>
@@ -49,7 +48,7 @@ Note: When you use `face_flip training strategy`, it suffers some minor drawback
 1. It is not fully-parallel compared with original shift.
 2. It can only be trained with 'cpu' or a single gpu, the batchSize must be 1, or it occurs an error.
 
-If you want to conquer these drawbacks, you can optimize it by referring to original shift. It is not difficult I think. However, I do not have time to do it.
+If you want to conquer these drawbacks, you can optimize it by referring to original shift. It is not difficult, however, I do not have time to do it.
 
 # Architecutre
 <img src="architecture.png" width="1000"/> 
