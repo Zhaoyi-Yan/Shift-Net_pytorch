@@ -292,9 +292,6 @@ For each batch, then:
 ## Using Switchable Norm instead of Instance/Batch Norm
 For fixed mask training, `Switchable Norm` delivers better stableness when batchSize > 1. **Please use switchable norm when you want to training with batchsize is large, much more stable than instance norm or batchnorm!**
 
-## Kindly remindier
-If you find it a little hard to read the code, you may read [Guides](https://github.com/Zhaoyi-Yan/Shift-Net_pytorch/blob/master/guides.md).
-
 ### Extra variants
 
 **These 3 models are just for fun**
