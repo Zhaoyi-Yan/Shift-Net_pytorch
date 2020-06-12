@@ -1,6 +1,45 @@
-# News
-I realse a new training strategy that helps deal with random mask training by reducing color shifting at the cost of about 30% training time increase. It is quite useful when adopting in face inpainiting.
+# New training strategy
+I release a new training strategy that helps deal with random mask training by reducing color shifting at the cost of about 30% training time increase. It is quite useful when adopting in face inpainiting.
 Set `--which_model_netG='face_unet_shift_triple'` and `--model='face_shiftnet'` and `--batchSize=1`to carry out the strategy.
+
+ <table style="float:center">
+ <tr>
+  <th><B>Input</B></th> <th><B>Results</B></th> <th><B>Ground-truth</B></th>
+ </tr>
+ <tr>
+  <td>
+   <img src='./imgs/face_center/13_real_A.png' >
+  </td>
+  <td>
+  <img src='./imgs/face_center/13_fake_B_normal.png'>
+  </td>
+  <td>
+  <img src='./imgs/face_center/13_fake_B_flip.png'>
+  </td>
+  <td>
+   <img src='./imgs/face_center/13_real_B.png'>
+  </td>
+  
+    <td>
+   <img src='./imgs/face_center/18_real_A.png' >
+  </td>
+  <td>
+  <img src='./imgs/face_center/18_fake_B_normal.png'>
+  </td>
+  <td>
+  <img src='./imgs/face_center/18_fake_B_flip.png'>
+  </td>
+  <td>
+   <img src='./imgs/face_center/18_real_B.png'>
+  </td>
+  
+  
+  </tr>
+ 
+  </table>
+ 
+ 
+
 
 Note: When you use `face_flip training strategy`, it suffers some minor drawbacks:
 1. It is not fully-parallel compared with original shift.
