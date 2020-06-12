@@ -4,37 +4,41 @@ Set `--which_model_netG='face_unet_shift_triple'` and `--model='face_shiftnet'` 
 
  <table style="float:center">
  <tr>
-  <th><B>Input</B></th> <th><B>Results</B></th> <th><B>Ground-truth</B></th>
+  <th><B>Input</B></th> <th><B> Navie Shift</B></th> <th><B> Flip Shift</B> <th><B>Ground-truth</B></th>
  </tr>
+ 
+
+<tr>
+  <td>
+   <img src='./imgs/face_center/compare/13_real_A.png' >
+  </td>
+  <td>
+  <img src='./imgs/face_center/compare/13_fake_B.png'>
+  </td>
+  <td>
+  <img src='./imgs/face_center/compare/13_fake_B_flip.png'>
+  </td>
+  <td>
+   <img src='./imgs/face_center/compare/13_real_B.png'>
+  </td>
+ 
+ </tr>
+ 
  <tr>
-  <td>
-   <img src='./imgs/face_center/13_real_A.png' >
+   <td>
+   <img src='./imgs/face_center/compare/18_real_A.png' >
   </td>
   <td>
-  <img src='./imgs/face_center/13_fake_B_normal.png'>
+  <img src='./imgs/face_center/compare/18_fake_B.png'>
   </td>
   <td>
-  <img src='./imgs/face_center/13_fake_B_flip.png'>
+  <img src='./imgs/face_center/compare/18_fake_B_flip.png'>
   </td>
   <td>
-   <img src='./imgs/face_center/13_real_B.png'>
+   <img src='./imgs/face_center/compare/18_real_B.png'>
   </td>
-  
-    <td>
-   <img src='./imgs/face_center/18_real_A.png' >
-  </td>
-  <td>
-  <img src='./imgs/face_center/18_fake_B_normal.png'>
-  </td>
-  <td>
-  <img src='./imgs/face_center/18_fake_B_flip.png'>
-  </td>
-  <td>
-   <img src='./imgs/face_center/18_real_B.png'>
-  </td>
-  
-  
-  </tr>
+ 
+ </tr>
  
   </table>
  
@@ -148,7 +152,7 @@ Specially, for training models of random masks, we adopt the masks of **partial 
   </td>
   </tr>
 
-  <tr>
+<tr>
   <td>
    <img src='./imgs/paris_center/048_im_real_A.png' >
   </td>
@@ -158,7 +162,7 @@ Specially, for training models of random masks, we adopt the masks of **partial 
   <td>
    <img src='./imgs/paris_center/048_im_real_B.png'>
   </td>
-  </tr>
+</tr>
 
 <tr>
   <td>
@@ -170,7 +174,7 @@ Specially, for training models of random masks, we adopt the masks of **partial 
   <td>
    <img src='./imgs/paris_center/004_im_real_B.png'>
   </td>
-  </tr>
+</tr>
 
 <tr>
   <td>
@@ -182,7 +186,7 @@ Specially, for training models of random masks, we adopt the masks of **partial 
   <td>
    <img src='./imgs/paris_random/006_im_real_B.png'>
   </td>
-  </tr>
+</tr>
 
 <tr>
   <td>
