@@ -1,26 +1,3 @@
-'''
-M: mask
-M_flip: mask flipped
-real_A: image concat with M
-real_A_flip: image flipped concat with M_flip
-
-The first forward (Only to get feat_flip, nothing more):
-we want to get feat_flip(the encoder feature of the flipped image)
-
-Then we set gt_latent, which is consistent with `guidance loss`.
-
-Finally, we hope searching space should be over a xxxxxxxxxxxxxxxxxxxx
-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-
-```python
-_, flip_feat = self.netG(self.real_A_flip)
-# set guidance here
-self.set_gt_latent()
-self.fake_B, _ = self.netG(self.real_A, flip_feat)
-```
-'''
-
 import torch
 from torch.nn import functional as F
 import util.util as util
@@ -217,7 +194,6 @@ class FaceShiftNetModel(BaseModel):
 
 
     def forward(self):
-        # As this is the version of simplified, so do not need to copy network.
         _, flip_feat = self.netG(self.real_A_flip)
         # set guidance here
         self.set_gt_latent()
