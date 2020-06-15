@@ -5,12 +5,6 @@ import util.util as util
 import time
 
 # This script offers a version of shift from multi-references.
-
-# TODO: Handle the random mask for face_flip version.
-# Mention: Here is the simplified version of face_flip.
-# Assuming that mask is the center mask, so we do not need to generate a mask_flip
-# And do not need to calculate 'flag_flip'
-#
 class InnerFaceShiftTripleFunction(torch.autograd.Function):
     ctx = None
 

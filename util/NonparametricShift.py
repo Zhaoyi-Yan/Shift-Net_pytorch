@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 from time import time
 
-# These three functions only works when patch_size = 1x1
+# These three functions only work when patch_size = 1x1
 class Modified_NonparametricShift(object):
 
     def _extract_patches_from_flag(self, img, patch_size, stride, flag, value):
@@ -138,7 +138,7 @@ class Batch_NonShift(object):
         return input_window.view(bz, input_window.size(0)//bz, -1)
 
 
-
+# Deprecated code
 class NonparametricShift(object):
     def buildAutoencoder(self, target_img, normalize, interpolate,  nonmask_point_idx, patch_size=1, stride=1):
         nDim = 3
