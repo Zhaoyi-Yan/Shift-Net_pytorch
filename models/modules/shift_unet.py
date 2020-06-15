@@ -117,7 +117,7 @@ class UnetSkipConnectionShiftBlock(nn.Module):
                                         padding=1), use_spectral_norm)
             down = [downrelu, downconv, downnorm]
             # shift should be placed after uprelu
-            # NB: innerCos are placed before shift. So need to add the latent gredient to
+            # NB: innerCos is placed before shift. So need to add the latent gredient to
             # to former part.
             up = [uprelu, innerCos, shift, upconv, upnorm]
 
@@ -215,24 +215,32 @@ class FaceUnetGenerator(nn.Module):
         e6 = self.e6_norm(self.e6_c(F.leaky_relu_(e5, negative_slope=0.2)))
 
         e7 = self.e7_norm(self.e7_c(F.leaky_relu_(e6, negative_slope=0.2)))
-        # No norm on the inner_most layer
+        # No norm in the inner_most layer
         e8 = self.e8_c(F.leaky_relu_(e7, negative_slope=0.2))
 
         # Decoder
         d1 = self.d1_norm(self.d1_dc(F.relu_(e8)))
-        d2 = self.d2_norm(self.d2_dc(F.relu_(torch.cat([d1, e7], dim=1))))
-        d3 = self.d3_norm(self.d3_dc(F.relu_(torch.cat([d2, e6], dim=1))))
-        d4 = self.d4_norm(self.d4_dc(F.relu_(torch.cat([d3, e5], dim=1))))
-        d5 = self.d5_norm(self.d5_dc(F.relu_(torch.cat([d4, e4], dim=1))))
-        tmp, innerFeat = self.shift(self.innerCos(F.relu_(torch.cat([d5, e3], dim=1))), flip_feat)
+        d2 = self.d2_norm(self.d2_dc(F.relu_(self.cat_feat(d1, e7))))
+        d3 = self.d3_norm(self.d3_dc(F.relu_(self.cat_feat(d2, e6))))
+        d4 = self.d4_norm(self.d4_dc(F.relu_(self.cat_feat(d3, e5))))
+        d5 = self.d5_norm(self.d5_dc(F.relu_(self.cat_feat(d4, e4))))
+        tmp, innerFeat = self.shift(self.innerCos(F.relu_(self.cat_feat(d5, e3))), flip_feat)
         d6 = self.d6_norm(self.d6_dc(tmp))
-        d7 = self.d7_norm(self.d7_dc(F.relu_(torch.cat([d6, e2], dim=1))))
+        d7 = self.d7_norm(self.d7_dc(F.relu_(self.cat_feat(d6, e2))))
         # No norm on the last layer
-        d8 = self.d8_dc(F.relu_(torch.cat([d7, e1], 1)))
+        d8 = self.d8_dc(F.relu_(self.cat_feat(d7, e1)))
 
         d8 = torch.tanh(d8)
 
         return d8, innerFeat
+
+    def cat_feat(self, de_feat, en_feat):
+        _, _, h1, w1 = de_feat.size()
+        _, _, h2, w2 = en_feat.size()
+        if h1 != h2 or w1 != w2:
+            de_feat = F.interpolate(de_feat, (h2, w2), mode='bilinear')
+        return torch.cat([de_feat, en_feat], 1)
+
 
 ################################### ***************************  #####################################
 ###################################         Res Shift_net            #####################################
