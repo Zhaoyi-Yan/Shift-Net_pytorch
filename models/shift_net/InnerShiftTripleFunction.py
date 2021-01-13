@@ -37,9 +37,9 @@ class InnerShiftTripleFunction(torch.autograd.Function):
 
         _, indexes = torch.max(cosine, dim=2)
 
-        mask_indexes = (flag==1).nonzero()[:, 1].view(ctx.bz, -1)
+        mask_indexes = (flag==1).nonzero(as_tuple=False)[:, 1].view(ctx.bz, -1)
 
-        non_mask_indexes = (flag==0).nonzero()[:, 1].view(ctx.bz, -1).gather(1, indexes)
+        non_mask_indexes = (flag==0).nonzero(as_tuple=False)[:, 1].view(ctx.bz, -1).gather(1, indexes)
 
         idx_b = torch.arange(ctx.bz).long().unsqueeze(1).expand(ctx.bz, mask_indexes.size(1))
         # set the elemnets of indexed by [mask_indexes, non_mask_indexes] to 1.
@@ -84,7 +84,7 @@ class InnerShiftTripleFunction(torch.autograd.Function):
                 shift_offset = ctx.shift_offsets.narrow(0, idx*mask_nums, mask_nums)
                 # reconstruct the original shift_map.
                 shift_offsets_map = torch.zeros(1, ctx.h, ctx.w, 2).type_as(input)
-                shift_offsets_map[:, (flag_cur == 1).nonzero().squeeze() // ctx.w, (flag_cur == 1).nonzero().squeeze() % ctx.w, :] = \
+                shift_offsets_map[:, (flag_cur == 1).nonzero(as_tuple=False).squeeze() // ctx.w, (flag_cur == 1).nonzero(as_tuple=False).squeeze() % ctx.w, :] = \
                                                                                                 shift_offset.unsqueeze(0)
                 # It is indicating the pixels(non-masked) that will shift the the masked region.
                 flow_src = util.highlight_flow(shift_offsets_map, flag_cur.unsqueeze(0))

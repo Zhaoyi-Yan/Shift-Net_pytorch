@@ -36,8 +36,8 @@ class InnerCos(nn.Module):
         self.cur_mask = self.cur_mask.to(in_data)
         if not self.skip:
             # It works like this:
-            # Each iteration contains 2 forward, In the first forward, we input GT, just to get the target.
-            # In the second forward, we input corrupted image, then back-propagate the network, the guidance loss works as expected.
+            # Each iteration contains 2 forward passes, In the first forward pass, we input a GT image, just to get the target.
+            # In the second forward pass, we input the corresponding corrupted image, then back-propagate the network, the guidance loss works as expected.
             self.output = InnerCosFunction.apply(in_data, self.criterion, self.strength, self.target, self.cur_mask)
             self.target = in_data.narrow(1, self.c // 2, self.c // 2).detach() # the latter part
         else:

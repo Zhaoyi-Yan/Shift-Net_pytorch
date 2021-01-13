@@ -1,5 +1,5 @@
 # New training strategy
-I release a new training strategy that helps deal with random mask training by reducing color shifting at the cost of about 30% training time increase. It is quite useful when adopting in face inpainiting.
+I release a new training strategy that helps deal with random mask training by reducing color shifting at the cost of about extra 30% training time. It is quite useful when we perform face inpainiting.
 Set `--which_model_netG='face_unet_shift_triple'` and `--model='face_shiftnet'` and `--batchSize=1`to carry out the strategy.
 
 See some examples below, many approaches suffer from such `color shifting` when training with random masks on face datasets.
@@ -46,7 +46,7 @@ See some examples below, many approaches suffer from such `color shifting` when 
 
 Note: When you use `face_flip training strategy`, it suffers some minor drawbacks:
 1. It is not fully-parallel compared with original shift.
-2. It can only be trained with 'cpu' or a single gpu, the batchSize must be 1, or it occurs an error.
+2. It can only be trained on the 'cpu' or on a single gpu, the batch size must be 1, or it occurs an error.
 
 If you want to conquer these drawbacks, you can optimize it by referring to original shift. It is not difficult, however, I do not have time to do it.
 
@@ -248,7 +248,7 @@ For `random mask`(`mask_sub_type` is NOT `rect`  or your own random masks), the 
 
 Random mask training(both online and offline) are also supported. 
 
-Personly, I would like to suggest you to loading the masks offline(similar as **partial conv**). Please refer to section **Masks**.
+Personally, I would like to suggest you to loading the masks offline(similar as **partial conv**). Please refer to section **Masks**.
 
 ## Test the model
 
@@ -273,7 +273,7 @@ The consistency of training and testing masks are crucial to get good performanc
 | random | All|
 | your own masks| your own masks|
 
-It means that if you taining a model with `center-mask`, then test it usin
+It means that if you training a model with `center-mask`, then test it using `center-mask`(even without one pixel offset). For more info, you may refer to https://github.com/Zhaoyi-Yan/Shift-Net_pytorch/issues/125
 ### Training by online-generating marks
 We offer three types of online-generating masks: `center-mask, random_square and random_mask`.
 If you want to train on your own masks silimar like **partial conv**, ref to **Training on your own masks**.
@@ -318,15 +318,13 @@ For `patch soft shift-net` or `res patch soft shift-net`. You may set `fuse=1` t
 
 ## New things that I want to add
 - [x] Make U-Net handle with inputs of any sizes.
-- [x] Update the code for pytorch >= 1.0.
-- [x] Guides of our code, we hope it helps you understand our code more easily.
 - [x] Add more GANs, like spectural norm and relativelistic GAN.
 - [x] Boost the efficiency of shift layer.
 - [x] Directly resize the global_mask to get the mask in feature space.
 - [x] Visualization of flow. It is still experimental now.
 - [x] Extensions of Shift-Net. Still active in absorbing new features.
 - [x] Fix bug in guidance loss when adopting it in multi-gpu.
-- [x] Add composit L1 loss between mask loss and non-mask loss
+- [x] Add composit L1 loss between mask loss and non-mask loss.
 - [x] Finish optimizing soft-shift.
 - [x] Add mask varaint in a batch.
 - [x] Support Online-generating/Offline-loading prepared masks for training/testing.
@@ -334,14 +332,14 @@ For `patch soft shift-net` or `res patch soft shift-net`. You may set `fuse=1` t
 - [x] Fix performance degradance when batchsize is larger than 1.
 - [x] Make it compatible for Pytorch 1.2
 - [ ] Training with mixed type of masks.
-- [ ] Add gated conv.
-- [ ] Try different network architecture.
+- [ ] Try amp training
+- [ ] Try self-attn discriminator(maybe it helps)
 
 ## Somethings extra I have tried
 **Gated Conv**: I have tried gated conv(by replacing the normal convs of UNet with gated conv, expect the innermost/outermost layer).
-However, I get no benifits. Maybe I should try replacing all layers with gated conv. I will try again when I am free.
+However, I obtained no benifits. Maybe I should try replacing all layers with gated conv. I will try again when I am free.
 
-**Non local block**: I added, but seems worse. Maybe I haven't add the blocks on the proper postion. (It makes the training time increase a lot. So I am not in favor of it.)
+**Non local block**: I added, but seems worse. Maybe I haven't added the blocks on the proper postion. (It makes the training time increase a lot. So I am not in favor of it.)
 
 ## Citation
 If you find this work useful or gives you some insights, please cite:
