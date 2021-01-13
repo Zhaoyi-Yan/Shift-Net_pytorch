@@ -62,18 +62,18 @@ class InnerFaceShiftTripleFunction(torch.autograd.Function):
                 _, indexes_flip = torch.max(cosine_flip, dim=1)
 
                 # SET  TRANSITION MATRIX
-                mask_indexes = (flag_cur == 1).nonzero()
-                non_mask_indexes = (flag_cur == 0).nonzero()[indexes]
+                mask_indexes = (flag_cur == 1).nonzero(as_tuple=False)
+                non_mask_indexes = (flag_cur == 0).nonzero(as_tuple=False)[indexes]
                 # then remove some indexes where we should select flip feat according to ori_larger
-                mask_indexes_select_index = (mask_indexes.squeeze() * ori_larger.squeeze()).nonzero()
+                mask_indexes_select_index = (mask_indexes.squeeze() * ori_larger.squeeze()).nonzero(as_tuple=False)
                 mask_indexes_select = mask_indexes[mask_indexes_select_index].squeeze()
                 ctx.ind_lst[idx][mask_indexes_select, non_mask_indexes] = 1
 
 
 
-                non_mask_indexes_flip = (flag_cur_flip == 0).nonzero()[indexes_flip]
+                non_mask_indexes_flip = (flag_cur_flip == 0).nonzero(as_tuple=False)[indexes_flip]
                 # then remove some indexes where we should select ori feat according to 1-ori_larger
-                mask_indexes_flip_select_index = (mask_indexes.squeeze() * (1 - ori_larger.squeeze())).nonzero()
+                mask_indexes_flip_select_index = (mask_indexes.squeeze() * (1 - ori_larger.squeeze())).nonzero(as_tuple=False)
                 mask_indexes_flip_select = mask_indexes[mask_indexes_flip_select_index].squeeze()
                 ctx.ind_lst_flip[idx][mask_indexes_flip_select, non_mask_indexes_flip] = 1
 
@@ -100,7 +100,7 @@ class InnerFaceShiftTripleFunction(torch.autograd.Function):
                 shift_offset = ctx.shift_offsets.narrow(0, idx*mask_nums, mask_nums)
                 # reconstruct the original shift_map.
                 shift_offsets_map = torch.zeros(1, ctx.h, ctx.w, 2).type_as(input)
-                shift_offsets_map[:, (flag_cur == 1).nonzero().squeeze() // ctx.w, (flag_cur == 1).nonzero().squeeze() % ctx.w, :] = \
+                shift_offsets_map[:, (flag_cur == 1).nonzero(as_tuple=False).squeeze() // ctx.w, (flag_cur == 1).nonzero(as_tuple=False).squeeze() % ctx.w, :] = \
                                                         shift_offset.unsqueeze(0)
                 # It is indicating the pixels(non-masked) that will shift the the masked region.
                 flow_src = util.highlight_flow(shift_offsets_map, flag_cur.unsqueeze(0))
