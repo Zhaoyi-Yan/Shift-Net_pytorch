@@ -210,7 +210,7 @@ bash download_models.sh
 ```
 Rename `face_center_mask.pth` to `30_net_G.pth`, and put it in the folder `./log/face_center_mask_20_30`(if not existed, create it)
 ```bash
-python test.py --which_model_netG='unet_shift_triple' --model='shiftnet' --name='face_center_mask_20_30' --which_epoch=30
+python test.py --which_model_netG='unet_shift_triple' --model='shiftnet' --name='face_center_mask_20_30' --which_epoch=30 --dataroot='./datasets/celeba-256/test'
 ```
 
 For face random inpainting, it is trained with `--which_model_netG='face_unet_shift_triple'` and `--model='face_shiftnet'`. Rename `face_flip_random.pth` to `30_net_G.pth` and set `which_model_netG='face_unet_shift_triple'` and `--model='face_shiftnet'` when testing.
@@ -227,7 +227,7 @@ For models trained with center mask, make sure `--mask_type='center' --offline_l
 
 
 ## Train models
-- Download your own inpainting datasets.
+- Download your own inpainting datasets. Just put all the train/test images in some folder (eg, ./xx/train/ , ./xx/test/), change `dataroot` in `options/base_options.py` to the that path, that is all.
 
 - Train a model:
 Please read this paragraph carefully before running the code.
@@ -264,7 +264,7 @@ The test results will be saved to a html file here: `./results/`.
 ## Masks
 Usually, **Keep the same setting of masks of between training and testing.**
 It is because the performance is highly-related to the masks your applied in training.
-The consistency of training and testing masks are crucial to get good performance.
+The consistency of training and testing masks is crucial to achieve good performance.
 
 | training | testing |
 | ----     | ----    |
@@ -273,7 +273,7 @@ The consistency of training and testing masks are crucial to get good performanc
 | random | All|
 | your own masks| your own masks|
 
-It means that if you training a model with `center-mask`, then test it using `center-mask`(even without one pixel offset). For more info, you may refer to https://github.com/Zhaoyi-Yan/Shift-Net_pytorch/issues/125
+It means that if you train a model with `center-mask`, then you need test it using `center-mask`(even without one pixel offset). For more info, you may refer to https://github.com/Zhaoyi-Yan/Shift-Net_pytorch/issues/125
 ### Training by online-generating marks
 We offer three types of online-generating masks: `center-mask, random_square and random_mask`.
 If you want to train on your own masks silimar like **partial conv**, ref to **Training on your own masks**.
